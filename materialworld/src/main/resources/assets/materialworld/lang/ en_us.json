@@ -1,0 +1,6 @@
+{
+  "block.materialworld.example_block": "Example Block",
+  "tooltip.materialworld.emc": "EMC: %s",
+  "key.categories.materialworld": "Material World",
+  "key.materialworld.open_transmutation": "Open Transmutation"
+}
