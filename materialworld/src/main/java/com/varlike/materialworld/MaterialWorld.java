@@ -49,20 +49,21 @@ public class MaterialWorld
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
-    private void commonSetup(final FMLCommonSetupEvent event)
-    {
+    private void commonSetup(final FMLCommonSetupEvent event) {
         LOGGER.info("物质世界模组加载中...");
+
+        // 加载配置值（此时配置已完全就绪）
+        Config.loadValues();
 
         // 1. 注册默认值
         EMCValues.registerDefaults();
 
-        // 2. 初始化存储路径并加载自定义值（会覆盖默认值）
+        // 2. 初始化存储路径并加载自定义值
         EMCStorage.init(FMLPaths.CONFIGDIR.get());
         EMCStorage.load();
 
         LOGGER.info("EMC 系统初始化完成，共 {} 种物品", EMCManager.size());
     }
-
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event)
     {

@@ -13,8 +13,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @EventBusSubscriber(modid = MaterialWorld.MOD_ID)
-public class Config
-{
+public class Config {
+
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
     private static final ModConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
@@ -31,34 +31,41 @@ public class Config
 
     private static final ModConfigSpec.ConfigValue<List<? extends String>> ITEM_STRINGS = BUILDER
             .comment("启动时要打印的物品列表")
-            .defineList(
-                    "items",
-                    List.of("minecraft:iron_ingot"),
-                    () -> "minecraft:iron_ingot", // 用于在配置UI中新增条目的默认值
-                    Config::validateItemName
-            );
+            .defineList("items", List.of("minecraft:iron_ingot"), () -> "minecraft:iron_ingot",
+                    Config::validateItemName);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
-    public static boolean logDirtBlock;
-    public static int magicNumber;
-    public static String magicNumberIntroduction;
-    public static Set<Item> items;
+    public static boolean logDirtBlock = false;
+    public static int magicNumber = 42;
+    public static String magicNumberIntroduction = "";
+    public static Set<Item> items = Set.of();
 
-    private static boolean validateItemName(final Object obj)
-    {
-        return obj instanceof final String itemName
-                && BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(itemName));
-    }
-
-    @SubscribeEvent
-    static void onLoad(final ModConfigEvent event)
-    {
+    /**
+     * 手动加载配置值。
+     * 在 FMLCommonSetupEvent 和 ModConfigEvent.Reloading 中调用。
+     */
+    public static void loadValues() {
         logDirtBlock = LOG_DIRT_BLOCK.get();
         magicNumber = MAGIC_NUMBER.get();
         magicNumberIntroduction = MAGIC_NUMBER_INTRODUCTION.get();
         items = ITEM_STRINGS.get().stream()
-                .map(itemName -> BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemName)))
+                .map(name -> BuiltInRegistries.ITEM.get(ResourceLocation.parse(name)))
                 .collect(Collectors.toSet());
+    }
+
+    private static boolean validateItemName(final Object obj) {
+        return obj instanceof final String itemName
+                && BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(itemName));
+    }
+
+    /**
+     * 游戏内重载配置时刷新。
+     * 首次加载不在此处读取——由 FMLCommonSetupEvent 处理。
+     */
+    @SubscribeEvent
+    static void onReload(ModConfigEvent.Reloading event) {
+        if (event.getConfig().getSpec() != SPEC) return;
+        loadValues();
     }
 }

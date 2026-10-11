@@ -43,14 +43,18 @@ public class Config {
     public static boolean spiritClearOnLogin = true;
     public static boolean spiritClearOnDeath = true;
 
-    @SubscribeEvent
-    static void onLoad(ModConfigEvent event) {
-        if (event.getConfig().getSpec() != SPEC) return;
+    /** 手动加载配置值，在 FMLCommonSetupEvent 和 ModConfigEvent.Reloading 中调用 */
+    public static void loadValues() {
         spiritRegenAmount = SPIRIT_REGEN_AMOUNT.get();
         spiritRegenInterval = SPIRIT_REGEN_INTERVAL.get();
         defaultMaxSpirit = DEFAULT_MAX_SPIRIT.get();
         syncInterval = SYNC_INTERVAL.get();
         spiritClearOnLogin = SPIRIT_CLEAR_ON_LOGIN.get();
         spiritClearOnDeath = SPIRIT_CLEAR_ON_DEATH.get();
+    }
+    @SubscribeEvent
+    static void onReload(ModConfigEvent.Reloading event) {
+        if (event.getConfig().getSpec() != SPEC) return;
+        loadValues();
     }
 }
