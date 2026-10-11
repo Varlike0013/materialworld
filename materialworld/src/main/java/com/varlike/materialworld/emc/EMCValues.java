@@ -12,7 +12,6 @@ import java.util.Map;
  */
 public class EMCValues {
 
-    // 默认值快照：只在类加载时填充一次，之后不再改变
     private static final Map<Item, Long> DEFAULTS = new HashMap<>();
 
     static {

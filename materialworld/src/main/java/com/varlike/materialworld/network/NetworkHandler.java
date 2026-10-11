@@ -1,52 +1,61 @@
 package com.varlike.materialworld.network;
 
 import com.varlike.materialworld.MaterialWorld;
+import com.varlike.materialworld.capability.CapabilityHandler;
 import com.varlike.materialworld.capability.ModCapabilities;
-import net.minecraft.resources.ResourceLocation;
+import com.varlike.materialworld.capability.PlayerEMC;
+import net.neoforged.neoforge.network.handling.DirectionalPayloadHandler;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
+@EventBusSubscriber(modid = MaterialWorld.MOD_ID)
 public class NetworkHandler {
+
     private static final String PROTOCOL_VERSION = "1";
 
-    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            ResourceLocation.fromNamespaceAndPath(MaterialWorld.MOD_ID, "main"),
-            () -> PROTOCOL_VERSION,
-            PROTOCOL_VERSION::equals,
-            PROTOCOL_VERSION::equals
-    );
+    @SubscribeEvent
+    public static void register(final RegisterPayloadHandlersEvent event) {
+        final PayloadRegistrar registrar = event.registrar(PROTOCOL_VERSION);
 
-    public static void register() {
-        int id = 0;
-        CHANNEL.messageBuilder(ServerboundTransmutePacket.class, id++)
-                .encoder(ServerboundTransmutePacket::encode)
-                .decoder(ServerboundTransmutePacket::decode)
-                .consumerMainThread(ServerboundTransmutePacket::handle).add();
-        CHANNEL.messageBuilder(ServerboundRequestSyncPacket.class, id++)
-                .encoder(ServerboundRequestSyncPacket::encode)
-                .decoder(ServerboundRequestSyncPacket::decode)
-                .consumerMainThread(ServerboundRequestSyncPacket::handle).add();
-        CHANNEL.messageBuilder(ClientboundSyncEMCPacket.class, id++)
-                .encoder(ClientboundSyncEMCPacket::encode)
-                .decoder(ClientboundSyncEMCPacket::decode)
-                .consumerMainThread(ClientboundSyncEMCPacket::handle).add();
-        CHANNEL.messageBuilder(ServerboundRecyclePacket.class, id++)
-                .encoder(ServerboundRecyclePacket::encode)
-                .decoder(ServerboundRecyclePacket::decode)
-                .consumerMainThread(ServerboundRecyclePacket::handle).add();
-        CHANNEL.messageBuilder(ServerboundEMCCraftPacket.class, id++)
-                .encoder(ServerboundEMCCraftPacket::encode)
-                .decoder(ServerboundEMCCraftPacket::decode)
-                .consumerMainThread(ServerboundEMCCraftPacket::handle).add();
+        registrar.playToServer(
+                ServerboundTransmutePacket.TYPE,
+                ServerboundTransmutePacket.STREAM_CODEC,
+                ServerboundTransmutePacket::handle);
+
+        registrar.playToServer(
+                ServerboundRequestSyncPacket.TYPE,
+                ServerboundRequestSyncPacket.STREAM_CODEC,
+                ServerboundRequestSyncPacket::handle);
+
+        registrar.playBidirectional(
+                ClientboundSyncEMCPacket.TYPE,
+                ClientboundSyncEMCPacket.STREAM_CODEC,
+                new DirectionalPayloadHandler<>(
+                        ClientPayloadHandler::handleSyncEMC,   // 客户端 handler
+                        ClientboundSyncEMCPacket::handle        // 服务端 handler（空实现）
+                ));
+
+        registrar.playToServer(
+                ServerboundRecyclePacket.TYPE,
+                ServerboundRecyclePacket.STREAM_CODEC,
+                ServerboundRecyclePacket::handle);
+
+        registrar.playToServer(
+                ServerboundEMCCraftPacket.TYPE,
+                ServerboundEMCCraftPacket.STREAM_CODEC,
+                ServerboundEMCCraftPacket::handle);
     }
 
     public static void syncTo(ServerPlayer player) {
-        player.getCapability(ModCapabilities.PLAYER_EMC).ifPresent(data ->
-                CHANNEL.send(
-                        PacketDistributor.PLAYER.with(() -> player),
-                        new ClientboundSyncEMCPacket(data.getEmcBalance(), data.getLearnedItems())
-                ));
+        PlayerEMC data = player.getCapability(CapabilityHandler.PLAYER_EMC);
+        if (data == null) return;
+        PacketDistributor.sendToPlayer(
+                player,
+                new ClientboundSyncEMCPacket(data.getEmcBalance(), data.getLearnedItems())
+        );
     }
 }

@@ -1,6 +1,47 @@
 {
-  "tooltip.materialworld.emc": "EMC: %s",
   "key.categories.materialworld": "物质世界",
   "key.materialworld.open_transmutation": "打开物质转换",
-  "itemGroup.materialworld": "物质世界"
+
+  "tooltip.materialworld.emc": "EMC: %s",
+
+  "screen.materialworld.transmutation.title": "物质转换",
+  "screen.materialworld.emc_balance": "§6EMC: §a%s",
+
+  "message.materialworld.hold_item": "请手持一个物品",
+  "message.materialworld.emc_query": "%s 的 EMC = %d",
+  "message.materialworld.emc_set": "已将 %s 的 EMC 设置为 %d",
+  "message.materialworld.emc_reset_default": "已将 %s 的 EMC 重置为默认值 %d",
+  "message.materialworld.emc_no_default": "%s 没有默认 EMC，已从映射表中移除",
+  "message.materialworld.emc_reloaded": "EMC 已重载，共 %d 条数据",
+  "message.materialworld.emc_recalc": "§a从合成表推导出 %d 个新的 EMC 值",
+  "message.materialworld.no_emc": "§c该物品没有 EMC 值",
+  "message.materialworld.not_learned": "§c尚未学会这个物品",
+  "message.materialworld.emc_insufficient": "§cEMC 不足，需要 %d，当前 %d",
+  "message.materialworld.emc_insufficient_short": "§cEMC 不足，需要 %d",
+  "message.materialworld.cannot_recycle": "§c该物品没有 EMC 值，无法回收",
+  "message.materialworld.new_learn": "§a新解锁 §e%s §a+%d EMC",
+  "message.materialworld.recycled": "§a回收 §e%dx %s §a+%d EMC",
+  "message.materialworld.cannot_craft": "§c无法用 EMC 合成：%s",
+
+  "screen.materialworld.tooltip.recycle": "§7左键点击回收整堆",
+  "screen.materialworld.tooltip.auto_unlock": "§e回收时自动解锁",
+  "screen.materialworld.tooltip.cannot_recycle": "§c该物品无 EMC 值，无法回收",
+  "screen.materialworld.tooltip.not_learned": "§c尚未学会（回收一个即可解锁）",
+  "screen.materialworld.tooltip.insufficient": "§cEMC 不足",
+  "screen.materialworld.tooltip.extract": "§7左键点击提取一个",
+  "screen.materialworld.tooltip.emc_full": "§6EMC: §a%d §7(§a%d §7x %d)",
+
+  "materialworld.configuration.title": "物质世界配置",
+  "materialworld.configuration.section.materialworld.common.toml": "物质世界配置",
+  "materialworld.configuration.section.materialworld.common.toml.title": "物质世界配置",
+  "materialworld.configuration.items": "物品列表",
+  "materialworld.configuration.logDirtBlock": "打印泥土方块日志",
+  "materialworld.configuration.magicNumberIntroduction": "魔法数字介绍语",
+  "materialworld.configuration.magicNumber": "魔法数字",
+
+  "materialworld.configuration.transmutationDisplayMode": "物质转换显示模式",
+  "materialworld.configuration.transmutationDisplayMode.all": "显示全部物品",
+  "materialworld.configuration.transmutationDisplayMode.learned_only": "只显示已学习",
+
+  "itemGroup.materialworld.addons": "物质世界附属"
 }

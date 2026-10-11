@@ -5,40 +5,33 @@ import com.varlike.materialworld.network.NetworkHandler;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.capabilities.EntityCapability;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
-@Mod.EventBusSubscriber(modid = MaterialWorld.MOD_ID)
+@EventBusSubscriber(modid = MaterialWorld.MOD_ID)
 public class CapabilityHandler {
 
-    @SubscribeEvent
-    public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
-        if (event.getObject() instanceof Player) {
-            if (!event.getObject().getCapability(ModCapabilities.PLAYER_EMC).isPresent()) {
-                event.addCapability(
-                        ResourceLocation.fromNamespaceAndPath(MaterialWorld.MOD_ID, "player_emc"),
-                        new PlayerEMCProvider()
-                );
-            }
-        }
-    }
+    /** NeoForge 实体能力：Player -> PlayerEMC */
+    public static final EntityCapability<PlayerEMC, Void> PLAYER_EMC =
+            EntityCapability.createVoid(
+                    ResourceLocation.fromNamespaceAndPath(MaterialWorld.MOD_ID, "player_emc"),
+                    PlayerEMC.class);
+
+    /** 每个玩家对应一个 Provider 实例，用于持有其 PlayerEMC 数据 */
+    private static final java.util.Map<java.util.UUID, PlayerEMCProvider> PROVIDERS =
+            new java.util.concurrent.ConcurrentHashMap<>();
 
     @SubscribeEvent
-    public static void onPlayerClone(PlayerEvent.Clone event) {
-        event.getOriginal().reviveCaps();
-        event.getOriginal().getCapability(ModCapabilities.PLAYER_EMC).ifPresent(oldData ->
-                event.getEntity().getCapability(ModCapabilities.PLAYER_EMC).ifPresent(newData ->
-                        newData.copyFrom(oldData)));
-        event.getOriginal().invalidateCaps();
-    }
-
-    @SubscribeEvent
-    public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer sp) {
-            NetworkHandler.syncTo(sp);
-        }
+    public static void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerEntity(
+                PLAYER_EMC,
+                EntityType.PLAYER,
+                new PlayerEMCProvider()   // 显式传入 Provider 实例，避免 lambda 类型推断干扰
+        );
     }
 }

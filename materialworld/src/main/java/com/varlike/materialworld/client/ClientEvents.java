@@ -2,25 +2,26 @@ package com.varlike.materialworld.client;
 
 import com.varlike.materialworld.MaterialWorld;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 
-@Mod.EventBusSubscriber(modid = MaterialWorld.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientEvents {
 
-    @SubscribeEvent
-    public static void onRegisterKeys(RegisterKeyMappingsEvent event) {
-        event.register(KeyBindings.OPEN_TRANSMUTATION);
+    @EventBusSubscriber(modid = MaterialWorld.MOD_ID)
+    public static class ModBus {
+        @SubscribeEvent
+        public static void onRegisterKeys(RegisterKeyMappingsEvent event) {
+            event.register(KeyBindings.OPEN_TRANSMUTATION);
+        }
     }
 
-    @Mod.EventBusSubscriber(modid = MaterialWorld.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-    public static class ForgeBus {
+    @EventBusSubscriber(modid = MaterialWorld.MOD_ID)
+    public static class GameBus {
         @SubscribeEvent
-        public static void onClientTick(TickEvent.ClientTickEvent event) {
-            if (event.phase != TickEvent.Phase.END) return;
+        public static void onClientTick(ClientTickEvent.Post event) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player == null || mc.screen != null) return;
 

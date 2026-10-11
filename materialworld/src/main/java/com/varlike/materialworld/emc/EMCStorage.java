@@ -5,9 +5,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -52,7 +51,6 @@ public class EMCStorage {
                     EMCManager.setEMC(entry.getKey(), value);
                     count++;
                 } catch (Exception e) {
-                    // 单条数据损坏时跳过，不影响其他加载
                     System.err.println("[物质世界] 无法解析 EMC 条目: " + entry.getKey());
                 }
             }
@@ -68,7 +66,7 @@ public class EMCStorage {
         try (Writer writer = Files.newBufferedWriter(filePath)) {
             JsonObject obj = new JsonObject();
             EMCManager.forEach((item, value) -> {
-                ResourceLocation key = ForgeRegistries.ITEMS.getKey(item);
+                ResourceLocation key = BuiltInRegistries.ITEM.getKey(item);
                 if (key != null) {
                     obj.addProperty(key.toString(), value);
                 }

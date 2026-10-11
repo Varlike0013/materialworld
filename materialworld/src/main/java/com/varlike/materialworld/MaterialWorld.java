@@ -8,63 +8,45 @@ import com.varlike.materialworld.emc.EMCValues;
 import com.mojang.logging.LogUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.*;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.MapColor;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.event.server.ServerStartedEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import org.slf4j.Logger;
 
 @Mod(MaterialWorld.MOD_ID)
 public class MaterialWorld
 {
     public static final String MOD_ID = "materialworld";
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
 
-    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MOD_ID);
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MOD_ID);
-    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB, MOD_ID);
+    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
+            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MOD_ID);
 
-    // 示例方块（后续可删）
-    public static final RegistryObject<Block> EXAMPLE_BLOCK = BLOCKS.register("example_block",
-            () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)));
-    public static final RegistryObject<Item> EXAMPLE_BLOCK_ITEM = ITEMS.register("example_block",
-            () -> new BlockItem(EXAMPLE_BLOCK.get(), new Item.Properties()));
-
-    public MaterialWorld(FMLJavaModLoadingContext context)
+    public MaterialWorld(IEventBus modEventBus, ModContainer modContainer)
     {
-        IEventBus modEventBus = context.getModEventBus();
-
         modEventBus.addListener(this::commonSetup);
-        BLOCKS.register(modEventBus);
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
 
-        MinecraftForge.EVENT_BUS.register(this);
-        modEventBus.addListener(this::addCreative);
-        context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
-
-        // 新增：注册网络通道
-        com.varlike.materialworld.network.NetworkHandler.register();
+        NeoForge.EVENT_BUS.register(this);
+        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event)
@@ -81,31 +63,14 @@ public class MaterialWorld
         LOGGER.info("EMC 系统初始化完成，共 {} 种物品", EMCManager.size());
     }
 
-    private void addCreative(BuildCreativeModeTabContentsEvent event)
-    {
-        if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS)
-            event.accept(EXAMPLE_BLOCK_ITEM);
-    }
-
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event)
     {
         LOGGER.info("物质世界：服务器启动");
     }
 
-
-    @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-    public static class ClientModEvents
-    {
-        @SubscribeEvent
-        public static void onClientSetup(FMLClientSetupEvent event)
-        {
-            LOGGER.info("物质世界：客户端初始化");
-        }
-    }
-
-    // 新增：Forge 事件总线（命令注册）
-    @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+    // NeoForge 游戏事件总线（命令注册）
+    @EventBusSubscriber(modid = MOD_ID)
     public static class ForgeEvents {
         @SubscribeEvent
         public static void onServerStarted(ServerStartedEvent event) {
@@ -114,6 +79,7 @@ public class MaterialWorld
                 EMCStorage.save(); // 把推导结果写回文件
             }
         }
+
         @SubscribeEvent
         public static void onRegisterCommands(RegisterCommandsEvent event) {
             event.getDispatcher().register(
@@ -125,14 +91,14 @@ public class MaterialWorld
                                         var player = ctx.getSource().getPlayerOrException();
                                         var stack = player.getMainHandItem();
                                         if (stack.isEmpty()) {
-                                            ctx.getSource().sendFailure(Component.literal("请手持一个物品"));
+                                            ctx.getSource().sendFailure(Component.translatable("message.materialworld.hold_item"));
                                             return 0;
                                         }
                                         long emc = EMCManager.getEMC(stack.getItem());
                                         String name = stack.getItem().getDescription().getString();
                                         ctx.getSource().sendSuccess(
-                                                () -> Component.literal(name + " 的 EMC = " + emc), false
-                                        );
+                                                () -> Component.translatable("message.materialworld.emc_query", name, emc),
+                                                false);
                                         return 1;
                                     })
                             )
@@ -143,7 +109,7 @@ public class MaterialWorld
                                                 var player = ctx.getSource().getPlayerOrException();
                                                 var stack = player.getMainHandItem();
                                                 if (stack.isEmpty()) {
-                                                    ctx.getSource().sendFailure(Component.literal("请手持一个物品"));
+                                                    ctx.getSource().sendFailure(Component.translatable("message.materialworld.hold_item"));
                                                     return 0;
                                                 }
                                                 long value = LongArgumentType.getLong(ctx, "value");
@@ -153,7 +119,7 @@ public class MaterialWorld
 
                                                 String name = item.getDescription().getString();
                                                 ctx.getSource().sendSuccess(
-                                                        () -> Component.literal("已将 " + name + " 的 EMC 设置为 " + value), true
+                                                        () -> Component.translatable("message.materialworld.emc_set", name, value), true
                                                 );
                                                 return 1;
                                             })
@@ -165,7 +131,7 @@ public class MaterialWorld
                                         var player = ctx.getSource().getPlayerOrException();
                                         var stack = player.getMainHandItem();
                                         if (stack.isEmpty()) {
-                                            ctx.getSource().sendFailure(Component.literal("请手持一个物品"));
+                                            ctx.getSource().sendFailure(Component.translatable("message.materialworld.hold_item"));
                                             return 0;
                                         }
                                         Item item = stack.getItem();
@@ -176,13 +142,13 @@ public class MaterialWorld
                                             EMCManager.setEMC(item, def);
                                             EMCStorage.save();
                                             ctx.getSource().sendSuccess(
-                                                    () -> Component.literal("已将 " + name + " 的 EMC 重置为默认值 " + def), true
+                                                    () -> Component.translatable("message.materialworld.emc_reset_default", name, def), true
                                             );
                                         } else {
                                             EMCManager.remove(item);
                                             EMCStorage.save();
                                             ctx.getSource().sendSuccess(
-                                                    () -> Component.literal(name + " 没有默认 EMC，已从映射表中移除"), true
+                                                    () -> Component.translatable("message.materialworld.emc_no_default", name), true
                                             );
                                         }
                                         return 1;
@@ -201,7 +167,7 @@ public class MaterialWorld
 
                                         int size = EMCManager.size();
                                         ctx.getSource().sendSuccess(
-                                                () -> Component.literal("EMC 已重载，共 " + size + " 条数据"), true
+                                                () -> Component.translatable("message.materialworld.emc_reloaded", size), true
                                         );
                                         return 1;
                                     })
@@ -211,12 +177,13 @@ public class MaterialWorld
                                         int count = EMCRecipeCalculator.calculate(ctx.getSource().getServer());
                                         EMCStorage.save();
                                         ctx.getSource().sendSuccess(
-                                                () -> Component.literal("§a从合成表推导出 " + count + " 个新的 EMC 值"), true);
+                                                () -> Component.translatable("message.materialworld.emc_recalc", count), true);
                                         return 1;
                                     })
                             )
             );
         }
+
         @SubscribeEvent
         public static void onItemTooltip(ItemTooltipEvent event) {
             ItemStack stack = event.getItemStack();

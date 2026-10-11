@@ -1,0 +1,46 @@
+{
+  "key.categories.materialworld": "MaterialWorld",
+  "key.materialworld.open_transmutation": "Open Transmutation",
+
+  "tooltip.materialworld.emc": "EMC: %s",
+
+  "screen.materialworld.transmutation.title": "Transmutation",
+  "screen.materialworld.emc_balance": "§6EMC: §a%s",
+
+  "message.materialworld.hold_item": "Please hold an item",
+  "message.materialworld.emc_query": "%s EMC = %d",
+  "message.materialworld.emc_set": "Set %s EMC to %d",
+  "message.materialworld.emc_reset_default": "Reset %s EMC to default %d",
+  "message.materialworld.emc_no_default": "%s has no default EMC, removed from map",
+  "message.materialworld.emc_reloaded": "EMC reloaded, %d entries",
+  "message.materialworld.emc_recalc": "§aDerived %d new EMC values from recipes",
+  "message.materialworld.no_emc": "§cThis item has no EMC value",
+  "message.materialworld.not_learned": "§cYou haven't learned this item",
+  "message.materialworld.emc_insufficient": "§cNot enough EMC, need %d, current %d",
+  "message.materialworld.emc_insufficient_short": "§cNot enough EMC, need %d",
+  "message.materialworld.cannot_recycle": "§cThis item has no EMC value, cannot recycle",
+  "message.materialworld.new_learn": "§aNew unlock §e%s §a+%d EMC",
+  "message.materialworld.recycled": "§aRecycled §e%dx %s §a+%d EMC",
+  "message.materialworld.cannot_craft": "§cCannot craft with EMC: %s",
+
+  "screen.materialworld.tooltip.recycle": "§7Left-click to recycle the stack",
+  "screen.materialworld.tooltip.auto_unlock": "§eAuto unlock on recycle",
+  "screen.materialworld.tooltip.cannot_recycle": "§cNo EMC value, cannot recycle",
+  "screen.materialworld.tooltip.not_learned": "§cNot learned (recycle one to unlock)",
+  "screen.materialworld.tooltip.insufficient": "§cNot enough EMC",
+  "screen.materialworld.tooltip.extract": "§7Left-click to extract one",
+  "screen.materialworld.tooltip.emc_full": "§6EMC: §a%d §7(§a%d §7x %d)",
+
+  "materialworld.configuration.title": "MaterialWorld Configs",
+  "materialworld.configuration.section.materialworld.common.toml": "MaterialWorld Configs",
+  "materialworld.configuration.section.materialworld.common.toml.title": "MaterialWorld Configs",
+  "materialworld.configuration.items": "Item List",
+  "materialworld.configuration.logDirtBlock": "Log Dirt Block",
+  "materialworld.configuration.magicNumberIntroduction": "Magic Number Text",
+  "materialworld.configuration.magicNumber": "Magic Number",
+
+  "materialworld.configuration.transmutationDisplayMode": "Transmutation Display Mode",
+  "materialworld.configuration.transmutationDisplayMode.all": "All Items",
+  "materialworld.configuration.transmutationDisplayMode.learned_only": "Learned Only",
+  "itemGroup.materialworld.addons": "MaterialWorld Addons"
+}

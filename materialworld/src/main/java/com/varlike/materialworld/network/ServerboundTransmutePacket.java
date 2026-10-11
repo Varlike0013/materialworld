@@ -1,56 +1,84 @@
 package com.varlike.materialworld.network;
 
+import com.varlike.materialworld.MaterialWorld;
+import com.varlike.materialworld.api.event.EMCChangeEvent;
+import com.varlike.materialworld.capability.CapabilityHandler;
 import com.varlike.materialworld.capability.ModCapabilities;
+import com.varlike.materialworld.capability.PlayerEMC;
 import com.varlike.materialworld.emc.EMCManager;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.world.item.Items;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.function.Supplier;
+public record ServerboundTransmutePacket(Item item) implements CustomPacketPayload {
 
-public class ServerboundTransmutePacket {
-    private final Item item;
+    public static final CustomPacketPayload.Type<ServerboundTransmutePacket> TYPE =
+            new CustomPacketPayload.Type<>(
+                    ResourceLocation.fromNamespaceAndPath(MaterialWorld.MOD_ID, "transmute"));
 
-    public ServerboundTransmutePacket(Item item) { this.item = item; }
+    public static final StreamCodec<RegistryFriendlyByteBuf, ServerboundTransmutePacket> STREAM_CODEC =
+            StreamCodec.ofMember(ServerboundTransmutePacket::encode, ServerboundTransmutePacket::new);
 
-    public static void encode(ServerboundTransmutePacket pkt, FriendlyByteBuf buf) {
-        buf.writeResourceLocation(ForgeRegistries.ITEMS.getKey(pkt.item));
+    public void encode(RegistryFriendlyByteBuf buf) {
+        buf.writeResourceLocation(BuiltInRegistries.ITEM.getKey(item));
     }
 
-    public static ServerboundTransmutePacket decode(FriendlyByteBuf buf) {
-        return new ServerboundTransmutePacket(ForgeRegistries.ITEMS.getValue(buf.readResourceLocation()));
+    public ServerboundTransmutePacket(RegistryFriendlyByteBuf buf) {
+        this(BuiltInRegistries.ITEM.get(buf.readResourceLocation()));
     }
 
-    public static void handle(ServerboundTransmutePacket pkt, Supplier<NetworkEvent.Context> ctxSup) {
-        NetworkEvent.Context ctx = ctxSup.get();
-        ctx.enqueueWork(() -> {
-            ServerPlayer player = ctx.getSender();
-            if (player == null || pkt.item == null) return;
+    public static void handle(ServerboundTransmutePacket pkt, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) return;
+            Item item = pkt.item();
+            if (item == null || item == Items.AIR) return;
 
-            long cost = EMCManager.getEMC(pkt.item);
+            long cost = EMCManager.getEMC(item);
             if (cost <= 0) {
-                player.sendSystemMessage(Component.literal("§c该物品没有 EMC 值"));
+                player.sendSystemMessage(Component.translatable("message.materialworld.no_emc"));
                 return;
             }
-            player.getCapability(ModCapabilities.PLAYER_EMC).ifPresent(data -> {
-                if (!data.isLearned(pkt.item)) {
-                    player.sendSystemMessage(Component.literal("§c尚未学会这个物品"));
-                    return;
-                }
-                if (!data.consumeEmc(cost)) {
-                    player.sendSystemMessage(Component.literal(
-                            "§cEMC 不足，需要 " + cost + "，当前 " + data.getEmcBalance()));
-                    return;
-                }
-                ItemStack stack = new ItemStack(pkt.item);
-                if (!player.getInventory().add(stack)) player.drop(stack, false);
-                NetworkHandler.syncTo(player);
-            });
+
+            PlayerEMC data = player.getCapability(CapabilityHandler.PLAYER_EMC);
+            if (data == null) return;
+
+            if (!data.isLearned(item)) {
+                player.sendSystemMessage(Component.translatable("message.materialworld.not_learned"));
+                return;
+            }
+
+            // 1. 先记录扣款前余额
+            long oldBalance = data.getEmcBalance();
+
+            // 2. 再扣款
+            if (!data.consumeEmc(cost)) {
+                player.sendSystemMessage(Component.translatable(
+                        "message.materialworld.emc_insufficient",
+                        cost, oldBalance));
+                return;
+            }
+
+            // 3. 扣款成功后发布事件
+            NeoForge.EVENT_BUS.post(new EMCChangeEvent(player, oldBalance, data.getEmcBalance()));
+
+            // 4. 发放物品并同步
+            ItemStack stack = new ItemStack(item);
+            if (!player.getInventory().add(stack)) player.drop(stack, false);
+            NetworkHandler.syncTo(player);
         });
-        ctx.setPacketHandled(true);
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

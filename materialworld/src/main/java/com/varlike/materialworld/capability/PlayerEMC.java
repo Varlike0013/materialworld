@@ -1,12 +1,12 @@
 package com.varlike.materialworld.capability;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -26,13 +26,13 @@ public class PlayerEMC {
     }
 
     public boolean isLearned(Item item) {
-        ResourceLocation key = ForgeRegistries.ITEMS.getKey(item);
+        ResourceLocation key = BuiltInRegistries.ITEM.getKey(item);
         return key != null && learnedItems.contains(key);
     }
 
     /** @return true 表示这次是新学会的 */
     public boolean learn(Item item) {
-        ResourceLocation key = ForgeRegistries.ITEMS.getKey(item);
+        ResourceLocation key = BuiltInRegistries.ITEM.getKey(item);
         return key != null && learnedItems.add(key);
     }
 

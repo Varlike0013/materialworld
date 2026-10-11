@@ -1,10 +1,9 @@
 package com.varlike.materialworld.emc;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.registries.ForgeRegistries;
 
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,8 +31,8 @@ public class EMCManager {
     /** 通过注册名（如 "minecraft:iron_ingot"）设置 EMC */
     public static void setEMC(String itemRegistryName, long value) {
         ResourceLocation rl = ResourceLocation.parse(itemRegistryName);
-        Item item = ForgeRegistries.ITEMS.getValue(rl);
-        if (item != null) {
+        Item item = BuiltInRegistries.ITEM.get(rl);
+        if (item != null && item != net.minecraft.world.item.Items.AIR) {
             setEMC(item, value);
         }
     }
@@ -52,10 +51,12 @@ public class EMCManager {
     public static void clear() {
         EMC_VALUES.clear();
     }
+
     /** 遍历所有已注册的 EMC 值（用于保存到文件） */
     public static void forEach(java.util.function.BiConsumer<Item, Long> action) {
         EMC_VALUES.forEach(action);
     }
+
     /** 移除某个物品的 EMC 定义 */
     public static void remove(Item item) {
         EMC_VALUES.remove(item);

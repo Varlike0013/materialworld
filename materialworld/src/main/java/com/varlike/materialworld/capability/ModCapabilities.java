@@ -1,20 +1,29 @@
 package com.varlike.materialworld.capability;
 
 import com.varlike.materialworld.MaterialWorld;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.capabilities.EntityCapability;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
-@Mod.EventBusSubscriber(modid = MaterialWorld.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = MaterialWorld.MOD_ID)
 public class ModCapabilities {
-    public static final Capability<PlayerEMC> PLAYER_EMC =
-            CapabilityManager.get(new CapabilityToken<>() {});
+
+    public static final PlayerEMCProvider PROVIDER = new PlayerEMCProvider();
+
+    public static final EntityCapability<PlayerEMC, Void> PLAYER_EMC =
+            EntityCapability.createVoid(
+                    ResourceLocation.fromNamespaceAndPath(MaterialWorld.MOD_ID, "player_emc"),
+                    PlayerEMC.class);
 
     @SubscribeEvent
     public static void register(RegisterCapabilitiesEvent event) {
-        event.register(PlayerEMC.class);
+        event.registerEntity(
+                PLAYER_EMC,
+                EntityType.PLAYER,
+                PROVIDER
+        );
     }
 }

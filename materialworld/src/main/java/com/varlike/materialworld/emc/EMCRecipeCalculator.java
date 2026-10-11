@@ -21,10 +21,11 @@ public class EMCRecipeCalculator {
 
     public static int calculate(MinecraftServer server) {
         RegistryAccess registryAccess = server.registryAccess();
-        Collection<Recipe<?>> allRecipes = server.getRecipeManager().getRecipes();
+        Collection<RecipeHolder<?>> allRecipes = server.getRecipeManager().getRecipes();
 
         // 筛选我们关心的配方类型
         List<Recipe<?>> relevantRecipes = allRecipes.stream()
+                .<Recipe<?>>map(RecipeHolder::value)
                 .filter(r -> r instanceof CraftingRecipe
                         || r instanceof SmeltingRecipe
                         || r instanceof BlastingRecipe

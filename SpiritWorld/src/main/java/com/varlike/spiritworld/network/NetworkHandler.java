@@ -1,0 +1,44 @@
+package com.varlike.spiritworld.network;
+
+import com.varlike.spiritworld.SpiritWorld;
+import com.varlike.spiritworld.capability.ModCapabilities;
+import com.varlike.spiritworld.capability.PlayerSpirit;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+
+@EventBusSubscriber(modid = SpiritWorld.MOD_ID)
+public class NetworkHandler {
+
+    private static final String PROTOCOL_VERSION = "1";
+
+    @SubscribeEvent
+    public static void register(final RegisterPayloadHandlersEvent event) {
+        final PayloadRegistrar registrar = event.registrar(PROTOCOL_VERSION);
+
+        registrar.playToClient(
+                ClientboundSyncSpiritPacket.TYPE,
+                ClientboundSyncSpiritPacket.STREAM_CODEC,
+                ClientPayloadHandler::handleSyncSpirit);
+
+        registrar.playToServer(
+                ServerboundRequestSyncPacket.TYPE,
+                ServerboundRequestSyncPacket.STREAM_CODEC,
+                ServerboundRequestSyncPacket::handle);
+    }
+
+    public static void syncTo(ServerPlayer player) {
+        PlayerSpirit data = player.getCapability(ModCapabilities.PLAYER_SPIRIT);
+        if (data == null) return;
+        PacketDistributor.sendToPlayer(
+                player,
+                new ClientboundSyncSpiritPacket(
+                        data.getSpirit(),
+                        data.getEffectiveMaxSpirit(),   // 同步有效上限而非基础上限
+                        data.getVisionLevel())
+        );
+    }
+}

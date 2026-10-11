@@ -1,90 +1,109 @@
 package com.varlike.materialworld.network;
 
+import com.varlike.materialworld.MaterialWorld;
 import com.varlike.materialworld.capability.ModCapabilities;
+import com.varlike.materialworld.capability.PlayerEMC;
 import com.varlike.materialworld.emc.EMCManager;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.CraftingMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 
-public class ServerboundEMCCraftPacket {
+public record ServerboundEMCCraftPacket(Map<Integer, ItemStack> slotItems)
+        implements CustomPacketPayload {
 
-    /** key = 合成网格索引 0..8；value = 要放进该槽的物品 */
-    private final Map<Integer, ItemStack> slotItems;
+    public static final CustomPacketPayload.Type<ServerboundEMCCraftPacket> TYPE =
+            new CustomPacketPayload.Type<>(
+                    ResourceLocation.fromNamespaceAndPath(MaterialWorld.MOD_ID, "emc_craft"));
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, ServerboundEMCCraftPacket> STREAM_CODEC =
+            StreamCodec.ofMember(ServerboundEMCCraftPacket::encode, ServerboundEMCCraftPacket::new);
 
     public ServerboundEMCCraftPacket(Map<Integer, ItemStack> slotItems) {
         this.slotItems = new LinkedHashMap<>(slotItems);
     }
 
-    public static void encode(ServerboundEMCCraftPacket pkt, FriendlyByteBuf buf) {
-        buf.writeVarInt(pkt.slotItems.size());
-        for (Map.Entry<Integer, ItemStack> e : pkt.slotItems.entrySet()) {
+    public void encode(RegistryFriendlyByteBuf buf) {
+        buf.writeVarInt(slotItems.size());
+        for (Map.Entry<Integer, ItemStack> e : slotItems.entrySet()) {
             buf.writeVarInt(e.getKey());
-            buf.writeItem(e.getValue());
+            ItemStack.STREAM_CODEC.encode(buf, e.getValue());
         }
     }
 
-    public static ServerboundEMCCraftPacket decode(FriendlyByteBuf buf) {
+    public ServerboundEMCCraftPacket(RegistryFriendlyByteBuf buf) {
+        this(readMap(buf));
+    }
+
+    private static Map<Integer, ItemStack> readMap(RegistryFriendlyByteBuf buf) {
         int size = buf.readVarInt();
         Map<Integer, ItemStack> map = new LinkedHashMap<>();
         for (int i = 0; i < size; i++) {
             int slot = buf.readVarInt();
-            ItemStack stack = buf.readItem();
+            ItemStack stack = ItemStack.STREAM_CODEC.decode(buf);
             map.put(slot, stack);
         }
-        return new ServerboundEMCCraftPacket(map);
+        return map;
     }
 
-    public static void handle(ServerboundEMCCraftPacket pkt, Supplier<NetworkEvent.Context> ctxSup) {
-        NetworkEvent.Context ctx = ctxSup.get();
-        ctx.enqueueWork(() -> {
-            ServerPlayer player = ctx.getSender();
-            if (player == null) return;
+    public static void handle(ServerboundEMCCraftPacket pkt, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) return;
             if (!(player.containerMenu instanceof CraftingMenu menu)) return;
 
-            player.getCapability(ModCapabilities.PLAYER_EMC).ifPresent(data -> {
-                // 1. 校验 + 计算总花费
-                long totalCost = 0;
-                for (Map.Entry<Integer, ItemStack> e : pkt.slotItems.entrySet()) {
-                    ItemStack stack = e.getValue();
-                    if (stack.isEmpty()) continue;
-                    long unit = EMCManager.getEMC(stack.getItem());
-                    if (unit <= 0 || !data.isLearned(stack.getItem())) {
-                        player.sendSystemMessage(Component.literal("§c无法用 EMC 合成："
-                                + stack.getHoverName().getString()));
-                        return;
-                    }
-                    totalCost += unit * stack.getCount();
-                }
+            PlayerEMC data = player.getCapability(ModCapabilities.PLAYER_EMC);
+            if (data == null) return;
 
-                if (data.getEmcBalance() < totalCost) {
-                    player.sendSystemMessage(Component.literal("§cEMC 不足，需要 " + totalCost));
+            // ===== 1. 校验 + 计算总花费 =====
+            long totalCost = 0;
+            for (Map.Entry<Integer, ItemStack> e : pkt.slotItems().entrySet()) {
+                ItemStack stack = e.getValue();
+                if (stack.isEmpty()) continue;
+                long unit = EMCManager.getEMC(stack.getItem());
+                if (unit <= 0 || !data.isLearned(stack.getItem())) {
+                    player.sendSystemMessage(Component.translatable(
+                            "message.materialworld.cannot_craft",
+                            stack.getHoverName()));
                     return;
                 }
+                totalCost += unit * stack.getCount();
+            }
 
-                // 2. 扣除 EMC
-                data.consumeEmc(totalCost);
+            if (data.getEmcBalance() < totalCost) {
+                player.sendSystemMessage(Component.translatable(
+                        "message.materialworld.emc_insufficient_short", totalCost));
+                return;
+            }
 
-                // 3. 按槽位放置（合成网格 slot 1..9 对应索引 0..8）
-                for (Map.Entry<Integer, ItemStack> e : pkt.slotItems.entrySet()) {
-                    int gridIndex = e.getKey();
-                    if (gridIndex < 0 || gridIndex > 8) continue;
-                    int menuSlot = gridIndex + 1; // slot 0 是输出槽
-                    ItemStack stack = e.getValue().copy();
-                    menu.getSlot(menuSlot).set(stack);
-                    menu.getSlot(menuSlot).setChanged();
-                }
-                menu.broadcastChanges();
+            // ===== 2. 扣除 EMC =====
+            data.consumeEmc(totalCost);
 
-                NetworkHandler.syncTo(player);
-            });
+            // ===== 3. 按槽位放置到合成网格 =====
+            for (Map.Entry<Integer, ItemStack> e : pkt.slotItems().entrySet()) {
+                int gridIndex = e.getKey();
+                if (gridIndex < 0 || gridIndex > 8) continue;
+                int menuSlot = gridIndex + 1; // slot 0 是输出槽
+                ItemStack stack = e.getValue().copy();
+                menu.getSlot(menuSlot).set(stack);
+                menu.getSlot(menuSlot).setChanged();
+            }
+            menu.broadcastChanges();
+
+            // ===== 4. 同步最新 EMC 数据给客户端 =====
+            NetworkHandler.syncTo(player);
         });
-        ctx.setPacketHandled(true);
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }
