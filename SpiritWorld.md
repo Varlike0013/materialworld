@@ -31,6 +31,17 @@ build.gradle build.gradle:
     仓库配置: mavenLocal() 用于解析 materialworld 依赖。
     依赖配置: compileOnly + runtimeOnly com.varlike.materialworld:materialworld:1.0.0。
 
+数据生成命令: ./gradlew runData
+输入（手写）:
+    src/main/resources/assets/spiritworld/textures/item/    ⬅️ 纹理
+输出（自动生成）:
+    src/generated/resources/assets/spiritworld/models/item/
+    src/generated/resources/assets/spiritworld/lang/
+已删除的手写文件:
+    src/main/resources/assets/spiritworld/lang/en_us.json
+    src/main/resources/assets/spiritworld/lang/zh_cn.json
+    src/main/resources/assets/spiritworld/models/item/bottled_spirit.json
+
 ## 玩家属性系统设计 / Player Attribute Design
 
 精神力 / Spirit:
@@ -95,6 +106,7 @@ build.gradle build.gradle:
     spiritClearOnLogin: 默认 true，控制登录时清零。
     spiritClearOnDeath: 默认 true，控制死亡重生时清零。
     两者均可通过配置关闭以方便调试。
+
 ## HUD 设计 / HUD Design
 
 精神力条:
@@ -105,13 +117,84 @@ build.gradle build.gradle:
     显示条件: 非创造模式、非旁观模式、未隐藏 GUI、showSpiritBar 为 true。
     Y 轴偏移: 由 ClientConfig.spiritBarYOffset 控制，正值向上。
 
-## 本地化 / Localization
+## 物品设计 / Item Design
 
-en_us.json src/main/resources/assets/spiritworld/lang/en_us.json:
-    英文语言文件，包含通用配置、客户端配置的翻译键。
+瓶装精神力 / Bottled Spirit:
+    定位: 类似原版水瓶的可饮用道具，恢复精神力。
+    堆叠: 8（。
+    使用动画: UseAnim.DRINK，时长 32 tick。
+    恢复量: Config.bottledSpiritRestoreAmount，默认 50。
+    返还: 饮用后返还玻璃瓶。
+    边界: 精神力已满时仍消耗瓶子。
+    创造模式: 不消耗瓶子也不返还玻璃瓶。
+    创造标签: 通过 MaterialWorldAPI.addToAddonTab 添加到物质世界的附属标签，
+              分组名 materialworld.addon_group.spirit_world。
 
-zh_cn.json src/main/resources/assets/spiritworld/lang/zh_cn.json:
-    中文语言文件，与 en_us.json 键名一一对应。
+精神秘戒 / Spirit Rings:
+    种类: 精神铁秘戒(100)、精神金秘戒(300)、精神钻秘戒(500)。
+    堆叠: 1。
+    数据存储: SpiritStored 数据组件，记录已存精神力量。
+    右键: 从玩家存入精神力到戒指。
+    潜行右键: 从戒指取出精神力给玩家。
+    右键含水炼药锅: 消耗 100 精神力，将水炼药锅转化为精神药水炼药锅。
+    稀有度: 铁-UNCOMMON，金-RARE，钻-EPIC。
+
+精神药水炼药锅 / Spirit Cauldron:
+    定义: 精神药水的载体，水位 1-3。
+    玻璃瓶右键: 取出瓶装精神力，水位 -1。
+    水位归零: 变回空炼药锅。
+    视觉: 暂时使用原版水炼药锅模型。
+
+## 资源文件 / Resources
+
+models/item/bottled_spirit.json:
+    物品模型，parent 为 item/generated，纹理指向 spiritworld:item/bottled_spirit。
+
+textures/item/bottled_spirit.png:
+    16×16 物品纹理，可暂时使用原版 glass_bottle.png 占位。
+
+## 数据组件 / Data Components
+
+ModDataComponents src/main/java/com/varlike/spiritworld/component/ModDataComponents.java:
+    SPIRIT_STORED: DataComponentType<SpiritStored> 静态实例。
+    register(IEventBus modEventBus): 注册到 DATA_COMPONENT_TYPE 注册表。
+
+SpiritStored src/main/java/com/varlike/spiritworld/component/SpiritStored.java:
+    amount(): 存储的精神力量。
+    CODEC: 持久化编解码器。
+    STREAM_CODEC: 网络同步编解码器。
+## 数据生成 / Data Generation
+
+ModItemModelProvider src/main/java/com/varlike/spiritworld/datagen/ModItemModelProvider.java:
+    ModItemModelProvider(PackOutput output, ExistingFileHelper existingFileHelper): 构造函数。
+    registerModels(): 为 BOTTLED_SPIRIT 生成基础 2D 模型。
+    输出: src/generated/resources/assets/spiritworld/models/item/bottled_spirit.json
+
+ModLanguageProvider src/main/java/com/varlike/spiritworld/datagen/ModLanguageProvider.java:
+    ModLanguageProvider(PackOutput output): 构造函数，locale 固定为 en_us。
+    addTranslations(): 添加物品名、消息、配置项的英文翻译。
+    输出: src/generated/resources/assets/spiritworld/lang/en_us.json
+
+ModLanguageProviderZH src/main/java/com/varlike/spiritworld/datagen/ModLanguageProviderZH.java:
+    ModLanguageProviderZH(PackOutput output): 构造函数，locale 固定为 zh_cn。
+    addTranslations(): 添加中文翻译。
+    输出: src/generated/resources/assets/spiritworld/lang/zh_cn.json
+
+DataGenerators src/main/java/com/varlike/spiritworld/datagen/DataGenerators.java:
+    gatherData(GatherDataEvent event): 注册三个 DataProvider（物品模型、英文、中文）。ModRecipeProvider追加配方。
+        使用 event.includeClient() 限制为客户端资源生成。gatherData 中追加 ModBlockStateProvider 注册，使用 event.includeClient() 归类为客户端资源。
+
+ModRecipeProvider src/main/java/com/varlike/spiritworld/datagen/ModRecipeProvider.java:
+    buildRecipes(RecipeOutput output): 生成三种戒指的合成配方。
+        精神铁秘戒: 4 铁锭菱形图案。
+        精神金秘戒: 4 金锭菱形图案。
+        精神钻秘戒: 4 钻石菱形图案。
+
+ModBlockStateProvider src/main/java/com/varlike/spiritworld/datagen/ModBlockStateProvider.java:
+    ModBlockStateProvider(PackOutput output, ExistingFileHelper existingFileHelper): 构造函数。
+    registerStatesAndModels(): 为 SPIRIT_CAULDRON 生成 blockstate JSON，
+        引用原版 minecraft:block/water_cauldron_level1/level2/full 三个模型。
+    输出: src/generated/resources/assets/spiritworld/blockstates/spirit_cauldron.json
 
 
 ## 公开 API / Public API
@@ -139,6 +222,8 @@ IPlayerSpirit src/main/java/com/varlike/spiritworld/api/IPlayerSpirit.java:
 
 SpiritWorld src/main/java/com/varlike/spiritworld/SpiritWorld.java:
     SpiritWorld(IEventBus modEventBus, ModContainer modContainer): 主构造函数，注册能力、物品、创造标签和配置。
+    变更: 取消 ModItems.register 注释，新增 MaterialWorldAPI.addToAddonTab 调用，
+          将 BOTTLED_SPIRIT 添加到物质世界的附属创造标签，分组名 materialworld.addon_group.spirit_world。
 
 PlayerSpirit src/main/java/com/varlike/spiritworld/capability/PlayerSpirit.java:
     maxSpiritModifiers: Map<ResourceLocation, Long>，存储临时上限加成（不序列化）。
@@ -201,6 +286,8 @@ Config src/main/java/com/varlike/spiritworld/Config.java:
     SPIRIT_CLEAR_ON_LOGIN: 玩家登录时是否清空精神力，默认 true。
     SPIRIT_CLEAR_ON_DEATH: 玩家死亡重生时是否清空精神力，默认 true。
     onLoad(ModConfigEvent event): 配置加载/重载时同步到静态字段。
+    新增 BOTTLED_SPIRIT_RESTORE_AMOUNT: 瓶装精神力恢复量，默认 20，范围 [1, 10000]。
+    变更: onLoad 中同步 bottledSpiritRestoreAmount 到静态字段。
 
 SpiritWorldClient src/main/java/com/varlike/spiritworld/SpiritWorldClient.java:
     SpiritWorldClient(ModContainer container): 客户端模组构造函数，注册配置界面扩展点和 CLIENT 配置。
@@ -222,3 +309,38 @@ SpiritHudOverlay src/main/java/com/varlike/spiritworld/client/SpiritHudOverlay.j
     onRegisterGuiLayers(RegisterGuiLayersEvent event): 在饥饿条之上注册精神力条 GUI 层。
     renderSpiritBar(GuiGraphics graphics, DeltaTracker deltaTracker): 渲染精神力条，
         包括背景、空槽、蓝色渐变填充和可选文本，位置右对齐饥饿条并支持 Y 轴偏移。
+
+ModItems src/main/java/com/varlike/spiritworld/registry/ModItems.java:
+    ITEMS: DeferredRegister.Items 静态实例，用于注册精神世界的物品。
+    BOTTLED_SPIRIT: 瓶装精神力物品的 DeferredItem，默认堆叠数为 1。
+    register(IEventBus modEventBus): 将 ITEMS 注册器绑定到 mod 事件总线。
+
+BottledSpiritItem src/main/java/com/varlike/spiritworld/item/BottledSpiritItem.java:
+    BottledSpiritItem(Properties properties): 构造函数。
+    use(Level level, Player player, InteractionHand hand): 开始饮用动画。
+    getUseAnimation(ItemStack stack): 返回 UseAnim.DRINK。
+    getUseDuration(ItemStack stack, LivingEntity entity): 返回 32 tick。
+    finishUsingItem(ItemStack stack, Level level, LivingEntity entity): 服务端恢复 Config.bottledSpiritRestoreAmount 点精神力，
+        同步客户端并发送提示；消耗瓶子并返还玻璃瓶；精神力已满时仍消耗瓶子但发送「已满」提示。
+
+SpiritRingItem src/main/java/com/varlike/spiritworld/item/SpiritRingItem.java:
+    SpiritRingItem(long capacity, Properties properties): 构造函数，指定容量。
+    getCapacity(): 返回容量。
+    getStored(ItemStack stack): 静态，读取已存精神力量。
+    setStored(ItemStack stack, long amount): 静态，设置已存精神力量。
+    use(Level, Player, InteractionHand): 右键逻辑，存入/取出精神力。
+    useOn(UseOnContext): 右键含水炼药锅转化为精神药水炼药锅。
+    appendHoverText(...): 显示已存精神力量和用法。
+
+SpiritCauldronBlock src/main/java/com/varlike/spiritworld/block/SpiritCauldronBlock.java:
+    SpiritCauldronBlock(Properties properties): 构造函数，降水类型为 NONE。
+    useItemOn(ItemStack, BlockState, Level, BlockPos, Player, InteractionHand, BlockHitResult):
+        玻璃瓶右键取出瓶装精神力，水位 -1，减到 0 变回空炼药锅。
+        变更: 返回值类型为 ItemInteractionResult（非 InteractionResult），
+              PASS 对应 PASS_TO_DEFAULT_BLOCK_INTERACTION。
+    getInteractionShape(...): 返回完整碰撞形状。
+
+ModBlocks src/main/java/com/varlike/spiritworld/registry/ModBlocks.java:
+    BLOCKS: DeferredRegister.Blocks 静态实例。
+    SPIRIT_CAULDRON: 精神药水炼药锅的 DeferredBlock。
+    register(IEventBus modEventBus): 绑定 BLOCKS 到 mod 事件总线。

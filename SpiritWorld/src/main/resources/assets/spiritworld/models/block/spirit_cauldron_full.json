@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/water_cauldron_full",
+  "textures": {
+    "water_still": "spiritworld:block/spirit_water_still"
+  }
+}

@@ -26,6 +26,10 @@ public class Config {
             .comment("客户端同步间隔（tick）/ Client sync interval in ticks")
             .defineInRange("syncInterval", 10, 1, 1200);
 
+    public static final ModConfigSpec.LongValue BOTTLED_SPIRIT_RESTORE_AMOUNT = BUILDER
+            .comment("瓶装精神力恢复的精神力量 / Spirit restored by bottled spirit")
+            .defineInRange("bottledSpiritRestoreAmount", 50L, 1L, 10000L);
+
     public static final ModConfigSpec.BooleanValue SPIRIT_CLEAR_ON_LOGIN = BUILDER
             .comment("玩家进入游戏时是否清空精神力 / Whether to clear spirit on player login")
             .define("spiritClearOnLogin", true);
@@ -33,6 +37,7 @@ public class Config {
     public static final ModConfigSpec.BooleanValue SPIRIT_CLEAR_ON_DEATH = BUILDER
             .comment("玩家死亡重生时是否清空精神力 / Whether to clear spirit on death respawn")
             .define("spiritClearOnDeath", true);
+
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
@@ -42,6 +47,7 @@ public class Config {
     public static int syncInterval = 10;
     public static boolean spiritClearOnLogin = true;
     public static boolean spiritClearOnDeath = true;
+    public static long bottledSpiritRestoreAmount = 50L;
 
     /** 手动加载配置值，在 FMLCommonSetupEvent 和 ModConfigEvent.Reloading 中调用 */
     public static void loadValues() {
@@ -51,6 +57,7 @@ public class Config {
         syncInterval = SYNC_INTERVAL.get();
         spiritClearOnLogin = SPIRIT_CLEAR_ON_LOGIN.get();
         spiritClearOnDeath = SPIRIT_CLEAR_ON_DEATH.get();
+        bottledSpiritRestoreAmount = BOTTLED_SPIRIT_RESTORE_AMOUNT.get();
     }
     @SubscribeEvent
     static void onReload(ModConfigEvent.Reloading event) {

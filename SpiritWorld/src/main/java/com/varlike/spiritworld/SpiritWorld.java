@@ -3,6 +3,9 @@ package com.varlike.spiritworld;
 import com.mojang.logging.LogUtils;
 import com.varlike.materialworld.api.MaterialWorldAPI;
 import com.varlike.spiritworld.capability.ModCapabilities;
+import com.varlike.spiritworld.component.ModDataComponents;
+import com.varlike.spiritworld.registry.ModBlocks;
+import com.varlike.spiritworld.registry.ModItems;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -22,11 +25,23 @@ public class SpiritWorld {
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(ModCapabilities::register);
-//        ModItems.register(modEventBus);
-//
-//        MaterialWorldAPI.addToAddonTab(
-//                "materialworld.addon_group.spirit_world",
-//                () -> new ItemStack(ModItems.BOTTLED_SPIRIT.get()));
+
+        ModDataComponents.register(modEventBus);
+        ModItems.register(modEventBus);
+        ModBlocks.register(modEventBus);
+
+        MaterialWorldAPI.addToAddonTab(
+                "materialworld.addon_group.spirit_world",
+                () -> new ItemStack(ModItems.BOTTLED_SPIRIT.get()));
+        MaterialWorldAPI.addToAddonTab(
+                "materialworld.addon_group.spirit_world",
+                () -> new ItemStack(ModItems.SPIRIT_IRON_RING.get()));
+        MaterialWorldAPI.addToAddonTab(
+                "materialworld.addon_group.spirit_world",
+                () -> new ItemStack(ModItems.SPIRIT_GOLD_RING.get()));
+        MaterialWorldAPI.addToAddonTab(
+                "materialworld.addon_group.spirit_world",
+                () -> new ItemStack(ModItems.SPIRIT_DIAMOND_RING.get()));
 
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }

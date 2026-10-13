@@ -1,0 +1,21 @@
+{
+  "item.spiritworld.bottled_spirit": "Bottled Spirit",
+  "materialworld.addon_group.spirit_world": "Spirit World",
+  "message.spiritworld.spirit_already_full": "Spirit is already full",
+  "message.spiritworld.spirit_restored": "Restored %d spirit",
+  "spiritworld.configuration.bottledSpiritRestoreAmount": "Bottled Spirit Restore Amount",
+  "spiritworld.configuration.defaultMaxSpirit": "Default Max Spirit",
+  "spiritworld.configuration.section.spiritworld.client.toml": "SpiritWorld Client Configs",
+  "spiritworld.configuration.section.spiritworld.client.toml.title": "SpiritWorld Client Configs",
+  "spiritworld.configuration.section.spiritworld.common.toml": "SpiritWorld Common Configs",
+  "spiritworld.configuration.section.spiritworld.common.toml.title": "SpiritWorld Common Configs",
+  "spiritworld.configuration.showSpiritBar": "Show Spirit Bar",
+  "spiritworld.configuration.showSpiritText": "Show Spirit Value",
+  "spiritworld.configuration.spiritBarYOffset": "Spirit Bar Y Offset",
+  "spiritworld.configuration.spiritClearOnDeath": "Clear Spirit on Death",
+  "spiritworld.configuration.spiritClearOnLogin": "Clear Spirit on Login",
+  "spiritworld.configuration.spiritRegenAmount": "Spirit Regen Amount",
+  "spiritworld.configuration.spiritRegenInterval": "Spirit Regen Interval (ticks)",
+  "spiritworld.configuration.syncInterval": "Sync Interval (ticks)",
+  "spiritworld.configuration.title": "SpiritWorld Configs"
+}
