@@ -53,5 +53,39 @@ public class ModLanguageProviderZH extends LanguageProvider {
         this.add("message.spiritworld.ring.extract", "取出 %d 点精神力");
         this.add("message.spiritworld.ring.not_enough", "精神力不足，需要 %d");
         this.add("message.spiritworld.ring.converted", "已将水转化为精神药水");
+
+        // ===== 按键 =====
+        this.add("key.spiritworld.open_skill_tree", "打开技能树");
+
+        // ===== 技能树界面 =====
+        this.add("screen.spiritworld.skill_tree.title", "精神视界");
+        this.add("screen.spiritworld.skill_tree.level", "灵视等级: %d");
+        this.add("screen.spiritworld.skill_tree.points", "灵视点: %d");
+        this.add("screen.spiritworld.skill_tree.progress", "%d / %d");
+
+        // ===== 技能类型 =====
+        this.add("skill.type.active", "主动技能");
+        this.add("skill.type.passive", "被动技能");
+        this.add("skill.type.special", "特殊技能");
+
+        // ===== 技能提示 =====
+        this.add("skill.tooltip.level", "等级: %d / %d");
+        this.add("skill.tooltip.cost", "下一级消耗: %d");
+        this.add("skill.tooltip.required_vision", "需要灵视等级: %d");
+        this.add("skill.tooltip.prerequisites", "前置：");
+
+        // ===== 内置示例技能 =====
+        this.add("skill.spiritworld.spirit_sense", "精神感知");
+        this.add("skill.spiritworld.spirit_sense.desc", "提升精神力恢复速度。");
+        this.add("skill.spiritworld.spirit_burst", "精神爆发");
+        this.add("skill.spiritworld.spirit_burst.desc", "主动技能，释放精神爆发。");
+        this.add("skill.spiritworld.spirit_focus", "精神专注");
+        this.add("skill.spiritworld.spirit_focus.desc", "提升精神力上限。");
+        this.add("skill.spiritworld.spirit_vision", "灵视");
+        this.add("skill.spiritworld.spirit_vision.desc", "开启灵视视野。");
+        this.add("skill.spiritworld.spirit_storm", "精神风暴");
+        this.add("skill.spiritworld.spirit_storm.desc", "毁灭性的范围攻击。");
+        this.add("skill.spiritworld.spirit_echo", "精神回响");
+        this.add("skill.spiritworld.spirit_echo.desc", "回响精神能量。");
     }
 }

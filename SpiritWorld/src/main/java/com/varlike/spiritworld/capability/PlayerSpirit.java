@@ -21,7 +21,6 @@ public class PlayerSpirit {
 
     private long spirit = DEFAULT_MAX_SPIRIT;
     private long maxSpirit = DEFAULT_MAX_SPIRIT;
-    private int visionLevel = 0;
 
     /** 临时上限加成，key 为来源 ID，value 为加成量（可正可负） */
     private final Map<ResourceLocation, Long> maxSpiritModifiers = new HashMap<>();
@@ -111,20 +110,76 @@ public class PlayerSpirit {
         return Collections.unmodifiableMap(maxSpiritModifiers);
     }
 
+    // ===== 新增字段 =====
+    private final Map<ResourceLocation, Integer> learnedSkills = new HashMap<>();
+    private long availableVisionPoints = 0L;
+    private long totalSpentVisionPoints = 0L;
+
+    // ===== 技能相关 =====
+    public int getSkillLevel(ResourceLocation id) {
+        return learnedSkills.getOrDefault(id, 0);
+    }
+
+    public void setSkillLevel(ResourceLocation id, int level) {
+        if (level <= 0) learnedSkills.remove(id);
+        else learnedSkills.put(id, level);
+        markDirty();
+    }
+
+    public Map<ResourceLocation, Integer> getLearnedSkills() {
+        return Collections.unmodifiableMap(learnedSkills);
+    }
+
+    public void clearLearnedSkills() {
+        learnedSkills.clear();
+        markDirty();
+    }
+
+    // ===== 灵视点 =====
+    public long getAvailableVisionPoints() { return availableVisionPoints; }
+
+    public void setAvailableVisionPoints(long v) {
+        this.availableVisionPoints = Math.max(0, v);
+        markDirty();
+    }
+
+    public void addVisionPoints(long v) {
+        this.availableVisionPoints += v;
+        markDirty();
+    }
+
+    public boolean consumeVisionPoints(long v) {
+        if (v < 0 || availableVisionPoints < v) return false;
+        availableVisionPoints -= v;
+        markDirty();
+        return true;
+    }
+
+    public long getTotalSpentVisionPoints() { return totalSpentVisionPoints; }
+
+    public void setTotalSpentVisionPoints(long v) {
+        this.totalSpentVisionPoints = Math.max(0, v);
+        markDirty();
+    }
+
+    public void addSpentVisionPoints(long v) {
+        this.totalSpentVisionPoints += v;
+        markDirty();
+    }
+
+    // ===== 灵视等级：根据已消耗点数动态计算 =====
     // ==================== 灵视 / Spirit Vision ====================
 
     public int getVisionLevel() {
-        return visionLevel;
-    }
-
-    public void setVisionLevel(int level) {
-        int old = this.visionLevel;
-        this.visionLevel = clamp(level, 0, MAX_VISION_LEVEL);
-        if (this.visionLevel != old) markDirty();
+        int level = 0;
+        while ((long)(level + 1) * (level + 2) / 2 * 10 <= totalSpentVisionPoints) {
+            level++;
+        }
+        return level;
     }
 
     public boolean isVisionAtLeast(int level) {
-        return visionLevel >= level;
+        return getVisionLevel() >= level;
     }
 
     // ==================== 初始化 / Initialization ====================
@@ -142,7 +197,6 @@ public class PlayerSpirit {
     public void copyFrom(PlayerSpirit other) {
         this.spirit = other.spirit;
         this.maxSpirit = other.maxSpirit;
-        this.visionLevel = other.visionLevel;
         this.maxSpiritModifiers.clear();
         this.maxSpiritModifiers.putAll(other.maxSpiritModifiers);
         this.initialized = other.initialized;
@@ -153,14 +207,32 @@ public class PlayerSpirit {
         CompoundTag tag = new CompoundTag();
         tag.putLong("spirit", spirit);
         tag.putLong("maxSpirit", maxSpirit);
-        tag.putInt("visionLevel", visionLevel);
+        tag.putLong("availableVisionPoints", availableVisionPoints);
+        tag.putLong("totalSpentVisionPoints", totalSpentVisionPoints);
+
+        CompoundTag skillsTag = new CompoundTag();
+        learnedSkills.forEach((id, lvl) -> skillsTag.putInt(id.toString(), lvl));
+        tag.put("learnedSkills", skillsTag);
+
         return tag;
     }
 
     public void load(CompoundTag tag) {
         this.spirit = tag.getLong("spirit");
         this.maxSpirit = tag.contains("maxSpirit") ? tag.getLong("maxSpirit") : DEFAULT_MAX_SPIRIT;
-        this.visionLevel = tag.getInt("visionLevel");
+        this.availableVisionPoints = tag.getLong("availableVisionPoints");
+        this.totalSpentVisionPoints = tag.getLong("totalSpentVisionPoints");
+
+        learnedSkills.clear();
+        CompoundTag skillsTag = tag.getCompound("learnedSkills");
+        for (String key : skillsTag.getAllKeys()) {
+            ResourceLocation id = ResourceLocation.tryParse(key);
+            if (id != null) {
+                int lvl = skillsTag.getInt(key);
+                if (lvl > 0) learnedSkills.put(id, lvl);
+            }
+        }
+
         if (spirit > getEffectiveMaxSpirit()) spirit = getEffectiveMaxSpirit();
         initialized = true;
     }
@@ -180,4 +252,6 @@ public class PlayerSpirit {
     private static int clamp(int v, int min, int max) {
         return Math.max(min, Math.min(max, v));
     }
+
+
 }

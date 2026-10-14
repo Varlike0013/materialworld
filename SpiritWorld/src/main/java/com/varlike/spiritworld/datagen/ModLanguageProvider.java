@@ -56,5 +56,39 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("message.spiritworld.ring.extract", "Extracted %d spirit");
         this.add("message.spiritworld.ring.not_enough", "Not enough spirit, need %d");
         this.add("message.spiritworld.ring.converted", "Water converted to spirit potion");
+
+        // ===== 按键 =====
+        this.add("key.spiritworld.open_skill_tree", "Open Skill Tree");
+
+        // ===== 技能树界面 =====
+        this.add("screen.spiritworld.skill_tree.title", "Spirit Skill Tree");
+        this.add("screen.spiritworld.skill_tree.level", "Vision Level: %d");
+        this.add("screen.spiritworld.skill_tree.points", "Vision Points: %d");
+        this.add("screen.spiritworld.skill_tree.progress", "%d / %d");
+
+        // ===== 技能类型 =====
+        this.add("skill.type.active", "Active Skill");
+        this.add("skill.type.passive", "Passive Skill");
+        this.add("skill.type.special", "Special Skill");
+
+        // ===== 技能提示 =====
+        this.add("skill.tooltip.level", "Level: %d / %d");
+        this.add("skill.tooltip.cost", "Next Level Cost: %d");
+        this.add("skill.tooltip.required_vision", "Required Vision Level: %d");
+        this.add("skill.tooltip.prerequisites", "Prerequisites:");
+
+        // ===== 内置示例技能 =====
+        this.add("skill.spiritworld.spirit_sense", "Spirit Sense");
+        this.add("skill.spiritworld.spirit_sense.desc", "Increases spirit regeneration.");
+        this.add("skill.spiritworld.spirit_burst", "Spirit Burst");
+        this.add("skill.spiritworld.spirit_burst.desc", "Active skill to burst spirit.");
+        this.add("skill.spiritworld.spirit_focus", "Spirit Focus");
+        this.add("skill.spiritworld.spirit_focus.desc", "Increases max spirit.");
+        this.add("skill.spiritworld.spirit_vision", "Spirit Vision");
+        this.add("skill.spiritworld.spirit_vision.desc", "Grants spirit vision.");
+        this.add("skill.spiritworld.spirit_storm", "Spirit Storm");
+        this.add("skill.spiritworld.spirit_storm.desc", "Devastating area attack.");
+        this.add("skill.spiritworld.spirit_echo", "Spirit Echo");
+        this.add("skill.spiritworld.spirit_echo.desc", "Echoes spirit energy.");
     }
 }

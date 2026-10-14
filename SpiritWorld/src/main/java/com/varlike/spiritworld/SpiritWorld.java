@@ -6,6 +6,7 @@ import com.varlike.spiritworld.capability.ModCapabilities;
 import com.varlike.spiritworld.component.ModDataComponents;
 import com.varlike.spiritworld.registry.ModBlocks;
 import com.varlike.spiritworld.registry.ModItems;
+import com.varlike.spiritworld.skill.ModSkills;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -29,6 +30,7 @@ public class SpiritWorld {
         ModDataComponents.register(modEventBus);
         ModItems.register(modEventBus);
         ModBlocks.register(modEventBus);
+        ModSkills.registerAll();
 
         MaterialWorldAPI.addToAddonTab(
                 "materialworld.addon_group.spirit_world",

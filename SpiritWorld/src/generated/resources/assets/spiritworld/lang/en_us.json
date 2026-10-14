@@ -1,6 +1,17 @@
 {
   "item.spiritworld.bottled_spirit": "Bottled Spirit",
+  "item.spiritworld.spirit_diamond_ring": "Spirit Diamond Ring",
+  "item.spiritworld.spirit_gold_ring": "Spirit Gold Ring",
+  "item.spiritworld.spirit_iron_ring": "Spirit Iron Ring",
   "materialworld.addon_group.spirit_world": "Spirit World",
+  "message.spiritworld.ring.converted": "Water converted to spirit potion",
+  "message.spiritworld.ring.empty": "Ring is empty",
+  "message.spiritworld.ring.extract": "Extracted %d spirit",
+  "message.spiritworld.ring.full": "Ring is full",
+  "message.spiritworld.ring.no_spirit": "No spirit to store",
+  "message.spiritworld.ring.not_enough": "Not enough spirit, need %d",
+  "message.spiritworld.ring.player_full": "Your spirit is full",
+  "message.spiritworld.ring.store": "Stored %d spirit",
   "message.spiritworld.spirit_already_full": "Spirit is already full",
   "message.spiritworld.spirit_restored": "Restored %d spirit",
   "spiritworld.configuration.bottledSpiritRestoreAmount": "Bottled Spirit Restore Amount",
@@ -17,5 +28,7 @@
   "spiritworld.configuration.spiritRegenAmount": "Spirit Regen Amount",
   "spiritworld.configuration.spiritRegenInterval": "Spirit Regen Interval (ticks)",
   "spiritworld.configuration.syncInterval": "Sync Interval (ticks)",
-  "spiritworld.configuration.title": "SpiritWorld Configs"
+  "spiritworld.configuration.title": "SpiritWorld Configs",
+  "tooltip.spiritworld.ring.stored": "Stored: %d / %d",
+  "tooltip.spiritworld.ring.usage": "Right-click: store spirit. Shift+Right-click: extract. Right-click water cauldron: convert."
 }

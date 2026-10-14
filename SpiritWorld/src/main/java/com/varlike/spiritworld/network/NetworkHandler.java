@@ -28,6 +28,11 @@ public class NetworkHandler {
                 ServerboundRequestSyncPacket.TYPE,
                 ServerboundRequestSyncPacket.STREAM_CODEC,
                 ServerboundRequestSyncPacket::handle);
+
+        registrar.playToServer(
+                ServerboundLearnSkillPacket.TYPE,
+                ServerboundLearnSkillPacket.STREAM_CODEC,
+                ServerboundLearnSkillPacket::handle);
     }
 
     public static void syncTo(ServerPlayer player) {
@@ -37,8 +42,10 @@ public class NetworkHandler {
                 player,
                 new ClientboundSyncSpiritPacket(
                         data.getSpirit(),
-                        data.getEffectiveMaxSpirit(),   // 同步有效上限而非基础上限
-                        data.getVisionLevel())
+                        data.getEffectiveMaxSpirit(),
+                        data.getAvailableVisionPoints(),
+                        data.getTotalSpentVisionPoints(),
+                        data.getLearnedSkills())
         );
     }
 }

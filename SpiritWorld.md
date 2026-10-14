@@ -163,6 +163,38 @@ SpiritStored src/main/java/com/varlike/spiritworld/component/SpiritStored.java:
     amount(): 存储的精神力量。
     CODEC: 持久化编解码器。
     STREAM_CODEC: 网络同步编解码器。
+
+## 按键与界面入口 / Keybind & Screen Entry
+
+SpiritKeyBindings src/main/java/com/varlike/spiritworld/client/SpiritKeyBindings.java:
+    CATEGORY: "key.categories.materialworld"，使用物质世界的按键分类，
+              在控制设置界面中显示在物质世界标题下方。
+    OPEN_SKILL_TREE: KeyMapping，默认按键 K，用于打开技能树界面。
+
+SpiritClientEvents src/main/java/com/varlike/spiritworld/client/SpiritClientEvents.java:
+    ModBus.onRegisterKeys(RegisterKeyMappingsEvent): 在 mod 总线注册按键映射。
+    GameBus.onClientTick(ClientTickEvent.Post): 每 tick 检测按键，在无界面时打开 SkillTreeScreen。
+
+## 内部退点接口 / Skill Refund Helper
+
+SkillRefundHelper src/main/java/com/varlike/spiritworld/skill/SkillRefundHelper.java:
+    resetAllSkills(Player): 重置全部技能，返还所有已消耗灵视点，返回是否成功。
+    resetSkill(Player, ResourceLocation): 重置单个技能，返还该技能已消耗灵视点。
+    用途: 供精神世界自己的物品（如退点道具）调用，不对外暴露。
+
+## 本地化 / Localization
+
+ModLanguageProvider / ModLanguageProviderZH 新增:
+    按键: key.spiritworld.open_skill_tree
+    技能树界面: screen.spiritworld.skill_tree.*
+    技能类型: skill.type.*
+    技能提示: skill.tooltip.*
+    示例技能: skill.spiritworld.spirit_sense / spirit_burst / spirit_focus / spirit_vision / spirit_storm / spirit_echo
+
+变更:
+    所有语言键统一在 datagen 中维护，不再手写 lang/en_us.json 和 lang/zh_cn.json。
+    按键分类使用物质世界的分类键，在控制设置中显示在物质世界下方。
+    
 ## 数据生成 / Data Generation
 
 ModItemModelProvider src/main/java/com/varlike/spiritworld/datagen/ModItemModelProvider.java:
@@ -196,6 +228,36 @@ ModBlockStateProvider src/main/java/com/varlike/spiritworld/datagen/ModBlockStat
         引用原版 minecraft:block/water_cauldron_level1/level2/full 三个模型。
     输出: src/generated/resources/assets/spiritworld/blockstates/spirit_cauldron.json
 
+## 技能树设计 / Skill Tree Design
+
+图形与类型:
+    ACTIVE（主动）: 正方形
+    PASSIVE（被动）: 圆形
+    SPECIAL（特殊）: 六边形
+    形状表示类型，颜色表示状态。
+
+状态配色:
+    LEARNED: 绿边框 + 深绿填充
+    LEARNABLE: 金边框 + 深金填充 + 呼吸光晕
+    LOCKED: 灰边框 + 深灰填充（前置未满足或灵视等级不足）
+    NO_POINTS: 红边框 + 深红填充
+    MAX: 蓝边框 + 深蓝填充
+
+灵视等级计算:
+    公式: n(n+1)/2*10 ≤ 已消耗灵视点总数
+    Lv1=10, Lv2=30, Lv3=60, Lv4=100, Lv5=150...
+
+学习判定:
+    1. 节点等级 < maxLevel
+    2. 所有前置节点等级 ≥ 1
+    3. 玩家灵视等级 ≥ node.requiredVisionLevel
+    4. 可用灵视点 ≥ node.costPerLevel
+
+滚动与拖动:
+    滚轮: 垂直滚动
+    Shift + 滚轮: 水平滚动
+    拖动空白区: 自由平移
+    无可见滚动条
 
 ## 公开 API / Public API
 
@@ -344,3 +406,49 @@ ModBlocks src/main/java/com/varlike/spiritworld/registry/ModBlocks.java:
     BLOCKS: DeferredRegister.Blocks 静态实例。
     SPIRIT_CAULDRON: 精神药水炼药锅的 DeferredBlock。
     register(IEventBus modEventBus): 绑定 BLOCKS 到 mod 事件总线。
+
+SkillType src/main/java/com/varlike/spiritworld/skill/SkillType.java:
+    ACTIVE / PASSIVE / SPECIAL 三种技能类型枚举。
+
+SkillNode src/main/java/com/varlike/spiritworld/skill/SkillNode.java:
+    数据类，包含 id、type、gridX、gridY、maxLevel、costPerLevel、requiredVisionLevel、prerequisites、icon、nameKey、descKey。
+    builder(ResourceLocation): 构建器入口。
+
+SkillTree src/main/java/com/varlike/spiritworld/skill/SkillTree.java:
+    register(SkillNode): 注册技能节点。
+    get(ResourceLocation): 按 id 获取节点。
+    getAll(): 返回全部节点集合。
+    exists(ResourceLocation): 判断节点是否存在。
+
+ModSkills src/main/java/com/varlike/spiritworld/skill/ModSkills.java:
+    registerAll(): 注册内置示例技能。
+
+ServerboundLearnSkillPacket src/main/java/com/varlike/spiritworld/network/ServerboundLearnSkillPacket.java:
+    handle(...): 服务端处理加点请求，校验上限/前置/灵视等级/点数后应用并同步。
+
+SkillRenderer src/main/java/com/varlike/spiritworld/client/skill/SkillRenderer.java:
+    fillSquare / fillCircle / fillHexagon: 绘制三种形状。
+    fillShape: 组合边框色与填充色。
+    fillGlow: 绘制呼吸光晕。
+
+SkillTreeScreen src/main/java/com/varlike/spiritworld/client/skill/SkillTreeScreen.java:
+    init(): 计算网格边界、居中视图。
+    render(...): 渲染背景、连线、节点、顶栏、Tooltip。
+    getState(SkillNode): 判定节点状态。
+    renderConnections / renderNodes / renderTopBar / renderTooltip: 各层渲染。
+    mouseClicked / mouseReleased / mouseDragged / mouseScrolled: 交互处理。
+
+SpiritWorldAPI 新增:
+    resetAllSkills(Player): 重置全部技能。
+    resetSkill(Player, ResourceLocation): 重置单个技能。
+
+PlayerSpirit 变更:
+    移除 visionLevel 字段（改为动态计算）。
+    新增 learnedSkills、availableVisionPoints、totalSpentVisionPoints。
+    新增 getVisionLevel() 根据 totalSpentVisionPoints 动态计算。
+
+ClientboundSyncSpiritPacket 变更:
+    新增 availableVisionPoints、totalSpentVisionPoints、learnedSkills 字段。
+
+ClientSpiritData 变更:
+    同步新字段，并提供 getVisionLevel()、getSkillLevel(ResourceLocation)。

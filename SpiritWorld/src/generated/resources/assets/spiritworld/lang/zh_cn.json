@@ -1,6 +1,17 @@
 {
   "item.spiritworld.bottled_spirit": "瓶装精神力",
+  "item.spiritworld.spirit_diamond_ring": "精神钻秘戒",
+  "item.spiritworld.spirit_gold_ring": "精神金秘戒",
+  "item.spiritworld.spirit_iron_ring": "精神铁秘戒",
   "materialworld.addon_group.spirit_world": "精神世界",
+  "message.spiritworld.ring.converted": "已将水转化为精神药水",
+  "message.spiritworld.ring.empty": "戒指是空的",
+  "message.spiritworld.ring.extract": "取出 %d 点精神力",
+  "message.spiritworld.ring.full": "戒指已满",
+  "message.spiritworld.ring.no_spirit": "没有精神力可存入",
+  "message.spiritworld.ring.not_enough": "精神力不足，需要 %d",
+  "message.spiritworld.ring.player_full": "你的精神力已满",
+  "message.spiritworld.ring.store": "存入 %d 点精神力",
   "message.spiritworld.spirit_already_full": "精神力已满",
   "message.spiritworld.spirit_restored": "恢复了 %d 点精神力",
   "spiritworld.configuration.bottledSpiritRestoreAmount": "瓶装精神力恢复量",
@@ -17,5 +28,7 @@
   "spiritworld.configuration.spiritRegenAmount": "精神力恢复量",
   "spiritworld.configuration.spiritRegenInterval": "精神力恢复间隔（tick）",
   "spiritworld.configuration.syncInterval": "同步间隔（tick）",
-  "spiritworld.configuration.title": "精神世界配置"
+  "spiritworld.configuration.title": "精神世界配置",
+  "tooltip.spiritworld.ring.stored": "已存储: %d / %d",
+  "tooltip.spiritworld.ring.usage": "右键：存入精神力。潜行右键：取出。右键含水炼药锅：转化。"
 }
