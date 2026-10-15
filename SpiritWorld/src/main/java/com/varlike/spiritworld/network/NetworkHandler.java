@@ -24,28 +24,37 @@ public class NetworkHandler {
                 ClientboundSyncSpiritPacket.STREAM_CODEC,
                 ClientPayloadHandler::handleSyncSpirit);
 
+        registrar.playToServer(ServerboundRequestSyncPacket.TYPE,
+                ServerboundRequestSyncPacket.STREAM_CODEC, ServerboundRequestSyncPacket::handle);
+        registrar.playToServer(ServerboundLearnSkillPacket.TYPE,
+                ServerboundLearnSkillPacket.STREAM_CODEC, ServerboundLearnSkillPacket::handle);
+        registrar.playToServer(ServerboundSetLoadoutPacket.TYPE,
+                ServerboundSetLoadoutPacket.STREAM_CODEC, ServerboundSetLoadoutPacket::handle);
+        registrar.playToServer(ServerboundSetSelectedSlotPacket.TYPE,
+                ServerboundSetSelectedSlotPacket.STREAM_CODEC, ServerboundSetSelectedSlotPacket::handle);
+        registrar.playToServer(ServerboundTogglePassivePacket.TYPE,
+                ServerboundTogglePassivePacket.STREAM_CODEC, ServerboundTogglePassivePacket::handle);
+        registrar.playToServer(ServerboundUseSkillPacket.TYPE,
+                ServerboundUseSkillPacket.STREAM_CODEC, ServerboundUseSkillPacket::handle);
         registrar.playToServer(
-                ServerboundRequestSyncPacket.TYPE,
-                ServerboundRequestSyncPacket.STREAM_CODEC,
-                ServerboundRequestSyncPacket::handle);
-
-        registrar.playToServer(
-                ServerboundLearnSkillPacket.TYPE,
-                ServerboundLearnSkillPacket.STREAM_CODEC,
-                ServerboundLearnSkillPacket::handle);
+                ServerboundSummonToolPacket.TYPE,
+                ServerboundSummonToolPacket.STREAM_CODEC,
+                ServerboundSummonToolPacket::handle);
     }
 
     public static void syncTo(ServerPlayer player) {
         PlayerSpirit data = player.getCapability(ModCapabilities.PLAYER_SPIRIT);
         if (data == null) return;
-        PacketDistributor.sendToPlayer(
-                player,
-                new ClientboundSyncSpiritPacket(
-                        data.getSpirit(),
-                        data.getEffectiveMaxSpirit(),
-                        data.getAvailableVisionPoints(),
-                        data.getTotalSpentVisionPoints(),
-                        data.getLearnedSkills())
-        );
+        PacketDistributor.sendToPlayer(player, new ClientboundSyncSpiritPacket(
+                data.getSpirit(),
+                data.getEffectiveMaxSpirit(),
+                data.getAvailableVisionPoints(),
+                data.getTotalSpentVisionPoints(),
+                data.getLearnedSkills(),
+                data.getLoadout(),
+                data.getSelectedSlot(),
+                data.getActivePassives()
+        ));
     }
+
 }

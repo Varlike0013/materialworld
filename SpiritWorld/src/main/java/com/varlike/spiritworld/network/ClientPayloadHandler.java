@@ -11,6 +11,9 @@ public class ClientPayloadHandler {
                 pkt.maxSpirit(),
                 pkt.availableVisionPoints(),
                 pkt.totalSpentVisionPoints(),
-                pkt.learnedSkills()));
+                pkt.learnedSkills(),
+                pkt.loadout(),
+                pkt.selectedSlot(),
+                pkt.activePassives()));
     }
 }

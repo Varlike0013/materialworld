@@ -1,10 +1,10 @@
 package com.varlike.spiritworld.client;
 
+import com.varlike.spiritworld.skill.SkillNode;
+import com.varlike.spiritworld.skill.SkillTree;
 import net.minecraft.resources.ResourceLocation;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ClientSpiritData {
 
@@ -34,14 +34,50 @@ public class ClientSpiritData {
         return level;
     }
 
+    private static final ResourceLocation[] loadout = new ResourceLocation[6];
+    private static int selectedSlot = 0;
+    private static final Set<ResourceLocation> activePassives = new HashSet<>();
+
+    public static ResourceLocation getLoadoutSlot(int slot) {
+        if (slot < 0 || slot >= 6) return null;
+        return loadout[slot];
+    }
+
+    public static ResourceLocation[] getLoadout() { return loadout.clone(); }
+    public static int getSelectedSlot() { return selectedSlot; }
+    public static Set<ResourceLocation> getActivePassives() {
+        return Collections.unmodifiableSet(activePassives);
+    }
+
+    public static ResourceLocation getEquippedSkill() {
+        return getLoadoutSlot(selectedSlot);
+    }
+
+    public static boolean isPassiveActive(ResourceLocation id) {
+        SkillNode node = SkillTree.get(id);
+        if (node == null) return false;
+        if (getSkillLevel(id) <= 0) return false;
+        if (node.isAlwaysOn()) return true;
+        return activePassives.contains(id);
+    }
+
     public static void update(long newSpirit, long newMaxSpirit,
-                              long newAvailableVisionPoints, long newTotalSpent,
-                              Map<ResourceLocation, Integer> newSkills) {
+                              long newAvail, long newTotalSpent,
+                              Map<ResourceLocation, Integer> newSkills,
+                              ResourceLocation[] newLoadout,
+                              int newSelectedSlot,
+                              Set<ResourceLocation> newPassives) {
         spirit = newSpirit;
         maxSpirit = newMaxSpirit;
-        availableVisionPoints = newAvailableVisionPoints;
+        availableVisionPoints = newAvail;
         totalSpentVisionPoints = newTotalSpent;
         learnedSkills.clear();
         learnedSkills.putAll(newSkills);
+        for (int i = 0; i < 6; i++) {
+            loadout[i] = (newLoadout != null && i < newLoadout.length) ? newLoadout[i] : null;
+        }
+        selectedSlot = newSelectedSlot;
+        activePassives.clear();
+        activePassives.addAll(newPassives);
     }
 }

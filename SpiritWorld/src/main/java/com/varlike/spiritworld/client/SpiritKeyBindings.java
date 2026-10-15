@@ -19,4 +19,29 @@ public class SpiritKeyBindings {
             GLFW.GLFW_KEY_K,
             CATEGORY
     );
+
+    public static final KeyMapping OPEN_LOADOUT = new KeyMapping(
+            "key.spiritworld.open_loadout",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_L,
+            CATEGORY
+    );
+
+    /** 按下立刻打开选盘，无长按判定 */
+    public static final KeyMapping OPEN_RADIAL = new KeyMapping(
+            "key.spiritworld.open_radial",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_G,
+            CATEGORY
+    );
+
+    public static final KeyMapping USE_SKILL = new KeyMapping(
+            "key.spiritworld.use_skill",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_V,
+            CATEGORY
+    );
 }

@@ -5,6 +5,24 @@ import net.minecraft.resources.ResourceLocation;
 
 public class ModSkills {
 
+    // ===== 已有技能 ID =====
+    public static final ResourceLocation EMC_CONVERSION_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "emc_conversion");
+
+    // ===== 精神工具技能 ID =====
+    public static final ResourceLocation SUMMON_TOOL_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "summon_spirit_tool");
+    public static final ResourceLocation TOOL_PICKAXE_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_tool_pickaxe");
+    public static final ResourceLocation TOOL_AXE_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_tool_axe");
+    public static final ResourceLocation TOOL_SHOVEL_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_tool_shovel");
+    public static final ResourceLocation TOOL_HOE_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_tool_hoe");
+    public static final ResourceLocation SPIRIT_FORTUNE_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_fortune");
+
     private static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, path);
     }
@@ -12,82 +30,90 @@ public class ModSkills {
     public static void registerAll() {
         SkillTree.clear();
 
-        // 中心节点：被动
+        // ===== 基础：EMC 转化 =====
+        SkillTree.register(SkillNode.builder(EMC_CONVERSION_ID)
+                .passiveEquippable()
+                .grid(2, 5)
+                .maxLevel(5)
+                .cost(20)
+                .requiredVisionLevel(0)
+                .icon("转")
+                .build());
+
+        // ===== 常驻被动 =====
         SkillTree.register(SkillNode.builder(id("spirit_sense"))
-                .type(SkillType.PASSIVE)
-                .grid(2, 2)
+                .passiveAlways()
+                .grid(0, 5)
                 .maxLevel(3)
                 .cost(5)
-                .requiredVisionLevel(0)
                 .icon("感")
-                .name("skill.spiritworld.spirit_sense")
-                .desc("skill.spiritworld.spirit_sense.desc")
                 .build());
 
-        // 主动技能：正方形，需要灵视等级 1
-        SkillTree.register(SkillNode.builder(id("spirit_burst"))
-                .type(SkillType.ACTIVE)
-                .grid(1, 1)
+        // ===== 主技能：召唤精神工具 =====
+        // 前置：EMC 转化
+        SkillTree.register(SkillNode.builder(SUMMON_TOOL_ID)
+                .active()
+                .grid(2, 1)
                 .maxLevel(1)
-                .cost(10)
+                .cost(15)
                 .requiredVisionLevel(1)
-                .prereq(id("spirit_sense"))
-                .icon("爆")
-                .name("skill.spiritworld.spirit_burst")
-                .desc("skill.spiritworld.spirit_burst.desc")
+                .prereq(EMC_CONVERSION_ID)
+                .icon("召")
                 .build());
 
-        // 被动技能：需要灵视等级 1
-        SkillTree.register(SkillNode.builder(id("spirit_focus"))
-                .type(SkillType.PASSIVE)
-                .grid(3, 1)
+        // ===== 镐分支 =====
+        SkillTree.register(SkillNode.builder(TOOL_PICKAXE_ID)
+                .passiveAlways()
+                .grid(2, 0)
                 .maxLevel(5)
                 .cost(8)
                 .requiredVisionLevel(1)
-                .prereq(id("spirit_sense"))
-                .icon("聚")
-                .name("skill.spiritworld.spirit_focus")
-                .desc("skill.spiritworld.spirit_focus.desc")
+                .prereq(SUMMON_TOOL_ID)
+                .icon("镐")
                 .build());
 
-        // 特殊技能：六边形，需要灵视等级 2
-        SkillTree.register(SkillNode.builder(id("spirit_vision"))
-                .type(SkillType.SPECIAL)
+        // ===== 斧分支 =====
+        SkillTree.register(SkillNode.builder(TOOL_AXE_ID)
+                .passiveAlways()
+                .grid(4, 1)
+                .maxLevel(5)
+                .cost(8)
+                .requiredVisionLevel(1)
+                .prereq(SUMMON_TOOL_ID)
+                .icon("斧")
+                .build());
+
+        // ===== 铲分支 =====
+        SkillTree.register(SkillNode.builder(TOOL_SHOVEL_ID)
+                .passiveAlways()
+                .grid(2, 2)
+                .maxLevel(5)
+                .cost(8)
+                .requiredVisionLevel(1)
+                .prereq(SUMMON_TOOL_ID)
+                .icon("铲")
+                .build());
+
+        // ===== 锄分支 =====
+        SkillTree.register(SkillNode.builder(TOOL_HOE_ID)
+                .passiveAlways()
+                .grid(4, 0)
+                .maxLevel(5)
+                .cost(8)
+                .requiredVisionLevel(1)
+                .prereq(SUMMON_TOOL_ID)
+                .icon("锄")
+                .build());
+
+        // ===== 时运：开关被动，前置为镐 =====
+        SkillTree.register(SkillNode.builder(SPIRIT_FORTUNE_ID)
+                .passiveToggle()
                 .grid(2, 3)
-                .maxLevel(1)
-                .cost(20)
-                .requiredVisionLevel(2)
-                .prereq(id("spirit_focus"))
-                .icon("视")
-                .name("skill.spiritworld.spirit_vision")
-                .desc("skill.spiritworld.spirit_vision.desc")
-                .build());
-
-        // 高级主动技能：需要灵视等级 3
-        SkillTree.register(SkillNode.builder(id("spirit_storm"))
-                .type(SkillType.ACTIVE)
-                .grid(1, 4)
                 .maxLevel(3)
-                .cost(15)
-                .requiredVisionLevel(3)
-                .prereq(id("spirit_burst"))
-                .prereq(id("spirit_vision"))
-                .icon("暴")
-                .name("skill.spiritworld.spirit_storm")
-                .desc("skill.spiritworld.spirit_storm.desc")
-                .build());
-
-        // 特殊技能：另一个分支
-        SkillTree.register(SkillNode.builder(id("spirit_echo"))
-                .type(SkillType.SPECIAL)
-                .grid(4, 3)
-                .maxLevel(1)
-                .cost(25)
+                .cost(12)
                 .requiredVisionLevel(2)
-                .prereq(id("spirit_focus"))
-                .icon("回")
-                .name("skill.spiritworld.spirit_echo")
-                .desc("skill.spiritworld.spirit_echo.desc")
+                .prereq(TOOL_PICKAXE_ID)
+                .icon("运")
                 .build());
     }
 }

@@ -3,6 +3,7 @@ package com.varlike.spiritworld.registry;
 import com.varlike.spiritworld.SpiritWorld;
 import com.varlike.spiritworld.item.BottledSpiritItem;
 import com.varlike.spiritworld.item.SpiritRingItem;
+import com.varlike.spiritworld.item.SpiritToolItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.neoforged.bus.api.IEventBus;
@@ -34,6 +35,14 @@ public class ModItems {
             ITEMS.register("spirit_diamond_ring",
                     () -> new SpiritRingItem(500L,
                             new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    /** 精神盐 / Spirit Salt */
+    public static final DeferredItem<Item> SPIRIT_SALT =
+            ITEMS.register("spirit_salt",
+                    () -> new Item(new Item.Properties()));
+
+    public static final DeferredItem<SpiritToolItem> SPIRIT_TOOL =
+            ITEMS.register("spirit_tool",
+                    () -> new SpiritToolItem(new Item.Properties().stacksTo(1).fireResistant()));
 
     public static void register(IEventBus modEventBus) {
         ITEMS.register(modEventBus);

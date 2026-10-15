@@ -59,6 +59,9 @@ public class ModLanguageProvider extends LanguageProvider {
 
         // ===== 按键 =====
         this.add("key.spiritworld.open_skill_tree", "Open Skill Tree");
+        this.add("key.spiritworld.open_loadout", "Open Skill Loadout");
+        this.add("key.spiritworld.open_radial", "Open Skill Radial");
+        this.add("key.spiritworld.use_skill", "Use Skill");
 
         // ===== 技能树界面 =====
         this.add("screen.spiritworld.skill_tree.title", "Spirit Skill Tree");
@@ -90,5 +93,47 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("skill.spiritworld.spirit_storm.desc", "Devastating area attack.");
         this.add("skill.spiritworld.spirit_echo", "Spirit Echo");
         this.add("skill.spiritworld.spirit_echo.desc", "Echoes spirit energy.");
+
+        this.add("screen.spiritworld.loadout.title", "Skill Loadout");
+        this.add("screen.spiritworld.loadout.hint", "Left-click skill list, then click a slot. Right-click slot to clear.");
+        this.add("screen.spiritworld.loadout.empty", "(No skills)");
+        this.add("screen.spiritworld.loadout.passives", "Passive Skills");
+        this.add("screen.spiritworld.loadout.passive.on", "ON");
+        this.add("screen.spiritworld.loadout.passive.off", "OFF");
+        this.add("screen.spiritworld.loadout.passive.always", "ALWAYS");
+        this.add("screen.spiritworld.loadout.filter.all", "All");
+        this.add("screen.spiritworld.loadout.filter.equippable", "Equippable");
+
+        this.add("skill.spiritworld.emc_conversion", "EMC Conversion");
+        this.add("skill.spiritworld.emc_conversion.desc", "Continuously converts EMC into Vision Points.");
+
+        this.add("message.spiritworld.skill.emc_conversion.no_emc", "Not enough EMC, EMC Conversion stopped");
+        this.add(ModItems.SPIRIT_TOOL.get(), "Spirit Tool");
+        this.add("tooltip.spiritworld.spirit_tool.pickaxe", "Pickaxe: %s");
+        this.add("tooltip.spiritworld.spirit_tool.axe", "Axe: %s");
+        this.add("tooltip.spiritworld.spirit_tool.shovel", "Shovel: %s");
+        this.add("tooltip.spiritworld.spirit_tool.hoe", "Hoe: %s");
+        this.add("tooltip.spiritworld.spirit_tool.fortune", "Fortune %d");
+        this.add("tooltip.spiritworld.spirit_tool.bound", "Bound to spirit, cannot be dropped");
+        this.add("tooltip.spiritworld.spirit_tool.level.empty", "Bare Hand");
+        this.add("tooltip.spiritworld.spirit_tool.level.wood", "Wood");
+        this.add("tooltip.spiritworld.spirit_tool.level.stone", "Stone");
+        this.add("tooltip.spiritworld.spirit_tool.level.iron", "Iron");
+        this.add("tooltip.spiritworld.spirit_tool.level.diamond", "Diamond");
+        this.add("tooltip.spiritworld.spirit_tool.level.netherite", "Netherite");
+
+        this.add("message.spiritworld.spirit_tool.destroyed", "Spirit Tool dissolved");
+        this.add("message.spiritworld.spirit_tool.already_have", "You already have a Spirit Tool");
+        this.add("message.spiritworld.spirit_tool.no_spirit", "Not enough spirit (need 10)");
+        this.add("message.spiritworld.spirit_tool.no_space", "No empty inventory slot");
+        this.add("message.spiritworld.spirit_tool.summoned", "Spirit Tool summoned");
+        this.add("message.spiritworld.spirit_tool.no_spirit_mining", "Not enough spirit to mine (%d needed)");
+
+        this.add("skill.spiritworld.summon_spirit_tool", "Summon Spirit Tool");
+        this.add("skill.spiritworld.spirit_tool_pickaxe", "Spirit Pickaxe");
+        this.add("skill.spiritworld.spirit_tool_axe", "Spirit Axe");
+        this.add("skill.spiritworld.spirit_tool_shovel", "Spirit Shovel");
+        this.add("skill.spiritworld.spirit_tool_hoe", "Spirit Hoe");
+        this.add("skill.spiritworld.spirit_fortune", "Spirit Fortune");
     }
 }

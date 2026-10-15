@@ -1,6 +1,7 @@
 package com.varlike.spiritworld.capability;
 
 import com.varlike.spiritworld.Config;
+import com.varlike.spiritworld.skill.ModSkills;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.capabilities.ICapabilityProvider;
 
@@ -24,6 +25,9 @@ public class PlayerSpiritProvider
             // 上限按配置初始化，但当前精神力从 0 开始
             data.setMaxSpirit(defaultMax);
             data.setSpirit(0L);
+            // 默认拥有 EMC 转化技能 lv1，并装配到 0 号槽位
+            data.setSkillLevel(ModSkills.EMC_CONVERSION_ID, 1);
+            data.setLoadoutSlot(0, ModSkills.EMC_CONVERSION_ID);
 
             data.markInitialized();
             data.clearDirty();

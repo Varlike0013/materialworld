@@ -2,6 +2,10 @@ package com.varlike.spiritworld.client;
 
 import com.varlike.spiritworld.ClientConfig;
 import com.varlike.spiritworld.SpiritWorld;
+import com.varlike.spiritworld.client.skill.SkillRenderer;
+import com.varlike.spiritworld.skill.SkillNode;
+import com.varlike.spiritworld.skill.SkillTree;
+import com.varlike.spiritworld.skill.SkillType;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -12,6 +16,9 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @EventBusSubscriber(modid = SpiritWorld.MOD_ID, value = Dist.CLIENT)
 public class SpiritHudOverlay {
@@ -37,7 +44,47 @@ public class SpiritHudOverlay {
                 SpiritHudOverlay::renderSpiritBar
         );
     }
+    // ===== 被动图标渲染方法 =====
+    private static void renderActivePassives(GuiGraphics graphics, Minecraft mc, int barX, int barY) {
+        int maxRows = ClientConfig.hudPassiveMaxRows;
+        int perRow = ClientConfig.hudPassivePerRow;
+        int iconSize = ClientConfig.hudPassiveIconSize;
+        int capacity = maxRows * perRow;
 
+        List<ResourceLocation> active = new ArrayList<>();
+        for (SkillNode node : SkillTree.getAll()) {
+            if (node.getType() != SkillType.PASSIVE) continue;
+            if (ClientSpiritData.isPassiveActive(node.getId())) {
+                active.add(node.getId());
+            }
+        }
+        if (active.isEmpty()) return;
+
+        int total = Math.min(active.size(), capacity);
+        int rows = (total + perRow - 1) / perRow;
+
+        // 每行从左到右排列，多行向上叠加
+        int startX = barX;
+        int bottomY = barY - 4;
+
+        for (int i = 0; i < total; i++) {
+            int row = i / perRow;
+            int col = i % perRow;
+            int ix = startX + col * (iconSize + 2);
+            int iy = bottomY - (row + 1) * (iconSize + 2);
+
+            ResourceLocation id = active.get(i);
+            SkillNode node = SkillTree.get(id);
+            if (node == null) continue;
+
+            SkillRenderer.fillCircle(graphics, ix + iconSize / 2, iy + iconSize / 2, iconSize / 2,
+                    node.isAlwaysOn() ? 0xFF4CAF50 : 0xFFFFD54F);
+            SkillRenderer.fillCircle(graphics, ix + iconSize / 2, iy + iconSize / 2, iconSize / 2 - 1,
+                    0xC0201030);
+            graphics.drawCenteredString(mc.font, node.getIcon(),
+                    ix + iconSize / 2, iy + iconSize / 2 - 4, 0xFFFFFFFF);
+        }
+    }
     private static void renderSpiritBar(GuiGraphics graphics, DeltaTracker deltaTracker) {
         if (!ClientConfig.showSpiritBar) return;
 
@@ -85,5 +132,30 @@ public class SpiritHudOverlay {
             graphics.drawString(mc.font, text, textX + 1, textY + 1, 0xFF000000, false);
             graphics.drawString(mc.font, text, textX, textY, 0xFFFFFFFF, false);
         }
+        // ===== 精神力条右侧：当前技能图标 =====
+        ResourceLocation equippedId = ClientSpiritData.getEquippedSkill();
+        if (equippedId != null) {
+            SkillNode node = SkillTree.get(equippedId);
+            if (node != null) {
+                int iconX = x + BAR_WIDTH + 4;
+                int iconY = y - 4;
+
+                boolean isActive = ClientSpiritData.isPassiveActive(equippedId)
+                        || node.isAlwaysOn();
+
+                int borderColor = isActive ? 0xFF4CAF50 : 0xFFFFD54F;
+                SkillRenderer.fillShape(graphics, node.getType(), iconX + 8, iconY + 8, 9,
+                        borderColor, 0x80201030);
+                graphics.drawCenteredString(mc.font, node.getIcon(), iconX + 8, iconY + 4, 0xFFFFFFFF);
+
+                // 槽位编号
+                int slot = ClientSpiritData.getSelectedSlot();
+                graphics.drawString(mc.font, String.valueOf(slot + 1),
+                        iconX, iconY + 20, 0xFFAAAAAA, false);
+            }
+        }
+
+        // ===== 精神力条上方：已激活被动图标 =====
+        renderActivePassives(graphics, mc, x, y);
     }
 }

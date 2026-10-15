@@ -1,13 +1,13 @@
 package com.varlike.spiritworld.datagen;
 
+import com.varlike.spiritworld.SpiritWorld;
 import com.varlike.spiritworld.registry.ModItems;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
-import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.data.recipes.RecipeOutput;
-import net.minecraft.data.recipes.RecipeProvider;
-import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.data.recipes.*;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -42,5 +42,25 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('D', Items.DIAMOND)
                 .unlockedBy("has_diamond", has(Items.DIAMOND))
                 .save(output);
+        // ===== 熔炼：瓶装精神力 → 精神盐 =====
+        SimpleCookingRecipeBuilder.smelting(
+                        Ingredient.of(ModItems.BOTTLED_SPIRIT.get()),
+                        RecipeCategory.MISC,
+                        ModItems.SPIRIT_SALT.get(),
+                        0.3f,     // 经验
+                        200       // 熔炼时间（tick）
+                )
+                .unlockedBy("has_bottled_spirit", has(ModItems.BOTTLED_SPIRIT.get()))
+                .save(output, ResourceLocation.fromNamespaceAndPath(
+                        SpiritWorld.MOD_ID, "spirit_salt_from_smelting"));
+        // 高炉（时间减半）
+        SimpleCookingRecipeBuilder.blasting(
+                        Ingredient.of(ModItems.BOTTLED_SPIRIT.get()),
+                        RecipeCategory.MISC,
+                        ModItems.SPIRIT_SALT.get(),
+                        0.3f, 100)
+                .unlockedBy("has_bottled_spirit", has(ModItems.BOTTLED_SPIRIT.get()))
+                .save(output, ResourceLocation.fromNamespaceAndPath(
+                        SpiritWorld.MOD_ID, "spirit_salt_from_blasting"));
     }
 }

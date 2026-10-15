@@ -452,3 +452,143 @@ ClientboundSyncSpiritPacket 变更:
 
 ClientSpiritData 变更:
     同步新字段，并提供 getVisionLevel()、getSkillLevel(ResourceLocation)。
+
+## 技能系统 v2 / Skill System v2
+
+技能行为标记（SkillNode）:
+    equippable: 是否可放入技能栏
+    toggleable: 是否可开关（被动）
+    alwaysOn: 是否常驻激活
+
+Builder 快捷方法:
+    passiveAlways()      常驻被动
+    passiveToggle()      装配页开关被动
+    passiveEquippable()  装配页开关 + 可装备被动
+    active()             主动技能
+    specialEquippable()  特殊技能（可装备）
+    specialDisplay()     特殊技能（仅展示）
+
+技能栏与被动:
+    PlayerSpirit.loadout: ResourceLocation[6]，6 个槽位
+    PlayerSpirit.selectedSlot: 当前选中槽位
+    PlayerSpirit.activePassives: Set<ResourceLocation>，开关被动激活集合
+    PlayerSpirit.isPassiveActive(id): 判断被动是否生效，常驻直接返回 true
+
+按键（SpiritKeyBindings，分类 key.categories.materialworld）:
+    K: 打开技能树
+    L: 打开技能装配页面
+    G: 打开技能选盘（按下立刻打开，松开确认）
+    V: 使用当前槽位技能
+
+界面:
+    SkillTreeScreen: 学习加点
+    SkillLoadoutScreen: 6 槽环形 + 技能列表 + 被动开关
+    RadialMenuScreen: 圆环选盘，中心镂空，不遮挡游戏画面
+
+HUD（SpiritHudOverlay）:
+    精神力条上方: 已激活被动图标（行列可配置）
+    精神力条右侧: 当前装备技能图标 + 槽位编号
+    ClientConfig:
+        hudPassiveMaxRows: 被动图标最多行数（默认 1）
+        hudPassivePerRow: 每行数量（默认 8）
+        hudPassiveIconSize: 图标尺寸（默认 12）
+
+EMC 转化技能:
+    ID: spiritworld:emc_conversion
+    类型: passiveEquippable
+    初始等级: 1（玩家创建时自动获得并装配到 0 号槽位）
+    效果: 激活时持续消耗 EMC 转化为灵视点
+    参数公式与配置项同前。
+
+## 网络包 / Network Packets
+
+ServerboundLearnSkillPacket: 加点
+ServerboundSetLoadoutPacket: 设置槽位技能
+ServerboundSetSelectedSlotPacket: 切换选中槽位
+ServerboundTogglePassivePacket: 开关被动
+ServerboundUseSkillPacket: 使用当前槽位技能
+
+ClientboundSyncSpiritPacket 新增字段:
+    loadout: 6 个槽位
+    selectedSlot: 当前选中槽位
+    activePassives: 激活被动集合
+
+## 类与函数记录 / Class & Function Log
+
+SkillNode 变更:
+    新增 equippable、toggleable、alwaysOn 字段及 Builder 快捷方法。
+
+ModSkills 变更:
+    新增 EMC_CONVERSION_ID。
+    registerAll() 中 6 个示例技能：spirit_sense（常驻被动）、emc_conversion（可装备被动）、
+    spirit_focus（开关被动）、spirit_burst（主动）、spirit_vision（特殊可装备）、
+    spirit_eye_lore（特殊仅展示）。
+
+PlayerSpirit 变更:
+    新增 loadout[6]、selectedSlot、activePassives 字段。
+    新增 setLoadoutSlot / getLoadoutSlot / getSelectedSlot / setSelectedSlot / getEquippedSkill /
+         getActivePassives / addPassive / removePassive / isPassiveActive 方法。
+    save/load/copyFrom 更新。
+    setSkillLevel 中追加清理技能栏和被动状态。
+
+PlayerSpiritProvider 变更:
+    首次创建玩家数据时初始化 EMC_CONVERSION_ID 技能 lv1 并装配到 0 号槽位。
+
+Config 变更:
+    新增 5 个 EMC 转化配置项。
+
+ClientConfig 变更:
+    新增 3 个 HUD 被动图标显示配置项。
+
+SpiritKeyBindings 变更:
+    新增 OPEN_LOADOUT(L)、OPEN_RADIAL(G)、USE_SKILL(V)。
+
+ServerboundSetLoadoutPacket / ServerboundSetSelectedSlotPacket /
+ServerboundTogglePassivePacket / ServerboundUseSkillPacket:
+    新增或重写，服务端处理对应操作并同步。
+
+ClientboundSyncSpiritPacket 变更:
+    新增 loadout、selectedSlot、activePassives 字段。
+
+ClientSpiritData 变更:
+    同步新字段，新增 getLoadoutSlot / getSelectedSlot / getEquippedSkill / isPassiveActive。
+
+SkillLoadoutScreen src/main/java/com/varlike/spiritworld/client/skill/SkillLoadoutScreen.java:
+    新增装配页面，6 槽环形 + 已学技能列表 + 被动开关区。
+
+RadialMenuScreen src/main/java/com/varlike/spiritworld/client/skill/RadialMenuScreen.java:
+    新增选盘页面，圆环 6 扇区，中心镂空，不遮挡游戏画面。
+
+SpiritHudOverlay 变更:
+    新增被动图标横排显示（可配置行列）和当前装备技能图标。
+
+SkillTickHandler 重写:
+    处理 EMC 转化技能的激活逻辑，EMC 不足时自动关闭。
+
+## 物品设计 / Item Design
+
+精神盐 / Spirit Salt:
+    来源: 熔炼瓶装精神力。
+    用途: 待定（后续作为合成材料）。
+
+## 配方 / Recipes
+
+ModRecipeProvider 新增:
+    spirit_salt_from_smelting: 熔炉，瓶装精神力 → 精神盐，经验 0.3，时间 200 tick。
+    可选: 已添加spirit_salt_from_blasting: 高炉，时间 100 tick。
+
+## 类与函数记录 / Class & Function Log
+
+ModItems 变更:
+    SPIRIT_SALT: 精神盐的 DeferredItem，普通 Item。
+
+ModItemModelProvider 变更:
+    registerModels 中追加 spirit_salt 的 basicItem 生成。
+
+ModLanguageProvider / ModLanguageProviderZH 变更:
+    新增 item.spiritworld.spirit_salt 翻译。
+
+## 资源文件 / Resources
+
+textures/item/spirit_salt.png:
+    16×16 物品纹理，可暂时用原版 sugar.png 或 gunpowder.png 改色占位。

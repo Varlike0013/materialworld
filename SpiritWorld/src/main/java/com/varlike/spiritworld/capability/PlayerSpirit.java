@@ -1,11 +1,14 @@
 package com.varlike.spiritworld.capability;
 
+import com.varlike.spiritworld.skill.SkillNode;
+import com.varlike.spiritworld.skill.SkillTree;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 玩家精神力与灵视数据。
@@ -121,8 +124,17 @@ public class PlayerSpirit {
     }
 
     public void setSkillLevel(ResourceLocation id, int level) {
-        if (level <= 0) learnedSkills.remove(id);
-        else learnedSkills.put(id, level);
+        if (level <= 0) {
+            learnedSkills.remove(id);
+            // 清理技能栏引用
+            for (int i = 0; i < LOADOUT_SIZE; i++) {
+                if (id.equals(loadout[i])) loadout[i] = null;
+            }
+            // 清理被动激活状态
+            activePassives.remove(id);
+        } else {
+            learnedSkills.put(id, level);
+        }
         markDirty();
     }
 
@@ -182,6 +194,75 @@ public class PlayerSpirit {
         return getVisionLevel() >= level;
     }
 
+    // ===== 技能栏 / 装配 =====
+    public static final int LOADOUT_SIZE = 6;
+
+    private final ResourceLocation[] loadout = new ResourceLocation[LOADOUT_SIZE];
+    private int selectedSlot = 0;
+    private final Set<ResourceLocation> activePassives = new HashSet<>();
+    // ===== 技能栏 =====
+    public ResourceLocation getLoadoutSlot(int slot) {
+        if (slot < 0 || slot >= LOADOUT_SIZE) return null;
+        return loadout[slot];
+    }
+
+    public void setLoadoutSlot(int slot, ResourceLocation id) {
+        if (slot < 0 || slot >= LOADOUT_SIZE) return;
+        loadout[slot] = id;
+        markDirty();
+    }
+
+    public ResourceLocation[] getLoadout() {
+        return loadout.clone();
+    }
+
+    public int getSelectedSlot() { return selectedSlot; }
+
+    public void setSelectedSlot(int slot) {
+        if (slot < 0 || slot >= LOADOUT_SIZE) return;
+        this.selectedSlot = slot;
+        markDirty();
+    }
+
+    public ResourceLocation getEquippedSkill() {
+        return getLoadoutSlot(selectedSlot);
+    }
+
+    // ===== 被动 =====
+    public Set<ResourceLocation> getActivePassives() {
+        return Collections.unmodifiableSet(activePassives);
+    }
+
+    public void addPassive(ResourceLocation id) {
+        activePassives.add(id);
+        markDirty();
+    }
+
+    public void removePassive(ResourceLocation id) {
+        activePassives.remove(id);
+        markDirty();
+    }
+
+    /**
+     * 判断某被动技能当前是否生效。
+     * 常驻被动只要学了就生效；其他被动需要 activePassives 中包含。
+     */
+    public boolean isPassiveActive(ResourceLocation id) {
+        SkillNode node = SkillTree.get(id);
+        if (node == null) return false;
+        if (getSkillLevel(id) <= 0) return false;
+        if (node.isAlwaysOn()) return true;
+        return activePassives.contains(id);
+    }
+    // ===== 精神工具状态 =====
+    private boolean spiritToolActive = false;
+
+    public boolean isSpiritToolActive() { return spiritToolActive; }
+
+    public void setSpiritToolActive(boolean active) {
+        this.spiritToolActive = active;
+        markDirty();
+    }
     // ==================== 初始化 / Initialization ====================
 
     public boolean isInitialized() {
@@ -200,6 +281,11 @@ public class PlayerSpirit {
         this.maxSpiritModifiers.clear();
         this.maxSpiritModifiers.putAll(other.maxSpiritModifiers);
         this.initialized = other.initialized;
+        System.arraycopy(other.loadout, 0, this.loadout, 0, LOADOUT_SIZE);
+        this.selectedSlot = other.selectedSlot;
+        this.activePassives.clear();
+        this.activePassives.addAll(other.activePassives);
+        this.spiritToolActive = other.spiritToolActive;
         markDirty();
     }
 
@@ -213,6 +299,22 @@ public class PlayerSpirit {
         CompoundTag skillsTag = new CompoundTag();
         learnedSkills.forEach((id, lvl) -> skillsTag.putInt(id.toString(), lvl));
         tag.put("learnedSkills", skillsTag);
+
+        // 技能栏
+        CompoundTag loadoutTag = new CompoundTag();
+        for (int i = 0; i < LOADOUT_SIZE; i++) {
+            if (loadout[i] != null) loadoutTag.putString("slot" + i, loadout[i].toString());
+        }
+        tag.put("loadout", loadoutTag);
+        tag.putInt("selectedSlot", selectedSlot);
+
+        // 激活的被动
+        ListTag passiveList = new ListTag();
+        for (ResourceLocation pid : activePassives) {
+            passiveList.add(StringTag.valueOf(pid.toString()));
+        }
+        tag.put("activePassives", passiveList);
+        tag.putBoolean("spiritToolActive", spiritToolActive);
 
         return tag;
     }
@@ -233,6 +335,23 @@ public class PlayerSpirit {
             }
         }
 
+        CompoundTag loadoutTag = tag.getCompound("loadout");
+        for (int i = 0; i < LOADOUT_SIZE; i++) {
+            String key = "slot" + i;
+            if (loadoutTag.contains(key)) {
+                loadout[i] = ResourceLocation.tryParse(loadoutTag.getString(key));
+            }
+        }
+        selectedSlot = tag.getInt("selectedSlot");
+        if (selectedSlot < 0 || selectedSlot >= LOADOUT_SIZE) selectedSlot = 0;
+
+        activePassives.clear();
+        ListTag passiveList = tag.getList("activePassives", Tag.TAG_STRING);
+        for (int i = 0; i < passiveList.size(); i++) {
+            ResourceLocation pid = ResourceLocation.tryParse(passiveList.getString(i));
+            if (pid != null) activePassives.add(pid);
+        }
+        this.spiritToolActive = tag.getBoolean("spiritToolActive");
         if (spirit > getEffectiveMaxSpirit()) spirit = getEffectiveMaxSpirit();
         initialized = true;
     }

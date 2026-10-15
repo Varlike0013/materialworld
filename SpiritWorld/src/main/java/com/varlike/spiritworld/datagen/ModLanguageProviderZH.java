@@ -56,6 +56,9 @@ public class ModLanguageProviderZH extends LanguageProvider {
 
         // ===== 按键 =====
         this.add("key.spiritworld.open_skill_tree", "打开技能树");
+        this.add("key.spiritworld.open_loadout", "打开技能装配");
+        this.add("key.spiritworld.open_radial", "打开技能选盘");
+        this.add("key.spiritworld.use_skill", "使用技能");
 
         // ===== 技能树界面 =====
         this.add("screen.spiritworld.skill_tree.title", "精神视界");
@@ -87,5 +90,33 @@ public class ModLanguageProviderZH extends LanguageProvider {
         this.add("skill.spiritworld.spirit_storm.desc", "毁灭性的范围攻击。");
         this.add("skill.spiritworld.spirit_echo", "精神回响");
         this.add("skill.spiritworld.spirit_echo.desc", "回响精神能量。");
+
+        this.add("screen.spiritworld.loadout.title", "技能装配");
+        this.add("screen.spiritworld.loadout.hint", "左键点技能，再点槽位装配。右键槽位清空。");
+        this.add("screen.spiritworld.loadout.empty", "（暂无技能）");
+        this.add("screen.spiritworld.loadout.passives", "被动技能");
+        this.add("screen.spiritworld.loadout.passive.on", "开");
+        this.add("screen.spiritworld.loadout.passive.off", "关");
+        this.add("screen.spiritworld.loadout.passive.always", "常驻");
+        this.add("screen.spiritworld.loadout.filter.all", "全部");
+        this.add("screen.spiritworld.loadout.filter.equippable", "可装备");
+
+        this.add("skill.spiritworld.emc_conversion", "EMC 转化");
+        this.add("skill.spiritworld.emc_conversion.desc", "持续将 EMC 转化为灵视点。");
+
+        this.add("message.spiritworld.skill.emc_conversion.no_emc", "EMC 不足，EMC 转化已停止");
+        this.add(ModItems.SPIRIT_TOOL.get(), "精神工具");
+        this.add("tooltip.spiritworld.spirit_tool.pickaxe", "镐: %s");
+        this.add("tooltip.spiritworld.spirit_tool.axe", "斧: %s");
+        this.add("tooltip.spiritworld.spirit_tool.shovel", "铲: %s");
+        this.add("tooltip.spiritworld.spirit_tool.hoe", "锄: %s");
+        this.add("tooltip.spiritworld.spirit_tool.fortune", "时运 %d");
+        this.add("tooltip.spiritworld.spirit_tool.bound", "由精神凝聚而成，无法丢弃");
+        this.add("tooltip.spiritworld.spirit_tool.level.empty", "空手");
+        this.add("tooltip.spiritworld.spirit_tool.level.wood", "木级");
+        this.add("tooltip.spiritworld.spirit_tool.level.stone", "石级");
+        this.add("tooltip.spiritworld.spirit_tool.level.iron", "铁级");
+        this.add("tooltip.spiritworld.spirit_tool.level.diamond", "钻石级");
+        this.add("tooltip.spiritworld.spirit_tool.level.netherite", "下界合金级");
     }
 }
