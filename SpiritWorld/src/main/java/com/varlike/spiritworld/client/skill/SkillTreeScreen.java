@@ -27,8 +27,9 @@ public class SkillTreeScreen extends Screen {
     private static final int COLOR_BG_BOTTOM = 0xFF0D0618;
     private static final int COLOR_BAR = 0xE02A1A4A;
     private static final int COLOR_BORDER = 0xFF7E57C2;
-    private static final int COLOR_LINE_DONE = 0xCC66BB6A;
-    private static final int COLOR_LINE_LOCKED = 0x80424242;
+    private static final int COLOR_LINE_DONE    = 0xCC66BB6A;  // 绿色，前置满足
+    private static final int COLOR_LINE_PARTIAL = 0xCCFFD54F;  // 金色，前置部分满足
+    private static final int COLOR_LINE_LOCKED  = 0x80424242;  // 灰色，前置未学
 
     private static final int COLOR_BORDER_LEARNED = 0xFF4CAF50;
     private static final int COLOR_FILL_LEARNED = 0x991B5E20;
@@ -40,6 +41,7 @@ public class SkillTreeScreen extends Screen {
     private static final int COLOR_FILL_NOPOINTS = 0x994A148C;
     private static final int COLOR_BORDER_MAX = 0xFF42A5F5;
     private static final int COLOR_FILL_MAX = 0x990D47A1;
+
 
     private double offsetX = 0;
     private double offsetY = 0;
@@ -120,14 +122,14 @@ public class SkillTreeScreen extends Screen {
         if (cur >= node.getMaxLevel()) return NodeState.MAX;
 
         // 前置
-        for (ResourceLocation p : node.getPrerequisites()) {
-            if (ClientSpiritData.getSkillLevel(p) <= 0) return NodeState.LOCKED;
+        for (SkillNode.Prerequisite p : node.getPrerequisites()) {
+            if (ClientSpiritData.getSkillLevel(p.id()) < p.minLevel()) return NodeState.LOCKED;
         }
         // 灵视等级
         if (ClientSpiritData.getVisionLevel() < node.getRequiredVisionLevel()) return NodeState.LOCKED;
 
         // 灵视点
-        if (ClientSpiritData.getAvailableVisionPoints() < node.getCostPerLevel()) return NodeState.NO_POINTS;
+        if (ClientSpiritData.getAvailableVisionPoints() < node.getCostForNextLevel(cur)) return NodeState.NO_POINTS;
 
         // 已学过但未满
         if (cur > 0) return NodeState.LEARNABLE; // 可继续加
@@ -174,26 +176,53 @@ public class SkillTreeScreen extends Screen {
         for (SkillNode node : SkillTree.getAll()) {
             int x1 = nodeCenterX(node);
             int y1 = nodeCenterY(node);
-            for (ResourceLocation preId : node.getPrerequisites()) {
-                SkillNode pre = SkillTree.get(preId);
-                if (pre == null) continue;
-                int x2 = nodeCenterX(pre);
-                int y2 = nodeCenterY(pre);
-                boolean done = ClientSpiritData.getSkillLevel(preId) > 0;
-                int color = done ? COLOR_LINE_DONE : COLOR_LINE_LOCKED;
+
+            for (SkillNode.Prerequisite pre : node.getPrerequisites()) {
+                SkillNode preNode = SkillTree.get(pre.id());
+                if (preNode == null) continue;
+
+                int x2 = nodeCenterX(preNode);
+                int y2 = nodeCenterY(preNode);
+
+                // 前置满足条件：前置技能等级 >= 要求的最低等级
+                boolean satisfied = ClientSpiritData.getSkillLevel(pre.id()) >= pre.minLevel();
+
+                // 三种颜色区分更细致
+                int color;
+                if (satisfied) {
+                    // 前置已满足：绿色
+                    color = COLOR_LINE_DONE;
+                } else if (ClientSpiritData.getSkillLevel(pre.id()) > 0) {
+                    // 前置已学但等级不够：金色（提示差几级）
+                    color = COLOR_LINE_PARTIAL;
+                } else {
+                    // 前置完全未学：灰色
+                    color = COLOR_LINE_LOCKED;
+                }
+
                 drawLine(g, x1, y1, x2, y2, color);
             }
         }
     }
 
     private void drawLine(GuiGraphics g, int x1, int y1, int x2, int y2, int color) {
-        int dx = x2 - x1;
-        int dy = y2 - y1;
-        int steps = Math.max(Math.abs(dx), Math.abs(dy));
+        // 缩短两端，避免覆盖节点
+        double dx = x2 - x1;
+        double dy = y2 - y1;
+        double len = Math.sqrt(dx * dx + dy * dy);
+        if (len < 1) return;
+
+        int shrink = NODE_RADIUS + 4;
+        int sx1 = (int) (x1 + dx / len * shrink);
+        int sy1 = (int) (y1 + dy / len * shrink);
+        int sx2 = (int) (x2 - dx / len * shrink);
+        int sy2 = (int) (y2 - dy / len * shrink);
+
+        int steps = Math.max(Math.abs(sx2 - sx1), Math.abs(sy2 - sy1));
         if (steps == 0) return;
         for (int i = 0; i <= steps; i++) {
-            int x = x1 + dx * i / steps;
-            int y = y1 + dy * i / steps;
+            int x = sx1 + (sx2 - sx1) * i / steps;
+            int y = sy1 + (sy2 - sy1) * i / steps;
             g.fill(x, y, x + 2, y + 2, color);
         }
     }
@@ -295,7 +324,8 @@ public class SkillTreeScreen extends Screen {
                 .withStyle(ChatFormatting.AQUA));
 
         if (cur < node.getMaxLevel()) {
-            lines.add(Component.translatable("skill.tooltip.cost", node.getCostPerLevel())
+            long nextCost = node.getCostForNextLevel(cur);
+            lines.add(Component.translatable("skill.tooltip.cost", nextCost)
                     .withStyle(ChatFormatting.YELLOW));
         }
 
@@ -307,17 +337,21 @@ public class SkillTreeScreen extends Screen {
         }
 
         if (!node.getPrerequisites().isEmpty()) {
-            lines.add(Component.translatable("skill.tooltip.prerequisites")
-                    .withStyle(ChatFormatting.GRAY));
-            for (ResourceLocation p : node.getPrerequisites()) {
-                SkillNode pn = SkillTree.get(p);
+            lines.add(Component.translatable("skill.tooltip.prerequisites").withStyle(ChatFormatting.GRAY));
+            for (SkillNode.Prerequisite p : node.getPrerequisites()) {
+                SkillNode pn = SkillTree.get(p.id());
                 if (pn == null) continue;
-                boolean ok = ClientSpiritData.getSkillLevel(p) > 0;
+                int curLvl = ClientSpiritData.getSkillLevel(p.id());
+                boolean ok = curLvl >= p.minLevel();
+                String suffix = p.minLevel() > 1 ? " (Lv." + p.minLevel() + ")" : "";
                 lines.add(Component.literal((ok ? " ✓ " : " ✗ "))
                         .append(Component.translatable(pn.getNameKey()))
+                        .append(Component.literal(suffix))
                         .withStyle(ok ? ChatFormatting.GREEN : ChatFormatting.RED));
             }
         }
+
+
 
         g.renderTooltip(this.font, lines, java.util.Optional.empty(), mouseX, mouseY);
     }

@@ -8,19 +8,21 @@ import java.util.List;
 
 public class SkillNode {
 
+    public record Prerequisite(ResourceLocation id, int minLevel) {}
+
     private final ResourceLocation id;
     private final SkillType type;
     private final int gridX;
     private final int gridY;
     private final int maxLevel;
-    private final long costPerLevel;
+    private final long baseCost;
+    private final long costIncrement;
     private final int requiredVisionLevel;
-    private final List<ResourceLocation> prerequisites;
+    private final List<Prerequisite> prerequisites;
     private final String icon;
     private final String nameKey;
     private final String descKey;
 
-    // ===== 行为标记 =====
     private final boolean equippable;
     private final boolean toggleable;
     private final boolean alwaysOn;
@@ -31,7 +33,8 @@ public class SkillNode {
         this.gridX = b.gridX;
         this.gridY = b.gridY;
         this.maxLevel = b.maxLevel;
-        this.costPerLevel = b.costPerLevel;
+        this.baseCost = b.baseCost;
+        this.costIncrement = b.costIncrement;
         this.requiredVisionLevel = b.requiredVisionLevel;
         this.prerequisites = Collections.unmodifiableList(new ArrayList<>(b.prerequisites));
         this.icon = b.icon;
@@ -42,21 +45,27 @@ public class SkillNode {
         this.alwaysOn = b.alwaysOn;
     }
 
-    // getters
+    // ===== getters =====
     public ResourceLocation getId() { return id; }
     public SkillType getType() { return type; }
     public int getGridX() { return gridX; }
     public int getGridY() { return gridY; }
     public int getMaxLevel() { return maxLevel; }
-    public long getCostPerLevel() { return costPerLevel; }
+    public long getBaseCost() { return baseCost; }
+    public long getCostIncrement() { return costIncrement; }
     public int getRequiredVisionLevel() { return requiredVisionLevel; }
-    public List<ResourceLocation> getPrerequisites() { return prerequisites; }
+    public List<Prerequisite> getPrerequisites() { return prerequisites; }
     public String getIcon() { return icon; }
     public String getNameKey() { return nameKey; }
     public String getDescKey() { return descKey; }
     public boolean isEquippable() { return equippable; }
     public boolean isToggleable() { return toggleable; }
     public boolean isAlwaysOn() { return alwaysOn; }
+
+    /** 从当前等级升到下一级所需的灵视点 */
+    public long getCostForNextLevel(int currentLevel) {
+        return baseCost + currentLevel * costIncrement;
+    }
 
     public static Builder builder(ResourceLocation id) {
         return new Builder(id);
@@ -68,9 +77,10 @@ public class SkillNode {
         private int gridX = 0;
         private int gridY = 0;
         private int maxLevel = 1;
-        private long costPerLevel = 1;
+        private long baseCost = 1;
+        private long costIncrement = 0;
         private int requiredVisionLevel = 0;
-        private final List<ResourceLocation> prerequisites = new ArrayList<>();
+        private final List<Prerequisite> prerequisites = new ArrayList<>();
         private String icon = "★";
         private String nameKey = "";
         private String descKey = "";
@@ -83,67 +93,32 @@ public class SkillNode {
 
         public Builder grid(int x, int y) { this.gridX = x; this.gridY = y; return this; }
         public Builder maxLevel(int n) { this.maxLevel = n; return this; }
-        public Builder cost(long c) { this.costPerLevel = c; return this; }
+        public Builder cost(long c) { this.baseCost = c; return this; }
+        public Builder costIncrement(long c) { this.costIncrement = c; return this; }
         public Builder requiredVisionLevel(int v) { this.requiredVisionLevel = v; return this; }
-        public Builder prereq(ResourceLocation p) { this.prerequisites.add(p); return this; }
+        public Builder prereq(ResourceLocation p) { this.prerequisites.add(new Prerequisite(p, 1)); return this; }
+        public Builder prereq(ResourceLocation p, int minLevel) { this.prerequisites.add(new Prerequisite(p, minLevel)); return this; }
         public Builder icon(String s) { this.icon = s; return this; }
         public Builder name(String key) { this.nameKey = key; return this; }
         public Builder desc(String key) { this.descKey = key; return this; }
 
-        // ===== 行为快捷方法 =====
-
-        /** 常驻被动：一定激活，不可关闭 */
         public Builder passiveAlways() {
-            this.type = SkillType.PASSIVE;
-            this.equippable = false;
-            this.toggleable = false;
-            this.alwaysOn = true;
-            return this;
+            this.type = SkillType.PASSIVE; this.equippable = false; this.toggleable = false; this.alwaysOn = true; return this;
         }
-
-        /** 开关被动：只在装配页面开关 */
         public Builder passiveToggle() {
-            this.type = SkillType.PASSIVE;
-            this.equippable = false;
-            this.toggleable = true;
-            this.alwaysOn = false;
-            return this;
+            this.type = SkillType.PASSIVE; this.equippable = false; this.toggleable = true; this.alwaysOn = false; return this;
         }
-
-        /** 可装备被动：装配页开关，可放入技能栏，使用键切换 */
         public Builder passiveEquippable() {
-            this.type = SkillType.PASSIVE;
-            this.equippable = true;
-            this.toggleable = true;
-            this.alwaysOn = false;
-            return this;
+            this.type = SkillType.PASSIVE; this.equippable = true; this.toggleable = true; this.alwaysOn = false; return this;
         }
-
-        /** 主动技能：装配到槽位，使用键触发 */
         public Builder active() {
-            this.type = SkillType.ACTIVE;
-            this.equippable = true;
-            this.toggleable = false;
-            this.alwaysOn = false;
-            return this;
+            this.type = SkillType.ACTIVE; this.equippable = true; this.toggleable = false; this.alwaysOn = false; return this;
         }
-
-        /** 特殊技能（可装备） */
         public Builder specialEquippable() {
-            this.type = SkillType.SPECIAL;
-            this.equippable = true;
-            this.toggleable = false;
-            this.alwaysOn = false;
-            return this;
+            this.type = SkillType.SPECIAL; this.equippable = true; this.toggleable = false; this.alwaysOn = false; return this;
         }
-
-        /** 特殊技能（仅展示） */
         public Builder specialDisplay() {
-            this.type = SkillType.SPECIAL;
-            this.equippable = false;
-            this.toggleable = false;
-            this.alwaysOn = false;
-            return this;
+            this.type = SkillType.SPECIAL; this.equippable = false; this.toggleable = false; this.alwaysOn = false; return this;
         }
 
         public SkillNode build() {

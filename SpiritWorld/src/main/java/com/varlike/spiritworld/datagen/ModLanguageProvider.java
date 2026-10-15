@@ -135,5 +135,25 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("skill.spiritworld.spirit_tool_shovel", "Spirit Shovel");
         this.add("skill.spiritworld.spirit_tool_hoe", "Spirit Hoe");
         this.add("skill.spiritworld.spirit_fortune", "Spirit Fortune");
+
+        this.add("skill.spiritworld.spirit_endurance", "Spirit Endurance");
+        this.add("skill.spiritworld.spirit_endurance.desc", "+10 max spirit per level.");
+        this.add("skill.spiritworld.spirit_toughness", "Spirit Toughness");
+        this.add("skill.spiritworld.spirit_toughness.desc", "+0.5 spirit regen per level.");
+        this.add("skill.spiritworld.spirit_strength", "Spirit Strength");
+        this.add("skill.spiritworld.spirit_strength.desc", "+5% max spirit per level.");
+        this.add("skill.spiritworld.spirit_surge", "Spirit Surge");
+        this.add("skill.spiritworld.spirit_surge.desc", "+5% spirit regen per level.");
+        this.add("skill.spiritworld.spirit_flow", "Spirit Flow");
+        this.add("skill.spiritworld.spirit_flow.desc", "Regenerate 0.25% max spirit per second per level.");
+        this.add("skill.spiritworld.spirit_source", "Spirit Source");
+        this.add("skill.spiritworld.spirit_source.desc", "+50% max spirit, +50% regen.");
+
+        this.add("skill.spiritworld.vision_sharpness", "Vision Sharpness");
+        this.add("skill.spiritworld.vision_sharpness.desc", "+2 vision fragments per mob kill per level.");
+        this.add("skill.spiritworld.emc_affinity", "EMC Affinity");
+        this.add("skill.spiritworld.emc_affinity.desc", "-3% EMC Conversion cost per level.");
+        this.add("skill.spiritworld.vision_mastery", "Vision Mastery");
+        this.add("skill.spiritworld.vision_mastery.desc", "+15% vision fragment gain per level.");
     }
 }

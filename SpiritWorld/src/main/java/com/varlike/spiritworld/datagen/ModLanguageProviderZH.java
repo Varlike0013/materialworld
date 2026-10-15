@@ -118,5 +118,25 @@ public class ModLanguageProviderZH extends LanguageProvider {
         this.add("tooltip.spiritworld.spirit_tool.level.iron", "铁级");
         this.add("tooltip.spiritworld.spirit_tool.level.diamond", "钻石级");
         this.add("tooltip.spiritworld.spirit_tool.level.netherite", "下界合金级");
+
+        this.add("skill.spiritworld.spirit_endurance", "精神耐力");
+        this.add("skill.spiritworld.spirit_endurance.desc", "每级提升精神力上限 10 点。");
+        this.add("skill.spiritworld.spirit_toughness", "精神韧性");
+        this.add("skill.spiritworld.spirit_toughness.desc", "每级提升精神力恢复 0.5 点。");
+        this.add("skill.spiritworld.spirit_strength", "精神强健");
+        this.add("skill.spiritworld.spirit_strength.desc", "每级提升精神力上限 5%。");
+        this.add("skill.spiritworld.spirit_surge", "精神涌动");
+        this.add("skill.spiritworld.spirit_surge.desc", "每级提升精神力恢复 5%。");
+        this.add("skill.spiritworld.spirit_flow", "精神洪流");
+        this.add("skill.spiritworld.spirit_flow.desc", "每秒回复上限 0.25% × 等级的精神力。");
+        this.add("skill.spiritworld.spirit_source", "精神源泉");
+        this.add("skill.spiritworld.spirit_source.desc", "精神力上限 +50%，恢复 +50%。");
+
+        this.add("skill.spiritworld.vision_sharpness", "灵视敏锐");
+        this.add("skill.spiritworld.vision_sharpness.desc", "每级击杀怪物额外获得 2 个灵视碎片。");
+        this.add("skill.spiritworld.emc_affinity", "EMC 亲和");
+        this.add("skill.spiritworld.emc_affinity.desc", "EMC 转化技能消耗每级降低 3%。");
+        this.add("skill.spiritworld.vision_mastery", "灵视精通");
+        this.add("skill.spiritworld.vision_mastery.desc", "每级灵视碎片获取 +15%。");
     }
 }

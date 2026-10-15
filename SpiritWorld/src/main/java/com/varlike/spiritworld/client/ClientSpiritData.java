@@ -12,12 +12,14 @@ public class ClientSpiritData {
     private static long maxSpirit = 100L;
     private static long availableVisionPoints = 0L;
     private static long totalSpentVisionPoints = 0L;
+    private static long visionFragments = 0L;
     private static final Map<ResourceLocation, Integer> learnedSkills = new HashMap<>();
 
     public static long getSpirit() { return spirit; }
     public static long getMaxSpirit() { return maxSpirit; }
     public static long getAvailableVisionPoints() { return availableVisionPoints; }
     public static long getTotalSpentVisionPoints() { return totalSpentVisionPoints; }
+    public static long getVisionFragments(){ return visionFragments; }
     public static Map<ResourceLocation, Integer> getLearnedSkills() {
         return Collections.unmodifiableMap(learnedSkills);
     }
@@ -63,6 +65,7 @@ public class ClientSpiritData {
 
     public static void update(long newSpirit, long newMaxSpirit,
                               long newAvail, long newTotalSpent,
+                              long newVisionFragments,
                               Map<ResourceLocation, Integer> newSkills,
                               ResourceLocation[] newLoadout,
                               int newSelectedSlot,
@@ -71,6 +74,7 @@ public class ClientSpiritData {
         maxSpirit = newMaxSpirit;
         availableVisionPoints = newAvail;
         totalSpentVisionPoints = newTotalSpent;
+        visionFragments = newVisionFragments;
         learnedSkills.clear();
         learnedSkills.putAll(newSkills);
         for (int i = 0; i < 6; i++) {

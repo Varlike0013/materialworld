@@ -37,7 +37,8 @@ public class SkillTickHandler {
         int interval = Math.max(2, Config.emcConversionBaseInterval - (skillLevel - 1) * 3);
         if (player.tickCount % interval != 0) return;
 
-        long emcCost = Config.emcConversionEmcCost * skillLevel;
+        long baseCost = Config.emcConversionEmcCost * skillLevel;
+        long emcCost = (long) Math.ceil(baseCost * data.getEmcCostMultiplier());
 
         IPlayerEMC emc = MaterialWorldAPI.getPlayerEMC(player);
         if (emc == null || emc.getBalance() < emcCost) {

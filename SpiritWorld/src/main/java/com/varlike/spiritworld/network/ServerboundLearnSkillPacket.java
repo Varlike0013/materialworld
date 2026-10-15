@@ -43,20 +43,20 @@ public record ServerboundLearnSkillPacket(ResourceLocation skillId) implements C
             int currentLevel = data.getSkillLevel(node.getId());
             if (currentLevel >= node.getMaxLevel()) return;
 
-            // 前置未满足
-            for (ResourceLocation prereq : node.getPrerequisites()) {
-                if (data.getSkillLevel(prereq) <= 0) return;
+            // 前置（含最低等级）
+            for (SkillNode.Prerequisite p : node.getPrerequisites()) {
+                if (data.getSkillLevel(p.id()) < p.minLevel()) return;
             }
 
-            // 灵视等级不足
+            // 灵视等级
             if (data.getVisionLevel() < node.getRequiredVisionLevel()) return;
 
-            // 灵视点不足
-            if (!data.consumeVisionPoints(node.getCostPerLevel())) return;
+            // 灵视点（按等级递增）
+            long cost = node.getCostForNextLevel(currentLevel);
+            if (!data.consumeVisionPoints(cost)) return;
 
-            // 应用
             data.setSkillLevel(node.getId(), currentLevel + 1);
-            data.addSpentVisionPoints(node.getCostPerLevel());
+            data.addSpentVisionPoints(cost);
 
             NetworkHandler.syncTo(player);
         });

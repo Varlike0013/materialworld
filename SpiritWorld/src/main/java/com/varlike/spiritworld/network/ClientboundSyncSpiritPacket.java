@@ -16,6 +16,7 @@ public record ClientboundSyncSpiritPacket(
         long maxSpirit,
         long availableVisionPoints,
         long totalSpentVisionPoints,
+        long visionFragments,
         Map<ResourceLocation, Integer> learnedSkills,
         ResourceLocation[] loadout,
         int selectedSlot,
@@ -54,11 +55,17 @@ public record ClientboundSyncSpiritPacket(
     }
 
     public ClientboundSyncSpiritPacket(RegistryFriendlyByteBuf buf) {
-        this(buf.readLong(), buf.readLong(), buf.readLong(), buf.readLong(),
-                readMap(buf),
-                readLoadout(buf),
-                buf.readVarInt(),
-                readPassives(buf));
+        this(
+                buf.readLong(),          // spirit
+                buf.readLong(),          // maxSpirit
+                buf.readLong(),          // availableVisionPoints
+                buf.readLong(),          // totalSpentVisionPoints
+                buf.readLong(),          // visionFragments
+                readMap(buf),            // learnedSkills
+                readLoadout(buf),        // loadout
+                buf.readVarInt(),        // selectedSlot
+                readPassives(buf)        // activePassives
+        );
     }
 
     private static Map<ResourceLocation, Integer> readMap(RegistryFriendlyByteBuf buf) {

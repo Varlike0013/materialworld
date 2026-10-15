@@ -33,7 +33,6 @@ public class PlayerSpirit {
 
     /** 脏标记，用于节流同步 / Dirty flag for throttled sync */
     private transient boolean dirty = false;
-
     // ==================== 精神力 / Spirit ====================
 
     public long getSpirit() {
@@ -61,9 +60,11 @@ public class PlayerSpirit {
      * Effective max = base max + sum of all temporary modifiers.
      */
     public long getEffectiveMaxSpirit() {
-        long total = maxSpirit;
-        for (long v : maxSpiritModifiers.values()) total += v;
-        return Math.max(0, total);
+        long base = maxSpirit;
+        for (long v : maxSpiritModifiers.values()) base += v;
+        base += getSkillMaxSpiritFlatBonus();
+        base = (long) (base * (1.0 + getSkillMaxSpiritPercentBonus()));
+        return Math.max(0, base);
     }
 
     public void addSpirit(long amount) {
@@ -193,7 +194,72 @@ public class PlayerSpirit {
     public boolean isVisionAtLeast(int level) {
         return getVisionLevel() >= level;
     }
+    //
+    private long visionFragments = 0;
+    private transient double regenAccumulator = 0;
+    public long getVisionFragments() { return visionFragments; }
 
+    public void addVisionFragments(long amount) {
+        if (amount <= 0) return;
+        this.visionFragments += amount;
+        while (this.visionFragments >= 100) {
+            this.visionFragments -= 100;
+            this.availableVisionPoints += 1;
+        }
+        markDirty();
+    }
+
+    /** 带小数的精神力恢复，累积到整数再加 */
+    public void addSpiritWithFraction(double amount) {
+        if (amount <= 0) return;
+        this.regenAccumulator += amount;
+        long whole = (long) this.regenAccumulator;
+        if (whole > 0) {
+            this.regenAccumulator -= whole;
+            addSpirit(whole);
+        }
+    }
+
+    // ===== 技能加成 =====
+    public long getSkillMaxSpiritFlatBonus() {
+        int endurance = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_ENDURANCE_ID);
+        return endurance * 10L;
+    }
+
+    public double getSkillMaxSpiritPercentBonus() {
+        int strength = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_STRENGTH_ID);
+        int source   = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_SOURCE_ID);
+        return strength * 0.05 + source * 0.50;
+    }
+
+    public double getSkillRegenFlatBonus() {
+        int toughness = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_TOUGHNESS_ID);
+        return toughness * 0.5;
+    }
+
+    public double getSkillRegenPercentBonus() {
+        int surge  = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_SURGE_ID);
+        int source = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_SOURCE_ID);
+        return surge * 0.05 + source * 0.50;
+    }
+
+    public double getSpiritFlowRegenPerSecond() {
+        int flow = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_FLOW_ID);
+        return flow * 0.25;
+    }
+
+    public int getVisionFragmentFlatBonus() {
+        return getSkillLevel(com.varlike.spiritworld.skill.ModSkills.VISION_SHARPNESS_ID) * 2;
+    }
+
+    public double getVisionFragmentPercentBonus() {
+        return getSkillLevel(com.varlike.spiritworld.skill.ModSkills.VISION_MASTERY_ID) * 0.15;
+    }
+
+    public double getEmcCostMultiplier() {
+        int affinity = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.EMC_AFFINITY_ID);
+        return Math.max(0.1, 1.0 - affinity * 0.03);
+    }
     // ===== 技能栏 / 装配 =====
     public static final int LOADOUT_SIZE = 6;
 
@@ -286,6 +352,7 @@ public class PlayerSpirit {
         this.activePassives.clear();
         this.activePassives.addAll(other.activePassives);
         this.spiritToolActive = other.spiritToolActive;
+        this.visionFragments = other.visionFragments;
         markDirty();
     }
 
@@ -315,6 +382,7 @@ public class PlayerSpirit {
         }
         tag.put("activePassives", passiveList);
         tag.putBoolean("spiritToolActive", spiritToolActive);
+        tag.putLong("visionFragments", visionFragments);
 
         return tag;
     }
@@ -352,6 +420,7 @@ public class PlayerSpirit {
             if (pid != null) activePassives.add(pid);
         }
         this.spiritToolActive = tag.getBoolean("spiritToolActive");
+        this.visionFragments = tag.getLong("visionFragments");
         if (spirit > getEffectiveMaxSpirit()) spirit = getEffectiveMaxSpirit();
         initialized = true;
     }

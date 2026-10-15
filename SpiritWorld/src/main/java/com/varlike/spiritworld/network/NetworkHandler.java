@@ -50,6 +50,7 @@ public class NetworkHandler {
                 data.getEffectiveMaxSpirit(),
                 data.getAvailableVisionPoints(),
                 data.getTotalSpentVisionPoints(),
+                data.getVisionFragments(),
                 data.getLearnedSkills(),
                 data.getLoadout(),
                 data.getSelectedSlot(),
