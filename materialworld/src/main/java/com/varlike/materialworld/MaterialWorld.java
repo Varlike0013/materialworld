@@ -55,17 +55,19 @@ public class MaterialWorld
     private void commonSetup(final FMLCommonSetupEvent event) {
         LOGGER.info("物质世界模组加载中...");
 
-        // 加载配置值（此时配置已完全就绪）
-        Config.loadValues();
+        event.enqueueWork(() -> {
+            // 加载配置值（此时配置已完全就绪）
+            Config.loadValues();
 
-        // 1. 注册默认值
-        EMCValues.registerDefaults();
+            // 1. 注册默认值
+            EMCValues.registerDefaults();
 
-        // 2. 初始化存储路径并加载自定义值
-        EMCStorage.init(FMLPaths.CONFIGDIR.get());
-        EMCStorage.load();
+            // 2. 初始化存储路径并加载自定义值
+            EMCStorage.init(FMLPaths.CONFIGDIR.get());
+            EMCStorage.load();
 
-        LOGGER.info("EMC 系统初始化完成，共 {} 种物品", EMCManager.size());
+            LOGGER.info("EMC 系统初始化完成，共 {} 种物品", EMCManager.size());
+        });
     }
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event)
@@ -191,16 +193,34 @@ public class MaterialWorld
         @SubscribeEvent
         public static void onItemTooltip(ItemTooltipEvent event) {
             ItemStack stack = event.getItemStack();
-            // 空物品不处理
             if (stack.isEmpty()) return;
 
-            long emc = EMCManager.getEMC(stack.getItem());
-            // 只显示有 EMC 值的物品
-            if (emc <= 0) return;
+            long unit = EMCManager.getEMC(stack.getItem());
+            if (unit <= 0) return;
 
-            Component line = Component.translatable("tooltip.materialworld.emc",
-                            Component.literal(String.valueOf(emc)).withStyle(ChatFormatting.GOLD))
-                    .withStyle(ChatFormatting.GREEN);
+            Component line;
+
+            if (stack.isDamageableItem()) {
+                long current = EMCManager.getCurrentEMC(stack);
+                line = Component.translatable("tooltip.materialworld.emc_durability",
+                                Component.literal(String.valueOf(current)).withStyle(ChatFormatting.GOLD),
+                                Component.literal(String.valueOf(unit)).withStyle(ChatFormatting.GOLD))
+                        .withStyle(ChatFormatting.GREEN);
+            } else {
+                int count = stack.getCount();
+                if (count == 1) {
+                    line = Component.translatable("tooltip.materialworld.emc",
+                                    Component.literal(String.valueOf(unit)).withStyle(ChatFormatting.GOLD))
+                            .withStyle(ChatFormatting.GREEN);
+                } else {
+                    long total = unit * count;
+                    line = Component.translatable("tooltip.materialworld.emc_stack",
+                                    Component.literal(String.valueOf(unit)).withStyle(ChatFormatting.GOLD),
+                                    Component.literal(String.valueOf(total)).withStyle(ChatFormatting.GOLD))
+                            .withStyle(ChatFormatting.GREEN);
+                }
+            }
+
             event.getToolTip().add(line);
         }
     }

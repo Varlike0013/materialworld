@@ -26,6 +26,11 @@ public class ClientConfig {
         if (event.getConfig().getSpec() != SPEC) return;
         transmutationDisplayMode = TRANSMUTATION_DISPLAY_MODE.get();
     }
+    @SubscribeEvent
+    static void onReload(final ModConfigEvent.Reloading event) {
+        if (event.getConfig().getSpec() != SPEC) return;
+        transmutationDisplayMode = TRANSMUTATION_DISPLAY_MODE.get();
+    }
 
     public enum TransmutationDisplayMode {
         ALL,

@@ -45,8 +45,8 @@ public record ServerboundRecyclePacket(int inventorySlot) implements CustomPacke
             if (stack.isEmpty()) return;
 
             Item item = stack.getItem();
-            long unit = EMCManager.getEMC(item);
-            if (unit <= 0) {
+            long total = EMCManager.getStackEMC(stack);
+            if (total <= 0) {
                 player.sendSystemMessage(Component.translatable("message.materialworld.cannot_recycle"));
                 return;
             }
@@ -55,7 +55,6 @@ public record ServerboundRecyclePacket(int inventorySlot) implements CustomPacke
             if (data == null) return;
 
             int count = stack.getCount();
-            long total = unit * count;
             String name = stack.getHoverName().getString();
 
             // 1. 先记录加款前余额

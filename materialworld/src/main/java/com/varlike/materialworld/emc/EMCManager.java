@@ -3,6 +3,7 @@ package com.varlike.materialworld.emc;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,9 +17,55 @@ public class EMCManager {
     // 核心映射表：Item -> EMC 值
     private static final Map<Item, Long> EMC_VALUES = new HashMap<>();
 
-    /** 获取物品的 EMC 值，未定义时返回 0 */
+    /** 获取物品的 EMC 值，不考虑耐久,未定义时返回 0 */
     public static long getEMC(Item item) {
         return EMC_VALUES.getOrDefault(item, 0L);
+    }
+
+    /**
+     * 有效值：按耐久度折算。
+     * - 无耐久物品：返回基础值。
+     * - 有耐久物品：基础值 * (剩余耐久 / 最大耐久)。
+     * - 完全损坏（剩余耐久 = 0）：返回 0。
+     */
+    public static long getEMC(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return 0L;
+
+        Item item = stack.getItem();
+        long base = getEMC(item);
+        if (base <= 0) return 0L;
+
+        if (!stack.isDamageableItem()) {
+            return base * stack.getCount();
+        }
+
+        int max = stack.getMaxDamage();
+        int remaining = max - stack.getDamageValue();
+        if (remaining <= 0) return 0L;
+
+        // 按剩余耐久比例折算，再乘以堆叠数量（工具通常不可堆叠，count=1）
+        long perItem = base * remaining / max;
+        return perItem * stack.getCount();
+    }
+    /** 有耐久物品的当前折算值（单个） */
+    public static long getCurrentEMC(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return 0L;
+        long base = getEMC(stack.getItem());
+        if (base <= 0) return 0L;
+
+        if (!stack.isDamageableItem()) return base;
+
+        int max = stack.getMaxDamage();
+        int remaining = max - stack.getDamageValue();
+        if (remaining <= 0) return 0L;
+        return base * remaining / max;
+    }
+
+    /** 整栈价值：有耐久按折算×count，无耐久按基础×count */
+    public static long getStackEMC(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return 0L;
+        long unit = getCurrentEMC(stack);
+        return unit * stack.getCount();
     }
 
     /** 设置或更新物品的 EMC 值 */

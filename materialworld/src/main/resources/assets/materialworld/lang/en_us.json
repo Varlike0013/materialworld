@@ -3,6 +3,8 @@
   "key.materialworld.open_transmutation": "Open Transmutation",
 
   "tooltip.materialworld.emc": "EMC: %s",
+  "tooltip.materialworld.emc_durability": "EMC: %s/%s",
+  "tooltip.materialworld.emc_stack": "EMC: %s-%s",
 
   "screen.materialworld.transmutation.title": "Transmutation",
   "screen.materialworld.emc_balance": "§6EMC: §a%s",

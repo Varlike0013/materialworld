@@ -17,37 +17,10 @@ public class Config {
 
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    private static final ModConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
-            .comment("是否在 common setup 时打印泥土方块日志")
-            .define("logDirtBlock", false);
-
-    private static final ModConfigSpec.IntValue MAGIC_NUMBER = BUILDER
-            .comment("一个魔法数字")
-            .defineInRange("magicNumber", 42, 0, Integer.MAX_VALUE);
-
-    public static final ModConfigSpec.ConfigValue<String> MAGIC_NUMBER_INTRODUCTION = BUILDER
-            .comment("魔法数字的介绍语")
-            .define("magicNumberIntroduction", "The magic number is... ");
-
-    private static final ModConfigSpec.ConfigValue<List<? extends String>> ITEM_STRINGS = BUILDER
-            .comment("启动时要打印的物品列表")
-            .defineList("items", List.of("minecraft:iron_ingot"), () -> "minecraft:iron_ingot",
-                    Config::validateItemName);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
-    public static boolean logDirtBlock = false;
-    public static int magicNumber = 42;
-    public static String magicNumberIntroduction = "";
-    public static Set<Item> items = Set.of();
-
     public static void loadValues() {
-        logDirtBlock = LOG_DIRT_BLOCK.get();
-        magicNumber = MAGIC_NUMBER.get();
-        magicNumberIntroduction = MAGIC_NUMBER_INTRODUCTION.get();
-        items = ITEM_STRINGS.get().stream()
-                .map(name -> BuiltInRegistries.ITEM.get(ResourceLocation.parse(name)))
-                .collect(Collectors.toSet());
     }
 
     private static boolean validateItemName(final Object obj) {

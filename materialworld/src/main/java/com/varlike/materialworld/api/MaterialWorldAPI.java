@@ -25,18 +25,27 @@ public final class MaterialWorldAPI {
     public static final String MOD_ID = MaterialWorld.MOD_ID;
 
     /** API 版本，附属 mod 可据此判断兼容性 / API version for compatibility check */
-    public static final int API_VERSION = 1;
+    public static final int API_VERSION = 2;
 
     private MaterialWorldAPI() {}
 
     // ==================== 物品 EMC 查询与设置 / Item EMC Query & Set ====================
 
-    /**
-     * 获取物品的 EMC 值，未定义时返回 0。
-     * Get the EMC value of an item, returns 0 if undefined.
-     */
+    /** 获取物品的基础 EMC，不考虑数量与耐久。未定义时返回 0。 */
     public static long getEMC(Item item) {
         return EMCRegistry.getEMC(item);
+    }
+
+    // ===== 耐久折算 =====
+
+    /** 单个物品当前有效 EMC（按剩余耐久折算）。 */
+    public static long getCurrentEMC(ItemStack stack) {
+        return EMCRegistry.getCurrentEMC(stack);
+    }
+
+    /** 整栈价值：有耐久按折算 × count，无耐久按基础 × count。 */
+    public static long getStackEMC(ItemStack stack) {
+        return EMCRegistry.getStackEMC(stack);
     }
 
     /**

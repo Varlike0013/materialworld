@@ -4,6 +4,7 @@ import com.varlike.materialworld.emc.EMCManager;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 /**
@@ -61,5 +62,13 @@ public final class EMCRegistry {
     /** 返回已定义 EMC 的物品数量 / Number of items with defined EMC */
     public static int size() {
         return EMCManager.size();
+    }
+
+    public static long getCurrentEMC(ItemStack stack) {
+        return EMCManager.getCurrentEMC(stack);
+    }
+
+    public static long getStackEMC(ItemStack stack) {
+        return EMCManager.getStackEMC(stack);
     }
 }
