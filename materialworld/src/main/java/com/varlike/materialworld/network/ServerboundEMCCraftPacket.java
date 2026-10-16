@@ -1,6 +1,7 @@
 package com.varlike.materialworld.network;
 
 import com.varlike.materialworld.MaterialWorld;
+import com.varlike.materialworld.api.event.EMCChangeEvent;
 import com.varlike.materialworld.capability.ModCapabilities;
 import com.varlike.materialworld.capability.PlayerEMC;
 import com.varlike.materialworld.emc.EMCManager;
@@ -12,6 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.CraftingMenu;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.LinkedHashMap;
@@ -62,7 +64,6 @@ public record ServerboundEMCCraftPacket(Map<Integer, ItemStack> slotItems)
             PlayerEMC data = player.getCapability(ModCapabilities.PLAYER_EMC);
             if (data == null) return;
 
-            // ===== 1. 校验 + 计算总花费 =====
             long totalCost = 0;
             for (Map.Entry<Integer, ItemStack> e : pkt.slotItems().entrySet()) {
                 ItemStack stack = e.getValue();
@@ -83,21 +84,20 @@ public record ServerboundEMCCraftPacket(Map<Integer, ItemStack> slotItems)
                 return;
             }
 
-            // ===== 2. 扣除 EMC =====
+            long oldBalance = data.getEmcBalance();
             data.consumeEmc(totalCost);
+            NeoForge.EVENT_BUS.post(new EMCChangeEvent(player, oldBalance, data.getEmcBalance()));
 
-            // ===== 3. 按槽位放置到合成网格 =====
             for (Map.Entry<Integer, ItemStack> e : pkt.slotItems().entrySet()) {
                 int gridIndex = e.getKey();
                 if (gridIndex < 0 || gridIndex > 8) continue;
-                int menuSlot = gridIndex + 1; // slot 0 是输出槽
+                int menuSlot = gridIndex + 1;
                 ItemStack stack = e.getValue().copy();
                 menu.getSlot(menuSlot).set(stack);
                 menu.getSlot(menuSlot).setChanged();
             }
             menu.broadcastChanges();
 
-            // ===== 4. 同步最新 EMC 数据给客户端 =====
             NetworkHandler.syncTo(player);
         });
     }

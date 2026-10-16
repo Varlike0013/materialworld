@@ -1,15 +1,14 @@
 package com.varlike.materialworld.network;
 
 import com.varlike.materialworld.MaterialWorld;
-import com.varlike.materialworld.capability.CapabilityHandler;
 import com.varlike.materialworld.capability.ModCapabilities;
 import com.varlike.materialworld.capability.PlayerEMC;
-import net.neoforged.neoforge.network.handling.DirectionalPayloadHandler;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.handling.DirectionalPayloadHandler;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 @EventBusSubscriber(modid = MaterialWorld.MOD_ID)
@@ -35,8 +34,8 @@ public class NetworkHandler {
                 ClientboundSyncEMCPacket.TYPE,
                 ClientboundSyncEMCPacket.STREAM_CODEC,
                 new DirectionalPayloadHandler<>(
-                        ClientPayloadHandler::handleSyncEMC,   // 客户端 handler
-                        ClientboundSyncEMCPacket::handle        // 服务端 handler（空实现）
+                        ClientPayloadHandler::handleSyncEMC,
+                        ClientboundSyncEMCPacket::handle
                 ));
 
         registrar.playToServer(
@@ -51,7 +50,7 @@ public class NetworkHandler {
     }
 
     public static void syncTo(ServerPlayer player) {
-        PlayerEMC data = player.getCapability(CapabilityHandler.PLAYER_EMC);
+        PlayerEMC data = player.getCapability(ModCapabilities.PLAYER_EMC);
         if (data == null) return;
         PacketDistributor.sendToPlayer(
                 player,

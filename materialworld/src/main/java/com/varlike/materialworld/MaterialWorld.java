@@ -1,11 +1,13 @@
 package com.varlike.materialworld;
 
 import com.mojang.brigadier.arguments.LongArgumentType;
+import com.varlike.materialworld.capability.ModCapabilities;
 import com.varlike.materialworld.emc.EMCManager;
 import com.varlike.materialworld.emc.EMCRecipeCalculator;
 import com.varlike.materialworld.emc.EMCStorage;
 import com.varlike.materialworld.emc.EMCValues;
 import com.mojang.logging.LogUtils;
+import com.varlike.materialworld.network.NetworkHandler;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.registries.Registries;
@@ -42,6 +44,7 @@ public class MaterialWorld
     public MaterialWorld(IEventBus modEventBus, ModContainer modContainer)
     {
         modEventBus.addListener(this::commonSetup);
+
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
 

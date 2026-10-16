@@ -23,13 +23,12 @@ public class ClientConfig {
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
+        if (event.getConfig().getSpec() != SPEC) return;
         transmutationDisplayMode = TRANSMUTATION_DISPLAY_MODE.get();
     }
 
     public enum TransmutationDisplayMode {
-        /** 显示所有有 EMC 值的物品 / Show all items with EMC */
         ALL,
-        /** 只显示已学习的物品 / Show only learned items */
         LEARNED_ONLY
     }
 }

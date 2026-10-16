@@ -2,7 +2,6 @@ package com.varlike.materialworld.network;
 
 import com.varlike.materialworld.MaterialWorld;
 import com.varlike.materialworld.api.event.EMCChangeEvent;
-import com.varlike.materialworld.capability.CapabilityHandler;
 import com.varlike.materialworld.capability.ModCapabilities;
 import com.varlike.materialworld.capability.PlayerEMC;
 import com.varlike.materialworld.emc.EMCManager;
@@ -48,7 +47,7 @@ public record ServerboundTransmutePacket(Item item) implements CustomPacketPaylo
                 return;
             }
 
-            PlayerEMC data = player.getCapability(CapabilityHandler.PLAYER_EMC);
+            PlayerEMC data = player.getCapability(ModCapabilities.PLAYER_EMC);
             if (data == null) return;
 
             if (!data.isLearned(item)) {
@@ -56,10 +55,8 @@ public record ServerboundTransmutePacket(Item item) implements CustomPacketPaylo
                 return;
             }
 
-            // 1. 先记录扣款前余额
             long oldBalance = data.getEmcBalance();
 
-            // 2. 再扣款
             if (!data.consumeEmc(cost)) {
                 player.sendSystemMessage(Component.translatable(
                         "message.materialworld.emc_insufficient",
@@ -67,10 +64,8 @@ public record ServerboundTransmutePacket(Item item) implements CustomPacketPaylo
                 return;
             }
 
-            // 3. 扣款成功后发布事件
             NeoForge.EVENT_BUS.post(new EMCChangeEvent(player, oldBalance, data.getEmcBalance()));
 
-            // 4. 发放物品并同步
             ItemStack stack = new ItemStack(item);
             if (!player.getInventory().add(stack)) player.drop(stack, false);
             NetworkHandler.syncTo(player);

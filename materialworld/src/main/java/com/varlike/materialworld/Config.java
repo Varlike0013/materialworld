@@ -41,10 +41,6 @@ public class Config {
     public static String magicNumberIntroduction = "";
     public static Set<Item> items = Set.of();
 
-    /**
-     * 手动加载配置值。
-     * 在 FMLCommonSetupEvent 和 ModConfigEvent.Reloading 中调用。
-     */
     public static void loadValues() {
         logDirtBlock = LOG_DIRT_BLOCK.get();
         magicNumber = MAGIC_NUMBER.get();
@@ -59,10 +55,6 @@ public class Config {
                 && BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(itemName));
     }
 
-    /**
-     * 游戏内重载配置时刷新。
-     * 首次加载不在此处读取——由 FMLCommonSetupEvent 处理。
-     */
     @SubscribeEvent
     static void onReload(ModConfigEvent.Reloading event) {
         if (event.getConfig().getSpec() != SPEC) return;

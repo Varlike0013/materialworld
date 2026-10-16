@@ -58,22 +58,25 @@ public record ServerboundRecyclePacket(int inventorySlot) implements CustomPacke
             long total = unit * count;
             String name = stack.getHoverName().getString();
 
-            // 1. 学习（首次学习时发事件）
+            // 1. 先记录加款前余额
+            long oldBalance = data.getEmcBalance();
+
+            // 2. 学习
             boolean newLearn = !data.isLearned(item);
             data.learn(item);
+
+            // 3. 加款并发布 EMCChangeEvent
+            data.addEmc(total);
+            NeoForge.EVENT_BUS.post(new EMCChangeEvent(player, oldBalance, data.getEmcBalance()));
+
+            // 4. 首次学习时发布 ItemLearnedEvent
             if (newLearn) {
                 NeoForge.EVENT_BUS.post(new ItemLearnedEvent(player, item));
             }
 
-            // 2. 记录加款前余额，加款，发事件
-            long oldBalance = data.getEmcBalance();
-            data.addEmc(total);
-            NeoForge.EVENT_BUS.post(new EMCChangeEvent(player, oldBalance, data.getEmcBalance()));
-
-            // 3. 清空原格子
+            // 5. 清空原格子
             stack.setCount(0);
 
-            // 4. 提示并同步
             Component msg = newLearn
                     ? Component.translatable("message.materialworld.new_learn", name, total)
                     : Component.translatable("message.materialworld.recycled", count, name, total);
