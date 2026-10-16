@@ -26,6 +26,13 @@ public final class EMCRegistry {
         return EMCManager.getEMC(item);
     }
 
+    public static long getCurrentEMC(ItemStack stack) {
+        return EMCManager.getCurrentEMC(stack);
+    }
+
+    public static long getStackEMC(ItemStack stack) {
+        return EMCManager.getStackEMC(stack);
+    }
     /**
      * 设置或覆盖物品的 EMC 值。
      * Set or override an item's EMC value.
@@ -62,13 +69,5 @@ public final class EMCRegistry {
     /** 返回已定义 EMC 的物品数量 / Number of items with defined EMC */
     public static int size() {
         return EMCManager.size();
-    }
-
-    public static long getCurrentEMC(ItemStack stack) {
-        return EMCManager.getCurrentEMC(stack);
-    }
-
-    public static long getStackEMC(ItemStack stack) {
-        return EMCManager.getStackEMC(stack);
     }
 }

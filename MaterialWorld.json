@@ -1,0 +1,511 @@
+{
+  "projectInfo": {
+    "minecraftVersion": "1.21.1",
+    "neoforgeVersion": "21.1.256",
+    "modId": "materialworld(com.varlike.materialworld)",
+    "modName": "MaterialWorld(物质世界)",
+    "description": "一个类似ProjectE 的物品转换mod，是其他如精神世界的前置。"
+  },
+  "buildAndMetadata": {
+    "commands": [
+      "./gradlew publishToMavenLocal",
+      "./gradlew clean build"
+    ],
+    "neoforgeModsToml": {
+      "path": "src/main/resources/META-INF/neoforge.mods.toml",
+      "entries": [
+        "modLoader=\"javafml\": 声明使用 Java 版 mod 加载器。",
+        "[[mods]]: 声明 modid=materialworld，版本、名称、描述等元数据。",
+        "[[dependencies.materialworld]] neoforge: 必需依赖，版本范围 [21.1.256,)，BOTH。",
+        "[[dependencies.materialworld]] minecraft: 必需依赖，版本范围 [1.21.1,1.22)，BOTH。",
+        "[[dependencies.materialworld]] jei: 可选依赖，版本范围 [19.0.0,)，AFTER，CLIENT。"
+      ]
+    },
+    "buildGradle": {
+      "path": "src/build.gradle",
+      "entries": [
+        "仓库配置: 添加 Jared's maven (https://maven.blamejared.com/) 和 ModMaven 镜像，用于解析 JEI 依赖。",
+        "依赖配置: compileOnly 添加 mezz.jei:jei-1.21.1-neoforge-api:19.51.0.418，localRuntime 添加 mezz.jei:jei-1.21.1-neoforge:19.51.0.418。"
+      ]
+    },
+    "gradleProperties": {
+      "path": "gradle.properties",
+      "entries": [
+        "mc_version=1.21.1: 目标 Minecraft 版本。",
+        "jei_version=19.51.0.418: 目标 JEI 版本，与 Minecraft 1.21.1 和 NeoForge 21.1.256 兼容。"
+      ]
+    },
+    "changelog": "修正 JEI 依赖配置，从错误的 Forge 版本改为正确的 NeoForge 版本，并添加必需的 Maven 仓库。"
+  },
+  "config": {
+    "ClientConfig": {
+      "path": "src/main/java/com/varlike/materialworld/ClientConfig.java",
+      "entries": [
+        "SPEC: CLIENT 类型配置规格。",
+        "transmutationDisplayMode: 客户端缓存的显示模式枚举值。",
+        "onLoad(ModConfigEvent event): 配置加载或重载时同步显示模式到静态字段。变更: 增加 `event.getConfig().getSpec() != SPEC` 判断，避免其他配置加载时误读。",
+        "TransmutationDisplayMode.ALL: 显示所有有 EMC 的物品。",
+        "TransmutationDisplayMode.LEARNED_ONLY: 只显示已学习的物品（默认）。"
+      ]
+    },
+    "Config": {
+      "path": "src/main/java/com/varlike/materialworld/Config.java",
+      "entries": [
+        "SPEC: COMMON 类型配置规格。",
+        "loadValues(): 手动加载配置值到静态字段，首次加载由 commonSetup 调用，重载由 ModConfigEvent.Reloading 触发。",
+        "onReload(ModConfigEvent.Reloading event): 配置重载时刷新静态字段，带 SPEC 判断。",
+        "变更: 首次加载由 MaterialWorld.commonSetup 调用 Config.loadValues()；不监听 Loading 事件，避免重复加载。"
+      ]
+    },
+    "MaterialWorldClient": {
+      "path": "src/main/java/com/varlike/materialworld/MaterialWorldClient.java",
+      "entries": [
+        "MaterialWorldClient(ModContainer container): 客户端构造函数。职责: 注册客户端配置(ClientConfig.SPEC) 与配置界面扩展点(IConfigScreenFactory)。",
+        "onClientSetup(FMLClientSetupEvent event): 客户端初始化时输出日志和当前玩家名。"
+      ]
+    },
+    "TransmutationScreen": {
+      "path": "src/main/java/com/varlike/materialworld/client/TransmutationScreen.java",
+      "entries": [
+        "init(): 初始化界面。变更: 物品收集时根据 ClientConfig.transmutationDisplayMode 过滤：LEARNED_ONLY 模式只保留已学习的物品；ALL 模式保留全部。"
+      ]
+    }
+  },
+  "localization": {
+    "en_us.json": {
+      "path": "src/main/resources/assets/materialworld/lang/en_us.json",
+      "entries": [
+        "英文语言文件，包含按键、tooltip、GUI、消息、配置界面的全部翻译键。",
+        "新增 tooltip 键: tooltip.materialworld.emc: \"EMC: %s\"",
+        "tooltip.materialworld.emc_durability: \"EMC: %s/%s\"",
+        "tooltip.materialworld.emc_stack: \"EMC: %s-%s\""
+      ]
+    },
+    "zh_cn.json": {
+      "path": "src/main/resources/assets/materialworld/lang/zh_cn.json",
+      "entries": [
+        "中文语言文件，与 en_us.json 键名一一对应。",
+        "新增 tooltip 键: tooltip.materialworld.emc: \"EMC：%s\"",
+        "tooltip.materialworld.emc_durability: \"EMC：%s/%s\"",
+        "tooltip.materialworld.emc_stack: \"EMC：%s-%s\""
+      ]
+    },
+    "changelog": "mod 中所有硬编码提示改为 Component.translatable(key, args...)，实现根据客户端语言自动切换。涉及文件: ServerboundTransmutePacket, ServerboundRecyclePacket, ServerboundEMCCraftPacket, MaterialWorld.ForgeEvents, TransmutationScreen, EMCRecipeTransferHandler"
+  },
+  "addonCreativeTabDesign": {
+    "behavior": [
+      "无附属 mod 添加物品 -> 标签不注册 -> 界面上看不到。",
+      "有附属 mod 添加物品 -> 标签注册 -> 显示所有附属物品。"
+    ],
+    "keyImplementation": [
+      "1. 附属 mod 在构造函数中调用 MaterialWorldAPI.addToAddonTab(...)。",
+      "2. 主 mod 在 RegisterEvent 中判断 AddonCreativeTab.isEmpty()。",
+      "3. 非空时注册 CreativeModeTab，displayItems 动态读取物品列表。"
+    ],
+    "timingRequirement": "附属 mod 构造函数 早于 主 mod 的 RegisterEvent，因此必须在构造函数中调用 API。"
+  },
+  "durabilityEMC": {
+    "designPrinciples": [
+      "满耐久工具/盔甲: EMC = 完整值。",
+      "部分损坏物品: 按剩余耐久比例折算。",
+      "无耐久物品: EMC = 基础值 × 数量。",
+      "完全损坏 (剩余耐久 = 0): EMC = 0。",
+      "转化 (EMC -> 物品): 始终发放满耐久物品，扣费按基础值。",
+      "回收 (物品 -> EMC): 按剩余耐久折算。"
+    ],
+    "tooltipFormat": [
+      "有耐久物品: EMC: 当前值/完整值，例如 \"EMC: 6144/12288\"。",
+      "无耐久且单个数: EMC: 单值，例如 \"EMC: 1\"。",
+      "无耐久且堆叠: EMC: 单值-总值，例如 \"EMC: 1-64\"。",
+      "完全损坏: 显示 \"EMC: 0/完整值\"。"
+    ]
+  },
+  "publicAPI": {
+    "MaterialWorldAPI": {
+      "path": "src/main/java/com/varlike/materialworld/api/MaterialWorldAPI.java",
+      "entries": [
+        "MOD_ID: 模组 ID 常量。",
+        "API_VERSION: API 版本号，当前为 2（v2 新增耐久折算相关方法）。",
+        "getEMC(Item item): 获取物品基础 EMC 值，不考虑耐久与数量。",
+        "getEMC(ResourceLocation itemId): 通过注册名获取基础 EMC。",
+        "getCurrentEMC(ItemStack stack): 获取单个物品的当前有效 EMC（按耐久折算）。",
+        "getStackEMC(ItemStack stack): 获取整栈物品的总 EMC（含数量与耐久折算）。",
+        "setEMC(Item item, long value): 设置物品 EMC 值。",
+        "hasEMC(Item item): 判断物品是否已定义 EMC。",
+        "getPlayerEMC(Player player): 获取玩家 EMC 数据接口，未初始化时返回 null。",
+        "addToAddonTab(Supplier<ItemStack> stackSupplier): 向附属创造标签添加无分组物品。必须在附属 mod 构造函数中调用。",
+        "addToAddonTab(String groupName, Supplier<ItemStack> stackSupplier): 向附属创造标签添加带分组物品。分组名含 \".\" 时视为翻译键，否则为字面文本。"
+      ]
+    },
+    "IPlayerEMC": {
+      "path": "src/main/java/com/varlike/materialworld/api/IPlayerEMC.java",
+      "entries": [
+        "getBalance(): 获取 EMC 余额。",
+        "setBalance(long value): 设置 EMC 余额。",
+        "addBalance(long amount): 增加 EMC 余额。",
+        "consumeBalance(long amount): 尝试扣除 EMC。",
+        "isLearned(Item item): 判断物品是否已学习。",
+        "learn(Item item): 学习物品，返回 true 表示首次学习。",
+        "getLearnedItems(): 获取不可修改的已学习物品集合。"
+      ]
+    },
+    "EMCRegistry": {
+      "path": "src/main/java/com/varlike/materialworld/api/EMCRegistry.java",
+      "entries": [
+        "getEMC(Item item): 查询物品基础 EMC 值。",
+        "setEMC(Item item, long value): 设置物品 EMC 值。",
+        "getEMC(ResourceLocation itemId): 通过注册名查询。",
+        "setEMC(ResourceLocation itemId, long value): 通过注册名设置。",
+        "hasEMC(Item item): 判断是否已定义。",
+        "size(): 返回已定义 EMC 的物品数量。",
+        "getCurrentEMC(ItemStack stack): 新增，单个物品的当前有效 EMC。",
+        "getStackEMC(ItemStack stack): 新增，整栈物品的总 EMC。"
+      ]
+    },
+    "EMCChangeEvent": {
+      "path": "src/main/java/com/varlike/materialworld/api/event/EMCChangeEvent.java",
+      "entries": [
+        "getPlayer(): 返回触发事件的玩家。",
+        "getOldBalance(): 返回变化前的余额。",
+        "getNewBalance(): 返回变化后的余额。",
+        "getDelta(): 返回余额变化量。"
+      ]
+    },
+    "ItemLearnedEvent": {
+      "path": "src/main/java/com/varlike/materialworld/api/event/ItemLearnedEvent.java",
+      "entries": [
+        "getPlayer(): 返回触发事件的玩家。",
+        "getItem(): 返回被学习的物品。"
+      ]
+    },
+    "changelog": "新增 api 包，作为附属 mod 的稳定访问契约；内部实现类不被附属 mod 直接引用。事件在 ServerboundRecyclePacket、ServerboundTransmutePacket、ServerboundEMCCraftPacket 中发布到 NeoForge.EVENT_BUS。"
+  },
+  "classAndFunctionLog": [
+    {
+      "className": "MaterialWorld",
+      "location": "src/main/java/com/varlike/materialworld/MaterialWorld.java",
+      "methods": [
+        { "name": "MaterialWorld(IEventBus modEventBus, ModContainer modContainer)", "purpose": "主构造函数，注册物品与创造模式标签注册器、配置和网络通道。" },
+        { "name": "commonSetup(FMLCommonSetupEvent event)", "purpose": "模组初始化。使用 event.enqueueWork 串行执行：Config.loadValues() -> EMCValues.registerDefaults() -> EMCStorage.init/load()。" },
+        { "name": "onServerStarting(ServerStartingEvent event)", "purpose": "服务器启动时输出日志。" },
+        { "name": "ForgeEvents.onServerStarted(ServerStartedEvent event)", "purpose": "服务器启动完成后计算 EMC 配方并保存。" },
+        { "name": "ForgeEvents.onRegisterCommands(RegisterCommandsEvent event)", "purpose": "注册 /emc 命令及其子命令。" },
+        { "name": "ForgeEvents.onItemTooltip(ItemTooltipEvent event)", "purpose": "为有 EMC 值的物品添加工具提示。有耐久显示「当前/完整」，无耐久显示「单值」或「单值-总值」。" }
+      ]
+    },
+    {
+      "className": "Config",
+      "location": "src/main/java/com/varlike/materialworld/Config.java",
+      "methods": [
+        { "name": "validateItemName(Object obj)", "purpose": "验证物品名称是否存在于物品注册表中。" },
+        { "name": "loadValues()", "purpose": "手动加载配置值到静态字段，由 commonSetup 首次调用。" },
+        { "name": "onReload(ModConfigEvent.Reloading event)", "purpose": "配置重载时刷新静态字段，带 SPEC 判断。" }
+      ]
+    },
+    {
+      "className": "ClientConfig",
+      "location": "src/main/java/com/varlike/materialworld/ClientConfig.java",
+      "methods": [
+        { "name": "onLoad(ModConfigEvent event)", "purpose": "配置加载或重载时同步 transmutationDisplayMode，带 SPEC 判断。" }
+      ]
+    },
+    {
+      "className": "MaterialWorldClient",
+      "location": "src/main/java/com/varlike/materialworld/MaterialWorldClient.java",
+      "methods": [
+        { "name": "MaterialWorldClient(ModContainer container)", "purpose": "客户端模组构造函数：注册 ClientConfig.SPEC 与 IConfigScreenFactory 扩展点。" },
+        { "name": "onClientSetup(FMLClientSetupEvent event)", "purpose": "客户端初始化时输出日志和当前玩家名。" }
+      ]
+    },
+    {
+      "className": "EMCManager",
+      "location": "src/main/java/com/varlike/materialworld/emc/EMCManager.java",
+      "methods": [
+        { "name": "getEMC(Item item)", "purpose": "获取物品基础 EMC，不考虑数量与耐久，未定义返回 0。" },
+        { "name": "getEMC(ItemStack stack)", "purpose": "整栈折算值：有耐久按剩余耐久比例折算 × 数量，无耐久按基础值 × 数量。" },
+        { "name": "getCurrentEMC(ItemStack stack)", "purpose": "单个物品的当前有效 EMC（按耐久折算）。" },
+        { "name": "getStackEMC(ItemStack stack)", "purpose": "整栈价值，等同于 getEMC(ItemStack)。" },
+        { "name": "setEMC(Item item, long value)", "purpose": "设置或更新物品 EMC，负值归零。" },
+        { "name": "setEMC(String itemRegistryName, long value)", "purpose": "通过注册名设置 EMC，使用 BuiltInRegistries.ITEM 查找。" },
+        { "name": "hasEMC(Item item)", "purpose": "判断物品是否已定义 EMC。" },
+        { "name": "size()", "purpose": "返回已注册 EMC 的物品数量。" },
+        { "name": "clear()", "purpose": "清空所有 EMC 值，用于重载。" },
+        { "name": "forEach(BiConsumer<Item, Long> action)", "purpose": "遍历所有已注册 EMC 值。" },
+        { "name": "remove(Item item)", "purpose": "移除某物品的 EMC 定义。" },
+        { "name": "变更", "purpose": "删除 getUnitEMC / getBaseEMC 重复方法，统一为 getEMC(Item)。" }
+      ]
+    },
+    {
+      "className": "EMCStorage",
+      "location": "src/main/java/com/varlike/materialworld/emc/EMCStorage.java",
+      "methods": [
+        { "name": "init(Path configDir)", "purpose": "初始化存储目录和文件路径 config/materialworld/emc.json。" },
+        { "name": "load()", "purpose": "从 JSON 文件加载自定义 EMC 值，覆盖默认值。" },
+        { "name": "save()", "purpose": "将当前 EMCManager 中的所有值写回 JSON 文件。" }
+      ]
+    },
+    {
+      "className": "EMCValues",
+      "location": "src/main/java/com/varlike/materialworld/emc/EMCValues.java",
+      "methods": [
+        { "name": "define(Item item, long value)", "purpose": "向默认值快照中添加一条物品 EMC 定义。" },
+        { "name": "registerDefaults()", "purpose": "将所有默认值写入 EMCManager。" },
+        { "name": "getDefault(Item item)", "purpose": "获取物品默认 EMC 值。" },
+        { "name": "hasDefault(Item item)", "purpose": "判断物品是否有默认 EMC 值。" },
+        { "name": "变更", "purpose": "只定义无工作台配方、无法通过推演获得的源头物品。当前共 98 种物品，涵盖自然方块、原木、矿石掉落物、熔炉产物、怪物掉落、植物原料、其他无配方物。矿石原矿方块已删除，交由其它方式处理。" }
+      ]
+    },
+    {
+      "className": "EMCRecipeCalculator",
+      "location": "src/main/java/com/varlike/materialworld/emc/EMCRecipeCalculator.java",
+      "methods": [
+        { "name": "calculate(MinecraftServer server)", "purpose": "从服务器所有配方中多轮迭代推导 EMC，返回新增数量。" },
+        { "name": "tryCalculate(Recipe<?> recipe, RegistryAccess registryAccess)", "purpose": "尝试为单个配方推导结果物品的 EMC。" },
+        { "name": "筛选的配方类型", "purpose": "CraftingRecipe、SmeltingRecipe、BlastingRecipe、SmokingRecipe、CampfireCookingRecipe、StonecutterRecipe。" },
+        { "name": "缺口", "purpose": "SmithingRecipe（锻造台配方）未纳入，下界合金成品需手动定义或后续补充。" }
+      ]
+    },
+    {
+      "className": "NetworkHandler",
+      "location": "src/main/java/com/varlike/materialworld/network/NetworkHandler.java",
+      "methods": [
+        { "name": "register(RegisterPayloadHandlersEvent event)", "purpose": "监听网络注册事件，向 PayloadRegistrar 注册全部 5 个网络包。" },
+        { "name": "syncTo(ServerPlayer player)", "purpose": "通过 ModCapabilities.PLAYER_EMC 获取玩家 EMC 数据并向该玩家发送同步包。" },
+        { "name": "变更", "purpose": "使用 ModCapabilities.PLAYER_EMC 统一能力实例；移除 bus 参数，依赖 NeoForge 自动路由。" }
+      ]
+    },
+    {
+      "className": "ClientboundSyncEMCPacket",
+      "location": "src/main/java/com/varlike/materialworld/network/ClientboundSyncEMCPacket.java",
+      "methods": [
+        { "name": "encode(RegistryFriendlyByteBuf buf)", "purpose": "将余额和已学习物品集合写入缓冲区。" },
+        { "name": "ClientboundSyncEMCPacket(RegistryFriendlyByteBuf buf)", "purpose": "从缓冲区解码构造包实例。" },
+        { "name": "readLearned(RegistryFriendlyByteBuf buf)", "purpose": "静态工具方法，从缓冲区读取 ResourceLocation 集合。" },
+        { "name": "handle(ClientboundSyncEMCPacket pkt, IPayloadContext context)", "purpose": "在主线程调用 ClientEMCData.update 更新客户端数据。" },
+        { "name": "type()", "purpose": "返回该载荷的唯一类型标识。" }
+      ]
+    },
+    {
+      "className": "ServerboundEMCCraftPacket",
+      "location": "src/main/java/com/varlike/materialworld/network/ServerboundEMCCraftPacket.java",
+      "methods": [
+        { "name": "encode(RegistryFriendlyByteBuf buf)", "purpose": "将槽位索引与对应 ItemStack 写入缓冲区。" },
+        { "name": "ServerboundEMCCraftPacket(RegistryFriendlyByteBuf buf)", "purpose": "从缓冲区解码构造包实例。" },
+        { "name": "readMap(RegistryFriendlyByteBuf buf)", "purpose": "静态工具方法，从缓冲区读取槽位到物品的映射。" },
+        { "name": "handle(ServerboundEMCCraftPacket pkt, IPayloadContext context)", "purpose": "服务端处理 EMC 合成请求，校验并扣除 EMC，向合成网格放置物品，最后同步最新数据给客户端。" },
+        { "name": "变更", "purpose": "扣除 EMC 时记录 oldBalance，扣除后发布 EMCChangeEvent，与转换/回收路径一致。使用 ModCapabilities.PLAYER_EMC。" },
+        { "name": "type()", "purpose": "返回该载荷的唯一类型标识。" }
+      ]
+    },
+    {
+      "className": "ServerboundRecyclePacket",
+      "location": "src/main/java/com/varlike/materialworld/network/ServerboundRecyclePacket.java",
+      "methods": [
+        { "name": "encode(RegistryFriendlyByteBuf buf)", "purpose": "将背包槽位索引写入缓冲区。" },
+        { "name": "ServerboundRecyclePacket(RegistryFriendlyByteBuf buf)", "purpose": "从缓冲区解码构造包实例。" },
+        { "name": "handle(ServerboundRecyclePacket pkt, IPayloadContext context)", "purpose": "服务端处理回收请求，学习物品并增加 EMC，清空原槽位，最后同步最新数据给客户端。" },
+        { "name": "变更", "purpose": "使用 EMCManager.getStackEMC(stack) 计算整栈价值，支持耐久折算；事件顺序为「先记录 oldBalance → 学习 → 加款并发布 EMCChangeEvent → 首次学习时发布 ItemLearnedEvent」。使用 ModCapabilities.PLAYER_EMC。" },
+        { "name": "type()", "purpose": "返回该载荷的唯一类型标识。" }
+      ]
+    },
+    {
+      "className": "ServerboundRequestSyncPacket",
+      "location": "src/main/java/com/varlike/materialworld/network/ServerboundRequestSyncPacket.java",
+      "methods": [
+        { "name": "encode(RegistryFriendlyByteBuf buf)", "purpose": "空实现，该包不携带数据。" },
+        { "name": "ServerboundRequestSyncPacket(RegistryFriendlyByteBuf buf)", "purpose": "从缓冲区解码构造包实例。" },
+        { "name": "handle(ServerboundRequestSyncPacket pkt, IPayloadContext context)", "purpose": "服务端收到请求后向该玩家发送一次 EMC 同步包。" },
+        { "name": "type()", "purpose": "返回该载荷的唯一类型标识。" }
+      ]
+    },
+    {
+      "className": "ServerboundTransmutePacket",
+      "location": "src/main/java/com/varlike/materialworld/network/ServerboundTransmutePacket.java",
+      "methods": [
+        { "name": "encode(RegistryFriendlyByteBuf buf)", "purpose": "将目标物品的注册名写入缓冲区。" },
+        { "name": "ServerboundTransmutePacket(RegistryFriendlyByteBuf buf)", "purpose": "从缓冲区解码物品并构造包实例。" },
+        { "name": "handle(ServerboundTransmutePacket pkt, IPayloadContext context)", "purpose": "服务端处理转换请求，校验已学习与 EMC 余额，扣除后发放物品并同步。" },
+        { "name": "变更", "purpose": "使用 EMCManager.getEMC(item) 取基础值；使用 ModCapabilities.PLAYER_EMC；事件顺序为「先记录 oldBalance → 再 consumeEmc → 再发布 EMCChangeEvent」。" },
+        { "name": "type()", "purpose": "返回该载荷的唯一类型标识。" }
+      ]
+    },
+    {
+      "className": "ClientPayloadHandler",
+      "location": "src/main/java/com/varlike/materialworld/network/ClientPayloadHandler.java",
+      "methods": [
+        { "name": "handleSyncEMC(ClientboundSyncEMCPacket pkt, IPayloadContext context)", "purpose": "客户端专用处理函数，接收 EMC 同步包并更新 ClientEMCData。" }
+      ]
+    },
+    {
+      "className": "ModCapabilities",
+      "location": "src/main/java/com/varlike/materialworld/capability/ModCapabilities.java",
+      "methods": [
+        { "name": "PLAYER_EMC", "purpose": "静态 EntityCapability<PlayerEMC, Void> 实例，唯一能力标识 materialworld:player_emc。" },
+        { "name": "PROVIDER", "purpose": "静态 PlayerEMCProvider 实例，按玩家 UUID 存储数据。" },
+        { "name": "register(RegisterCapabilitiesEvent event)", "purpose": "使用 event.registerEntity 注册玩家实体的 EMC 能力，参数为 PLAYER_EMC、EntityType.PLAYER 和 PROVIDER。" },
+        { "name": "变更", "purpose": "成为唯一能力注册入口；移除 bus 参数，依赖 NeoForge 自动路由。" }
+      ]
+    },
+    {
+      "className": "PlayerEMC",
+      "location": "src/main/java/com/varlike/materialworld/capability/PlayerEMC.java",
+      "methods": [
+        { "name": "getEmcBalance()", "purpose": "返回当前 EMC 余额。" },
+        { "name": "setEmcBalance(long value)", "purpose": "设置 EMC 余额，负值归零。" },
+        { "name": "addEmc(long amount)", "purpose": "增加 EMC 余额。" },
+        { "name": "consumeEmc(long amount)", "purpose": "尝试扣除 EMC，余额不足返回 false。" },
+        { "name": "isLearned(Item item)", "purpose": "判断物品是否已被学习。" },
+        { "name": "learn(Item item)", "purpose": "学习物品，返回 true 表示首次学习。" },
+        { "name": "getLearnedItems()", "purpose": "返回不可修改的已学习物品集合。" },
+        { "name": "copyFrom(PlayerEMC other)", "purpose": "从另一个 PlayerEMC 复制余额和已学习集合。" },
+        { "name": "save()", "purpose": "将数据序列化为 CompoundTag。" },
+        { "name": "load(CompoundTag tag)", "purpose": "从 CompoundTag 反序列化数据。" }
+      ]
+    },
+    {
+      "className": "PlayerEMCProvider",
+      "location": "src/main/java/com/varlike/materialworld/capability/PlayerEMCProvider.java",
+      "methods": [
+        { "name": "getCapability(Entity entity, Void context)", "purpose": "返回该实体的 PlayerEMC 实例，内部使用 Map<UUID, PlayerEMC> 按玩家 UUID 存储。" },
+        { "name": "serializeNBT(UUID uuid)", "purpose": "将指定玩家的 PlayerEMC 数据序列化为 CompoundTag。" },
+        { "name": "deserializeNBT(UUID uuid, CompoundTag nbt)", "purpose": "从 CompoundTag 反序列化数据到指定玩家的 PlayerEMC。" },
+        { "name": "copyFrom(UUID oldUuid, UUID newUuid)", "purpose": "死亡重生等场景下，把旧 UUID 的数据复制到新 UUID。" },
+        { "name": "remove(UUID uuid)", "purpose": "玩家退出时清理内存。" },
+        { "name": "变更", "purpose": "从全局单例改为按 UUID 存储，修复多人共享数据问题。" }
+      ]
+    },
+    {
+      "className": "CapabilityGameHandler",
+      "location": "src/main/java/com/varlike/materialworld/capability/CapabilityGameHandler.java",
+      "methods": [
+        { "name": "onPlayerClone(PlayerEvent.Clone event)", "purpose": "玩家死亡重生时，将旧 PlayerEMC 数据复制到新 PlayerEMC。" },
+        { "name": "onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event)", "purpose": "玩家登录时从 persistentData 读取 EMC 数据并向该玩家发送同步包。" },
+        { "name": "onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event)", "purpose": "玩家退出时写入 persistentData 并清理 Provider 内存。" },
+        { "name": "变更", "purpose": "补齐持久化与登录同步逻辑。" }
+      ]
+    },
+    {
+      "className": "ClientEMCData",
+      "location": "src/main/java/com/varlike/materialworld/client/ClientEMCData.java",
+      "methods": [
+        { "name": "getBalance()", "purpose": "返回客户端缓存的 EMC 余额。" },
+        { "name": "isLearned(Item item)", "purpose": "判断物品是否已被学习，使用 BuiltInRegistries.ITEM 获取注册名。" },
+        { "name": "update(long newBalance, Collection<ResourceLocation> newLearned)", "purpose": "用服务端同步包中的数据更新客户端缓存。" }
+      ]
+    },
+    {
+      "className": "KeyBindings",
+      "location": "src/main/java/com/varlike/materialworld/client/KeyBindings.java",
+      "methods": [
+        { "name": "OPEN_TRANSMUTATION", "purpose": "静态字段，注册默认按键 P，用于打开物质转换界面。" }
+      ]
+    },
+    {
+      "className": "ClientEvents",
+      "location": "src/main/java/com/varlike/materialworld/client/ClientEvents.java",
+      "methods": [
+        { "name": "ModBus.onRegisterKeys(RegisterKeyMappingsEvent event)", "purpose": "在 mod 总线注册按键映射。" },
+        { "name": "GameBus.onClientTick(ClientTickEvent.Post event)", "purpose": "在每个客户端 tick 结束时检测按键并打开物质转换界面。" }
+      ]
+    },
+    {
+      "className": "TransmutationScreen",
+      "location": "src/main/java/com/varlike/materialworld/client/TransmutationScreen.java",
+      "methods": [
+        { "name": "TransmutationScreen()", "purpose": "构造函数，设置界面标题。" },
+        { "name": "init()", "purpose": "初始化界面，请求服务端同步 EMC 数据并构建物品网格列表；根据 ClientConfig.transmutationDisplayMode 过滤物品。" },
+        { "name": "render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)", "purpose": "渲染 EMC 网格、玩家背包、悬停提示。" },
+        { "name": "drawInvCell(GuiGraphics graphics, Inventory inv, int invIndex, int cx, int cy, int mouseX, int mouseY)", "purpose": "绘制单个背包格子及其物品。" },
+        { "name": "renderGridTooltip(GuiGraphics graphics, int idx, int mouseX, int mouseY)", "purpose": "绘制 EMC 网格物品的悬停提示。" },
+        { "name": "inside(int mx, int my, int x, int y)", "purpose": "判断鼠标是否位于指定格子内。" },
+        { "name": "getHoveredGridIndex(int mx, int my)", "purpose": "返回鼠标悬停的 EMC 网格物品索引，未命中返回 -1。" },
+        { "name": "getHoveredInvIndex(int mx, int my)", "purpose": "返回鼠标悬停的背包槽位索引，未命中返回 -1。" },
+        { "name": "mouseClicked(double mouseX, double mouseY, int button)", "purpose": "处理鼠标点击，左键提取 EMC 网格物品或回收背包物品。" },
+        { "name": "mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY)", "purpose": "处理滚轮滚动，切换 EMC 网格显示行。" },
+        { "name": "isPauseScreen()", "purpose": "返回 false，使界面不暂停游戏。" }
+      ]
+    },
+    {
+      "className": "EMCRecipeTransferHandler",
+      "location": "src/main/java/com/varlike/materialworld/compat/jei/EMCRecipeTransferHandler.java",
+      "methods": [
+        { "name": "EMCRecipeTransferHandler(IRecipeTransferHandlerHelper helper)", "purpose": "构造函数，保存 JEI 提供的转移辅助工具。" },
+        { "name": "getContainerClass()", "purpose": "返回该处理器适用的容器类 CraftingMenu。" },
+        { "name": "getMenuType()", "purpose": "返回该处理器适用的菜单类型 MenuType.CRAFTING。" },
+        { "name": "getRecipeType()", "purpose": "返回 RecipeType<RecipeHolder<CraftingRecipe>>，对应 JEI 19.x 中包装后的配方类型。" },
+        { "name": "transferRecipe(CraftingMenu container, RecipeHolder<CraftingRecipe> recipeHolder, IRecipeSlotsView recipeSlots, Player player, boolean maxTransfer, boolean doTransfer)", "purpose": "从 RecipeHolder 取出 CraftingRecipe，统计背包已有材料，不足部分通过 EMC 合成补齐，发送 ServerboundEMCCraftPacket 到服务端或进行预检查。" }
+      ]
+    },
+    {
+      "className": "MaterialWorldJEIPlugin",
+      "location": "src/main/java/com/varlike/materialworld/compat/jei/MaterialWorldJEIPlugin.java",
+      "methods": [
+        { "name": "getPluginUid()", "purpose": "返回该 JEI 插件的唯一标识 materialworld:jei_plugin。" },
+        { "name": "registerRecipeTransferHandlers(IRecipeTransferRegistration registration)", "purpose": "向 JEI 注册 EMCRecipeTransferHandler，用于原版工作台配方。" }
+      ]
+    },
+    {
+      "className": "AddonCreativeTab",
+      "location": "src/main/java/com/varlike/materialworld/registry/AddonCreativeTab.java",
+      "methods": [
+        { "name": "Entry(String groupName, Supplier<ItemStack> supplier)", "purpose": "内部记录类，携带可空分组名和物品供应器。" },
+        { "name": "add(Supplier<ItemStack> supplier)", "purpose": "无分组添加物品。" },
+        { "name": "add(String groupName, Supplier<ItemStack> supplier)", "purpose": "带分组添加物品。" },
+        { "name": "getAll()", "purpose": "返回所有条目的不可修改列表。" },
+        { "name": "isEmpty()", "purpose": "判断是否为空。" },
+        { "name": "getIconSupplier()", "purpose": "返回第一个物品作为标签图标。" },
+        { "name": "变更", "purpose": "数据结构从 List<Supplier<ItemStack>> 改为 List<Entry>，支持分组。" }
+      ]
+    },
+    {
+      "className": "CreativeTabRegistration",
+      "location": "src/main/java/com/varlike/materialworld/registry/CreativeTabRegistration.java",
+      "methods": [
+        { "name": "onRegister(RegisterEvent event)", "purpose": "条件注册附属创造标签，AddonCreativeTab 为空时跳过。" },
+        { "name": "createGroupHeader(String groupName)", "purpose": "生成分组标题锚点（金色加粗名称的纸张）。" },
+        { "name": "变更", "purpose": "displayItems 支持分组，分组切换时插入标题锚点。" }
+      ]
+    }
+  ],
+  "toBeConfirmed": [
+    "neoforge.mods.toml 中 JEI 版本范围是 [19.0.0,)，而 Gradle 编译版本是 19.51.0.418，需要确认是否要收紧依赖范围。",
+    "EMCRecipeCalculator 未纳入 SmithingRecipe（锻造台配方）。如果下界合金成品需要 EMC 推演，需补充。",
+    "EMCValues 中矿石原矿方块已删除。精准采集挖到的矿石方块目前无 EMC。如需纳入，可按掉落物同价补 define。",
+    "EMCManager.getEMC(ItemStack) 与 EMCManager.getStackEMC(ItemStack) 逻辑重复，可考虑合并为一个。"
+  ],
+  "changelog": {
+    "capabilityFixes": [
+      "删除 CapabilityHandler.java，移除重复的 PLAYER_EMC 能力实例。",
+      "统一能力实例：所有网络包、API、同步逻辑均使用 ModCapabilities.PLAYER_EMC。",
+      "PlayerEMCProvider 改为按 UUID 存储，修复多人服务器中所有玩家共享同一份数据的问题。",
+      "CapabilityGameHandler 补齐持久化：登录时读取、退出时保存、死亡时复制。"
+    ],
+    "eventsAndSync": [
+      "ServerboundEMCCraftPacket 补发 EMCChangeEvent，与转换/回收路径保持一致。",
+      "ServerboundRecyclePacket 调整事件顺序：先记录 oldBalance，再学习、加款，最后发布事件。",
+      "NetworkHandler.syncTo 使用 ModCapabilities.PLAYER_EMC。"
+    ],
+    "durabilityEMC": [
+      "EMCManager 新增 getCurrentEMC(ItemStack) 与 getStackEMC(ItemStack)，支持按剩余耐久折算。",
+      "EMCManager 删除 getUnitEMC / getBaseEMC 重复方法，统一为 getEMC(Item)。",
+      "ServerboundRecyclePacket 回收时使用 EMCManager.getStackEMC(stack)。",
+      "MaterialWorld.ForgeEvents.onItemTooltip 更新显示格式：有耐久 EMC: 当前/完整；无耐久单个数 EMC: 单值；无耐久堆叠 EMC: 单值-总值。",
+      "语言文件新增 tooltip.materialworld.emc、tooltip.materialworld.emc_durability、tooltip.materialworld.emc_stack。",
+      "EMCRegistry 新增 getCurrentEMC / getStackEMC。",
+      "MaterialWorldAPI 新增 getCurrentEMC / getStackEMC，API_VERSION 升到 2。"
+    ],
+    "configChanges": [
+      "ClientConfig.onLoad 增加 SPEC 判断，避免其他配置加载时误读。",
+      "Config 首次加载由 MaterialWorld.commonSetup 调用 Config.loadValues()；不监听 Loading 事件，避免重复加载。",
+      "MaterialWorld.commonSetup 使用 event.enqueueWork 串行执行初始化逻辑。"
+    ],
+    "eventBus": [
+      "移除已弃用的 bus = EventBusSubscriber.Bus.MOD，依赖 NeoForge 21.1 自动路由。"
+    ],
+    "emcDefaults": [
+      "EMCValues 只定义无工作台配方、无法通过推演获得的源头物品，共 98 种。",
+      "删除矿石原矿方块定义，保留矿石掉落物定义。",
+      "推演筛选的配方类型：CraftingRecipe、SmeltingRecipe、BlastingRecipe、SmokingRecipe、CampfireCookingRecipe、StonecutterRecipe。"
+    ]
+  }
+}
