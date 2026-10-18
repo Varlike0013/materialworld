@@ -7,16 +7,12 @@ import com.varlike.spiritworld.network.ServerboundTogglePassivePacket;
 import com.varlike.spiritworld.skill.SkillNode;
 import com.varlike.spiritworld.skill.SkillTree;
 import com.varlike.spiritworld.skill.SkillType;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.PacketDistributor;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class SkillLoadoutScreen extends Screen {
 
@@ -29,14 +25,21 @@ public class SkillLoadoutScreen extends Screen {
     private static final int RING_RADIUS = 80;
     private static final int SLOT_COUNT = 6;
 
+    // 技能列表布局常量（render 和 mouseClicked 共用，避免坐标漂移）
+    private static final int LIST_BASE_OFFSET_X = 20;   // 相对 this.width / 2
+    private static final int LIST_BASE_Y = 60;
+    private static final int LIST_CELL = 40;
+    private static final int LIST_PER_ROW = 6;
+    private static final int LIST_ICON_HALF = 16;
+
     private int centerX, centerY;
     private int[] slotX = new int[SLOT_COUNT];
     private int[] slotY = new int[SLOT_COUNT];
 
-    private SkillType filterType = null;    // null = 全部
+    private SkillType filterType = null;
     private boolean onlyEquippable = false;
 
-    private Button btnAll, btnEquippable, btnActive, btnPassive, btnSpecial;
+    private Button btnAll, btnEquippable, btnActive, btnPassive, btnSpecial, btnSwitchToTree;
 
     public SkillLoadoutScreen() {
         super(Component.translatable("screen.spiritworld.loadout.title"));
@@ -49,7 +52,6 @@ public class SkillLoadoutScreen extends Screen {
         centerX = this.width / 4;
         centerY = this.height / 2;
 
-        // 6 槽环形，1 号槽在正上方
         for (int i = 0; i < SLOT_COUNT; i++) {
             double angle = -Math.PI / 2 + i * (Math.PI * 2 / SLOT_COUNT);
             slotX[i] = centerX + (int) (Math.cos(angle) * RING_RADIUS);
@@ -58,7 +60,7 @@ public class SkillLoadoutScreen extends Screen {
 
         int bx = this.width - 20 - 60;
         int by = 30;
-        // 分类按钮
+
         btnAll = addRenderableWidget(Button.builder(
                         Component.translatable("screen.spiritworld.loadout.filter.all"),
                         b -> { filterType = null; onlyEquippable = false; })
@@ -83,19 +85,27 @@ public class SkillLoadoutScreen extends Screen {
                         Component.translatable("skill.type.special"),
                         b -> { filterType = SkillType.SPECIAL; onlyEquippable = false; })
                 .bounds(bx, by, 60, 18).build());
+
+        // 页面切换：技能树
+        by += 26;
+        btnSwitchToTree = addRenderableWidget(Button.builder(
+                        Component.translatable("screen.spiritworld.loadout.switch_to_tree"),
+                        b -> {
+                            if (this.minecraft != null) {
+                                this.minecraft.setScreen(new SkillTreeScreen());
+                            }
+                        })
+                .bounds(bx, by, 60, 18).build());
     }
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         g.fillGradient(0, 0, this.width, this.height, COLOR_BG_TOP, COLOR_BG_BOTTOM);
 
-        // 标题
         g.drawCenteredString(this.font, this.title, this.width / 2, 15, 0xFFFFD54F);
 
-        // 环形背景
         SkillRenderer.fillCircle(g, centerX, centerY, RING_RADIUS + SLOT_RADIUS + 8, COLOR_PANEL);
 
-        // 槽位
         for (int i = 0; i < SLOT_COUNT; i++) {
             ResourceLocation equipped = ClientSpiritData.getLoadoutSlot(i);
             boolean selected = i == ClientSpiritData.getSelectedSlot();
@@ -115,18 +125,13 @@ public class SkillLoadoutScreen extends Screen {
                 g.drawCenteredString(this.font, "空", slotX[i], slotY[i] - 4, 0xFF666666);
             }
 
-            // 槽位编号
             g.drawString(this.font, String.valueOf(i + 1),
                     slotX[i] - SLOT_RADIUS + 4, slotY[i] - SLOT_RADIUS + 4, 0xFFAAAAAA, false);
         }
 
-        // 已学技能列表
         renderSkillList(g, mouseX, mouseY);
-
-        // 被动开关区
         renderPassiveToggles(g, mouseX, mouseY);
 
-        // 操作提示
         g.drawCenteredString(this.font,
                 Component.translatable("screen.spiritworld.loadout.hint"),
                 this.width / 2, this.height - 20, 0xFFAAAAAA);
@@ -135,10 +140,7 @@ public class SkillLoadoutScreen extends Screen {
     }
 
     private void renderSkillList(GuiGraphics g, int mouseX, int mouseY) {
-        int listX = this.width / 2 + 20;
-        int listY = 60;
-        int cell = 40;
-        int perRow = 6;
+        int listX = this.width / 2 + LIST_BASE_OFFSET_X;
 
         int i = 0;
         for (SkillNode node : SkillTree.getAll()) {
@@ -146,18 +148,24 @@ public class SkillLoadoutScreen extends Screen {
             if (filterType != null && node.getType() != filterType) continue;
             if (onlyEquippable && !node.isEquippable()) continue;
 
-            int col = i % perRow;
-            int row = i / perRow;
-            int cx = listX + col * cell + cell / 2;
-            int cy = listY + row * cell + cell / 2;
+            int col = i % LIST_PER_ROW;
+            int row = i / LIST_PER_ROW;
+            int cx = listX + col * LIST_CELL + LIST_CELL / 2;
+            int cy = LIST_BASE_Y + row * LIST_CELL + LIST_CELL / 2;
 
             int borderColor = node.isEquippable() ? 0xFF4CAF50 : 0xFF666666;
-            SkillRenderer.fillShape(g, node.getType(), cx, cy, 16, borderColor, 0x80201030);
+            int fillColor = node.isEquippable() ? 0xFF2E1A4A : 0xFF1A1A1A;
+            SkillRenderer.fillShape(g, node.getType(), cx, cy, LIST_ICON_HALF, borderColor, fillColor);
 
             g.drawCenteredString(this.font, node.getIcon(), cx, cy - 4, 0xFFFFFFFF);
 
             int lvl = ClientSpiritData.getSkillLevel(node.getId());
             g.drawCenteredString(this.font, String.valueOf(lvl), cx, cy + 6, 0xFFFFD54F);
+
+            // 悬停高亮，方便确认命中区域
+            if (Math.abs(mouseX - cx) <= LIST_ICON_HALF && Math.abs(mouseY - cy) <= LIST_ICON_HALF) {
+                SkillRenderer.fillShape(g, node.getType(), cx, cy, LIST_ICON_HALF + 2, 0xFFFFFFFF, 0x00000000);
+            }
 
             i++;
         }
@@ -165,7 +173,7 @@ public class SkillLoadoutScreen extends Screen {
         if (i == 0) {
             g.drawString(this.font,
                     Component.translatable("screen.spiritworld.loadout.empty"),
-                    listX, listY, 0xFF888888, false);
+                    listX, LIST_BASE_Y, 0xFF888888, false);
         }
     }
 
@@ -205,29 +213,64 @@ public class SkillLoadoutScreen extends Screen {
         }
     }
 
+    // ==================== 命中判定 ====================
+
+    /** 返回鼠标命中的技能节点，未命中返回 null。render 与 mouseClicked 共用同一套坐标逻辑。 */
+    private SkillNode getSkillNodeAt(double mouseX, double mouseY) {
+        int listX = this.width / 2 + LIST_BASE_OFFSET_X;
+
+        int i = 0;
+        for (SkillNode node : SkillTree.getAll()) {
+            if (ClientSpiritData.getSkillLevel(node.getId()) <= 0) continue;
+            if (filterType != null && node.getType() != filterType) continue;
+            if (onlyEquippable && !node.isEquippable()) continue;
+
+            int col = i % LIST_PER_ROW;
+            int row = i / LIST_PER_ROW;
+            int cx = listX + col * LIST_CELL + LIST_CELL / 2;
+            int cy = LIST_BASE_Y + row * LIST_CELL + LIST_CELL / 2;
+
+            if (Math.abs(mouseX - cx) <= LIST_ICON_HALF && Math.abs(mouseY - cy) <= LIST_ICON_HALF) {
+                return node;
+            }
+            i++;
+        }
+        return null;
+    }
+
     // ==================== 交互 ====================
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // ① Widget（分类按钮 + 切换按钮）最优先
         if (super.mouseClicked(mouseX, mouseY, button)) return true;
 
         int mx = (int) mouseX, my = (int) mouseY;
 
-        // 点击槽位
+        // ② 槽位（圆形判定）
         for (int i = 0; i < SLOT_COUNT; i++) {
-            if (Math.abs(mx - slotX[i]) <= SLOT_RADIUS && Math.abs(my - slotY[i]) <= SLOT_RADIUS) {
+            int dx = mx - slotX[i], dy = my - slotY[i];
+            if (dx * dx + dy * dy <= SLOT_RADIUS * SLOT_RADIUS) {
                 if (button == 0) {
-                    // 左键：选中该槽位
                     PacketDistributor.sendToServer(new ServerboundSetSelectedSlotPacket(i));
                 } else if (button == 1) {
-                    // 右键：清空槽位
                     PacketDistributor.sendToServer(new ServerboundSetLoadoutPacket(i, null));
                 }
                 return true;
             }
         }
 
-        // 点击被动开关
+        // ③ 技能列表：左键装备到当前选中槽位（← 关键修复）
+        SkillNode hit = getSkillNodeAt(mouseX, mouseY);
+        if (hit != null) {
+            if (button == 0 && hit.isEquippable()) {
+                int slot = ClientSpiritData.getSelectedSlot();
+                PacketDistributor.sendToServer(new ServerboundSetLoadoutPacket(slot, hit.getId()));
+            }
+            return true;
+        }
+
+        // ④ 被动开关
         int listX = 20;
         int listY = this.height - 180;
         int y = listY;
@@ -249,4 +292,9 @@ public class SkillLoadoutScreen extends Screen {
 
     @Override
     public boolean isPauseScreen() { return false; }
+
+    @Override
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        // 空实现：render 里已用 fillGradient 画了自定义背景，避免原版半透明黑 + 模糊覆盖
+    }
 }

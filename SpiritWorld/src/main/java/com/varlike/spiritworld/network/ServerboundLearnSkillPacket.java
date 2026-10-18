@@ -3,6 +3,7 @@ package com.varlike.spiritworld.network;
 import com.varlike.spiritworld.SpiritWorld;
 import com.varlike.spiritworld.capability.ModCapabilities;
 import com.varlike.spiritworld.capability.PlayerSpirit;
+import com.varlike.spiritworld.capability.SpiritPersistence;
 import com.varlike.spiritworld.skill.SkillNode;
 import com.varlike.spiritworld.skill.SkillTree;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -59,6 +60,8 @@ public record ServerboundLearnSkillPacket(ResourceLocation skillId) implements C
             data.addSpentVisionPoints(cost);
 
             NetworkHandler.syncTo(player);
+            // 学技能是最关键的进度节点，立刻落盘
+            SpiritPersistence.save(player, data);
         });
     }
 

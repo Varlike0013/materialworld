@@ -28,9 +28,24 @@ public class SpiritClientEvents {
 
     @EventBusSubscriber(modid = SpiritWorld.MOD_ID, value = Dist.CLIENT)
     public static class GameBus {
+
+        /** 是否正处于某个世界中（用于检测“退出世界”这个瞬间） */
+        private static boolean inWorld = false;
+
         @SubscribeEvent
         public static void onClientTick(ClientTickEvent.Post event) {
             Minecraft mc = Minecraft.getInstance();
+
+            // 离开世界时清掉客户端缓存，避免切存档后残留上一个世界的进度
+            if (mc.level == null) {
+                if (inWorld) {
+                    inWorld = false;
+                    ClientSpiritData.reset();
+                }
+                return;
+            }
+            inWorld = true;
+
             if (mc.player == null) return;
             if (mc.screen != null) return;
 

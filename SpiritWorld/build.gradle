@@ -112,7 +112,6 @@ configurations {
 }
 
 repositories {
-    // 必须放在最前面，清空 NeoForge 自动注入的官方仓库
     clear()
     mavenLocal()   // 必须放在最前，优先解析本地依赖
     // ForgeCDN 镜像替换官方仓库
@@ -124,6 +123,9 @@ repositories {
     // 其他必要仓库
     mavenCentral()
     gradlePluginPortal()
+    // 补回 moddev 需要的官方仓库（保险）
+    //maven { url = "https://maven.neoforged.net/releases" }
+    //aven { url = "https://maven.neoforged.net/mojang-meta" }
 }
 
 dependencies {

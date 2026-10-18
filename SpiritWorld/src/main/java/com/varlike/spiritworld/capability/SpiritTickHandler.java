@@ -43,5 +43,12 @@ public class SpiritTickHandler {
             NetworkHandler.syncTo(player);
             data.clearDirty();
         }
+
+        // 4. 定期把最新进度写进玩家 NBT（落盘由自动存档 / 登出 / 关服完成），
+        //    避免崩溃时把最近一分钟的游玩进度整个丢掉；
+        //    必须等登录流程读过存档再写，否则会拿默认值覆盖真实进度
+        if (data.isPersistenceReady() && player.tickCount % 1200 == 0) {
+            SpiritPersistence.save(player, data);
+        }
     }
 }

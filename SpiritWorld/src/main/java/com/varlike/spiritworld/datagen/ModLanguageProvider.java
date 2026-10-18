@@ -103,6 +103,8 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("screen.spiritworld.loadout.passive.always", "ALWAYS");
         this.add("screen.spiritworld.loadout.filter.all", "All");
         this.add("screen.spiritworld.loadout.filter.equippable", "Equippable");
+        this.add("screen.spiritworld.loadout.switch_to_tree", "Skill Tree");
+        this.add("screen.spiritworld.skill_tree.switch_to_loadout", "Skill Loadout");
 
         this.add("skill.spiritworld.emc_conversion", "EMC Conversion");
         this.add("skill.spiritworld.emc_conversion.desc", "Continuously converts EMC into Vision Points.");
@@ -129,12 +131,25 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("message.spiritworld.spirit_tool.summoned", "Spirit Tool summoned");
         this.add("message.spiritworld.spirit_tool.no_spirit_mining", "Not enough spirit to mine (%d needed)");
 
+        // 技能学习失败提示
+        this.add("message.spiritworld.skill.max_level", "This skill is already at max level");
+        this.add("message.spiritworld.skill.prereq", "Requires %s first");
+        this.add("message.spiritworld.skill.prereq_unknown", "Prerequisite skill not learned");
+        this.add("message.spiritworld.skill.no_vision", "Requires Vision Level %d");
+        this.add("message.spiritworld.skill.no_points", "Not enough Vision Points (need %d)");
+
         this.add("skill.spiritworld.summon_spirit_tool", "Summon Spirit Tool");
+        this.add("skill.spiritworld.summon_spirit_tool.desc", "Summons a spirit tool bound to you. Costs 10 spirit.");
         this.add("skill.spiritworld.spirit_tool_pickaxe", "Spirit Pickaxe");
+        this.add("skill.spiritworld.spirit_tool_pickaxe.desc", "Spirit tool mines pickaxe blocks; faster per level.");
         this.add("skill.spiritworld.spirit_tool_axe", "Spirit Axe");
+        this.add("skill.spiritworld.spirit_tool_axe.desc", "Spirit tool chops axe blocks; faster per level.");
         this.add("skill.spiritworld.spirit_tool_shovel", "Spirit Shovel");
+        this.add("skill.spiritworld.spirit_tool_shovel.desc", "Spirit tool digs shovel blocks; faster per level.");
         this.add("skill.spiritworld.spirit_tool_hoe", "Spirit Hoe");
+        this.add("skill.spiritworld.spirit_tool_hoe.desc", "Spirit tool tills hoe blocks; faster per level.");
         this.add("skill.spiritworld.spirit_fortune", "Spirit Fortune");
+        this.add("skill.spiritworld.spirit_fortune.desc", "Spirit tool gains Fortune while this passive is active.");
 
         this.add("skill.spiritworld.spirit_endurance", "Spirit Endurance");
         this.add("skill.spiritworld.spirit_endurance.desc", "+10 max spirit per level.");

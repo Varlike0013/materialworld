@@ -31,12 +31,12 @@ public class Config {
             .defineInRange("bottledSpiritRestoreAmount", 50L, 1L, 10000L);
 
     public static final ModConfigSpec.BooleanValue SPIRIT_CLEAR_ON_LOGIN = BUILDER
-            .comment("玩家进入游戏时是否清空精神力 / Whether to clear spirit on player login")
-            .define("spiritClearOnLogin", true);
+            .comment("玩家进入游戏时是否清空精神力（进度已持久化，默认保留）/ Whether to clear spirit on player login")
+            .define("spiritClearOnLogin", false);
 
     public static final ModConfigSpec.BooleanValue SPIRIT_CLEAR_ON_DEATH = BUILDER
-            .comment("玩家死亡重生时是否清空精神力 / Whether to clear spirit on death respawn")
-            .define("spiritClearOnDeath", true);
+            .comment("玩家死亡重生时是否清空精神力（默认保留，避免与重生自动召唤抢顺序）/ Whether to clear spirit on death respawn")
+            .define("spiritClearOnDeath", false);
 
     public static final ModConfigSpec.LongValue EMC_CONVERSION_EMC_COST = BUILDER
             .comment("EMC 转化技能每级每次消耗的 EMC")
@@ -65,8 +65,8 @@ public class Config {
     public static int spiritRegenInterval = 40;
     public static long defaultMaxSpirit = 100L;
     public static int syncInterval = 10;
-    public static boolean spiritClearOnLogin = true;
-    public static boolean spiritClearOnDeath = true;
+    public static boolean spiritClearOnLogin = false;
+    public static boolean spiritClearOnDeath = false;
     public static long bottledSpiritRestoreAmount = 50L;
     public static long emcConversionEmcCost = 20L;
     public static int emcConversionBaseInterval = 20;

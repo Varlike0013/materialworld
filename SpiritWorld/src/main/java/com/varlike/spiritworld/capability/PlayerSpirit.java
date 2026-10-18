@@ -33,6 +33,12 @@ public class PlayerSpirit {
 
     /** 脏标记，用于节流同步 / Dirty flag for throttled sync */
     private transient boolean dirty = false;
+
+    /**
+     * 是否已经和存档对接过（load 成功或登录流程走完）。
+     * 登录握手阶段玩家可能先被 tick，此时若把默认值写回 NBT 会覆盖真实存档。
+     */
+    private transient boolean persistenceReady = false;
     // ==================== 精神力 / Spirit ====================
 
     public long getSpirit() {
@@ -347,6 +353,10 @@ public class PlayerSpirit {
         this.maxSpiritModifiers.clear();
         this.maxSpiritModifiers.putAll(other.maxSpiritModifiers);
         this.initialized = other.initialized;
+        this.learnedSkills.clear();
+        this.learnedSkills.putAll(other.learnedSkills);
+        this.availableVisionPoints = other.availableVisionPoints;
+        this.totalSpentVisionPoints = other.totalSpentVisionPoints;
         System.arraycopy(other.loadout, 0, this.loadout, 0, LOADOUT_SIZE);
         this.selectedSlot = other.selectedSlot;
         this.activePassives.clear();
@@ -388,6 +398,12 @@ public class PlayerSpirit {
     }
 
     public void load(CompoundTag tag) {
+        // 覆盖前先清空旧状态，避免存档缺字段时残留上一次（或默认值）的数据
+        this.maxSpiritModifiers.clear();
+        this.learnedSkills.clear();
+        Arrays.fill(this.loadout, null);
+        this.activePassives.clear();
+
         this.spirit = tag.getLong("spirit");
         this.maxSpirit = tag.contains("maxSpirit") ? tag.getLong("maxSpirit") : DEFAULT_MAX_SPIRIT;
         this.availableVisionPoints = tag.getLong("availableVisionPoints");
@@ -423,6 +439,8 @@ public class PlayerSpirit {
         this.visionFragments = tag.getLong("visionFragments");
         if (spirit > getEffectiveMaxSpirit()) spirit = getEffectiveMaxSpirit();
         initialized = true;
+        persistenceReady = true;
+        markDirty();
     }
 
     // ==================== Dirty ====================
@@ -430,6 +448,12 @@ public class PlayerSpirit {
     public void markDirty() { this.dirty = true; }
     public boolean isDirty() { return dirty; }
     public void clearDirty() { this.dirty = false; }
+
+    /** 存档是否已经对接完成 */
+    public boolean isPersistenceReady() { return persistenceReady; }
+
+    /** 标记存档已对接（登录载入完成 / 新玩家建立存档后调用） */
+    public void markPersistenceReady() { this.persistenceReady = true; }
 
     // ==================== 工具 / Utils ====================
 

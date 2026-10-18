@@ -18,5 +18,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         this.basicItem(ModItems.SPIRIT_IRON_RING.get());
         this.basicItem(ModItems.SPIRIT_GOLD_RING.get());
         this.basicItem(ModItems.SPIRIT_DIAMOND_RING.get());
+        this.basicItem(ModItems.SPIRIT_SALT.get());
+        this.basicItem(ModItems.SPIRIT_TOOL.get());
     }
 }

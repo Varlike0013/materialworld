@@ -8,6 +8,7 @@ import com.varlike.spiritworld.skill.SkillTree;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -52,6 +53,11 @@ public class SkillTreeScreen extends Screen {
     private int minGridX, maxGridX, minGridY, maxGridY;
 
     private int contentLeft, contentTop, contentRight, contentBottom;
+    private Button btnSwitchToLoadout;
+
+    /** 点击失败时的临时提示（底部居中显示约 2.5 秒） */
+    private Component feedback = null;
+    private long feedbackUntil = 0L;
 
     public SkillTreeScreen() {
         super(Component.translatable("screen.spiritworld.skill_tree.title"));
@@ -78,6 +84,14 @@ public class SkillTreeScreen extends Screen {
         contentRight = this.width - 20;
         contentBottom = this.height - BOTTOM_BAR_HEIGHT - 10;
 
+        btnSwitchToLoadout = addRenderableWidget(Button.builder(
+                        Component.translatable("screen.spiritworld.skill_tree.switch_to_loadout"),
+                        b -> {
+                            if (this.minecraft != null) {
+                                this.minecraft.setScreen(new SkillLoadoutScreen());
+                            }
+                        })
+                .bounds(this.width - 100, 15, 80, 20).build());
         centerView();
     }
 
@@ -141,26 +155,28 @@ public class SkillTreeScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        // 背景渐变
         renderGradientBackground(g);
 
-        // 内容区裁剪
         g.enableScissor(contentLeft, contentTop, contentRight, contentBottom);
-
-        // 连线
         renderConnections(g);
-
-        // 节点
         renderNodes(g, mouseX, mouseY);
-
         g.disableScissor();
 
-        // 顶栏
         renderTopBar(g);
 
-        // Tooltip
+        // 新增：画 Widget（切换按钮）
+        super.render(g, mouseX, mouseY, partialTick);
+
+        renderFeedback(g);
+
         SkillNode hovered = getHoveredNode(mouseX, mouseY);
         if (hovered != null) renderTooltip(g, hovered, mouseX, mouseY);
+    }
+
+    // 4) 重写 renderBackground 为空，避免 super.render 触发原版遮罩
+    @Override
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        // 空实现
     }
 
     private void renderGradientBackground(GuiGraphics g) {
@@ -356,6 +372,61 @@ public class SkillTreeScreen extends Screen {
         g.renderTooltip(this.font, lines, java.util.Optional.empty(), mouseX, mouseY);
     }
 
+    // ==================== 学习反馈 ====================
+
+    /** 本地预检，失败时给出可见提示，避免“点了没反应” */
+    private void tryLearn(SkillNode node) {
+        int cur = ClientSpiritData.getSkillLevel(node.getId());
+
+        if (cur >= node.getMaxLevel()) {
+            showFeedback(Component.translatable("message.spiritworld.skill.max_level"));
+            return;
+        }
+
+        for (SkillNode.Prerequisite p : node.getPrerequisites()) {
+            if (ClientSpiritData.getSkillLevel(p.id()) < p.minLevel()) {
+                SkillNode pre = SkillTree.get(p.id());
+                showFeedback(pre != null
+                        ? Component.translatable("message.spiritworld.skill.prereq",
+                                Component.translatable(pre.getNameKey()))
+                        : Component.translatable("message.spiritworld.skill.prereq_unknown"));
+                return;
+            }
+        }
+
+        if (ClientSpiritData.getVisionLevel() < node.getRequiredVisionLevel()) {
+            showFeedback(Component.translatable("message.spiritworld.skill.no_vision",
+                    node.getRequiredVisionLevel()));
+            return;
+        }
+
+        long cost = node.getCostForNextLevel(cur);
+        if (ClientSpiritData.getAvailableVisionPoints() < cost) {
+            showFeedback(Component.translatable("message.spiritworld.skill.no_points", cost));
+            return;
+        }
+
+        PacketDistributor.sendToServer(new ServerboundLearnSkillPacket(node.getId()));
+    }
+
+    private void showFeedback(Component text) {
+        this.feedback = text;
+        this.feedbackUntil = Util.getMillis() + 2500L;
+    }
+
+    private void renderFeedback(GuiGraphics g) {
+        if (feedback == null) return;
+        if (Util.getMillis() >= feedbackUntil) {
+            feedback = null;
+            return;
+        }
+        int w = this.font.width(feedback);
+        int x = (this.width - w) / 2;
+        int y = this.height - BOTTOM_BAR_HEIGHT - 16;
+        g.fill(x - 4, y - 3, x + w + 4, y + 10, 0xB0000000);
+        g.drawString(this.font, feedback, x, y, 0xFFFF8A80, false);
+    }
+
     private boolean isInside(int mx, int my, int cx, int cy, int r) {
         return Math.abs(mx - cx) <= r && Math.abs(my - cy) <= r;
     }
@@ -373,19 +444,20 @@ public class SkillTreeScreen extends Screen {
 
     // ==================== 交互 ====================
 
+    // 5) mouseClicked 开头加 Widget 处理（放在 button 判定之前）
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
+        // Widget 优先（切换按钮）
+        if (super.mouseClicked(mouseX, mouseY, button)) return true;
+
+        if (button != 0) return false;
 
         SkillNode node = getHoveredNode((int) mouseX, (int) mouseY);
         if (node != null) {
-            if (getState(node) == NodeState.LEARNABLE) {
-                PacketDistributor.sendToServer(new ServerboundLearnSkillPacket(node.getId()));
-            }
+            tryLearn(node);
             return true;
         }
 
-        // 空白区开始拖动
         dragging = true;
         dragStartX = mouseX;
         dragStartY = mouseY;

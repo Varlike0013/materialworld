@@ -63,6 +63,22 @@ public class ClientSpiritData {
         return activePassives.contains(id);
     }
 
+    /**
+     * 退出世界 / 断开服务器时清空缓存，避免切换到另一个存档后
+     * HUD 和技能树短暂显示上一个世界的进度。
+     */
+    public static void reset() {
+        spirit = 0L;
+        maxSpirit = 100L;
+        availableVisionPoints = 0L;
+        totalSpentVisionPoints = 0L;
+        visionFragments = 0L;
+        learnedSkills.clear();
+        Arrays.fill(loadout, null);
+        selectedSlot = 0;
+        activePassives.clear();
+    }
+
     public static void update(long newSpirit, long newMaxSpirit,
                               long newAvail, long newTotalSpent,
                               long newVisionFragments,

@@ -35,6 +35,7 @@ public record ClientboundSyncSpiritPacket(
         buf.writeLong(maxSpirit);
         buf.writeLong(availableVisionPoints);
         buf.writeLong(totalSpentVisionPoints);
+        buf.writeLong(visionFragments);
         buf.writeVarInt(learnedSkills.size());
         for (var e : learnedSkills.entrySet()) {
             buf.writeResourceLocation(e.getKey());
