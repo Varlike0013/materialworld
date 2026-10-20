@@ -52,7 +52,7 @@ public class SpiritHudOverlay {
         int capacity = maxRows * perRow;
 
         List<ResourceLocation> active = new ArrayList<>();
-        for (SkillNode node : SkillTree.getAll()) {
+        for (SkillNode node : SkillTree.getHud()) {
             if (node.getType() != SkillType.PASSIVE) continue;
             if (ClientSpiritData.isPassiveActive(node.getId())) {
                 active.add(node.getId());

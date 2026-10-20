@@ -57,7 +57,7 @@ public class SkillTickHandler {
                 * (1 + Config.emcConversionSkillBonus * (skillLevel - 1));
 
         long gain = Math.max(1, (long) Math.ceil(emcCost * rate));
-        data.addVisionPoints(gain);
+        data.addVisionFragments(gain);
         data.markDirty();
 
         if (player.tickCount % Config.syncInterval == 0) {

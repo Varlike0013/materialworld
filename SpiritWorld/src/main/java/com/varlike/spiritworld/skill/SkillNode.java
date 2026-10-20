@@ -26,6 +26,7 @@ public class SkillNode {
     private final boolean equippable;
     private final boolean toggleable;
     private final boolean alwaysOn;
+    private final boolean hudVisible;   // 默认 true
 
     private SkillNode(Builder b) {
         this.id = b.id;
@@ -43,6 +44,7 @@ public class SkillNode {
         this.equippable = b.equippable;
         this.toggleable = b.toggleable;
         this.alwaysOn = b.alwaysOn;
+        this.hudVisible = b.hudVisible;
     }
 
     // ===== getters =====
@@ -61,6 +63,7 @@ public class SkillNode {
     public boolean isEquippable() { return equippable; }
     public boolean isToggleable() { return toggleable; }
     public boolean isAlwaysOn() { return alwaysOn; }
+    public boolean isHudVisible() { return hudVisible; }
 
     /** 从当前等级升到下一级所需的灵视点 */
     public long getCostForNextLevel(int currentLevel) {
@@ -88,6 +91,7 @@ public class SkillNode {
         private boolean equippable = false;
         private boolean toggleable = false;
         private boolean alwaysOn = false;
+        private boolean hudVisible = true;
 
         private Builder(ResourceLocation id) { this.id = id; }
 
@@ -101,24 +105,38 @@ public class SkillNode {
         public Builder icon(String s) { this.icon = s; return this; }
         public Builder name(String key) { this.nameKey = key; return this; }
         public Builder desc(String key) { this.descKey = key; return this; }
+        public Builder hideInHud() { this.hudVisible = false;return this;} //使用时要在SkillType后
+        public Builder showInHud() { this.hudVisible = true;return this;}
 
         public Builder passiveAlways() {
-            this.type = SkillType.PASSIVE; this.equippable = false; this.toggleable = false; this.alwaysOn = true; return this;
+            this.type = SkillType.PASSIVE; this.equippable = false; this.toggleable = false;
+            this.alwaysOn = true;this.hudVisible = false;
+            return this;
         }
         public Builder passiveToggle() {
-            this.type = SkillType.PASSIVE; this.equippable = false; this.toggleable = true; this.alwaysOn = false; return this;
+            this.type = SkillType.PASSIVE; this.equippable = false; this.toggleable = true;
+            this.alwaysOn = false; this.hudVisible = true;
+            return this;
         }
         public Builder passiveEquippable() {
-            this.type = SkillType.PASSIVE; this.equippable = true; this.toggleable = true; this.alwaysOn = false; return this;
+            this.type = SkillType.PASSIVE; this.equippable = true; this.toggleable = true;
+            this.alwaysOn = false; this.hudVisible = true;
+            return this;
         }
         public Builder active() {
-            this.type = SkillType.ACTIVE; this.equippable = true; this.toggleable = false; this.alwaysOn = false; return this;
+            this.type = SkillType.ACTIVE; this.equippable = true; this.toggleable = false;
+            this.alwaysOn = false; this.hudVisible = true;
+            return this;
         }
         public Builder specialEquippable() {
-            this.type = SkillType.SPECIAL; this.equippable = true; this.toggleable = false; this.alwaysOn = false; return this;
+            this.type = SkillType.SPECIAL; this.equippable = true; this.toggleable = false;
+            this.alwaysOn = false; this.hudVisible = true;
+            return this;
         }
         public Builder specialDisplay() {
-            this.type = SkillType.SPECIAL; this.equippable = false; this.toggleable = false; this.alwaysOn = false; return this;
+            this.type = SkillType.SPECIAL; this.equippable = false; this.toggleable = false;
+            this.alwaysOn = false; this.hudVisible = true;
+            return this;
         }
 
         public SkillNode build() {

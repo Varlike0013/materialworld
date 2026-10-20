@@ -187,7 +187,7 @@ public class ModSkills {
                 .grid(1, 1)
                 .maxLevel(5)
                 .cost(5).costIncrement(2)
-                .prereq(EMC_CONVERSION_ID)
+                .prereq(VISION_SHARPNESS_ID)
                 .icon("亲")
                 .build());
 
@@ -196,7 +196,7 @@ public class ModSkills {
                 .grid(1, 2)
                 .maxLevel(3)
                 .cost(10).costIncrement(3)
-                .prereq(VISION_SHARPNESS_ID)
+                .prereq(EMC_AFFINITY_ID)
                 .icon("精")
                 .build());
     }
