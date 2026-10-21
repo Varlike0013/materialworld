@@ -367,7 +367,11 @@ public class SkillTreeScreen extends Screen {
             }
         }
 
-
+        List<Component> extras = node.getExtraTooltip();
+        if (!extras.isEmpty()) {
+            lines.add(Component.empty());
+            lines.addAll(extras);
+        }
 
         g.renderTooltip(this.font, lines, java.util.Optional.empty(), mouseX, mouseY);
     }

@@ -1,10 +1,12 @@
 package com.varlike.spiritworld.skill;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 public class SkillNode {
 
@@ -27,6 +29,8 @@ public class SkillNode {
     private final boolean toggleable;
     private final boolean alwaysOn;
     private final boolean hudVisible;   // 默认 true
+    /** 动态额外 tooltip 行；null 表示无。仅在客户端渲染时调用。 */
+    private final Function<SkillNode, List<Component>> tooltipExtra;
 
     private SkillNode(Builder b) {
         this.id = b.id;
@@ -45,6 +49,7 @@ public class SkillNode {
         this.toggleable = b.toggleable;
         this.alwaysOn = b.alwaysOn;
         this.hudVisible = b.hudVisible;
+        this.tooltipExtra = b.tooltipExtra;
     }
 
     // ===== getters =====
@@ -64,6 +69,11 @@ public class SkillNode {
     public boolean isToggleable() { return toggleable; }
     public boolean isAlwaysOn() { return alwaysOn; }
     public boolean isHudVisible() { return hudVisible; }
+    public List<Component> getExtraTooltip() {
+        if (tooltipExtra == null) return List.of();
+        List<Component> out = tooltipExtra.apply(this);
+        return out == null ? List.of() : out;
+    }
 
     /** 从当前等级升到下一级所需的灵视点 */
     public long getCostForNextLevel(int currentLevel) {
@@ -92,6 +102,7 @@ public class SkillNode {
         private boolean toggleable = false;
         private boolean alwaysOn = false;
         private boolean hudVisible = true;
+        private Function<SkillNode, List<Component>> tooltipExtra = null;
 
         private Builder(ResourceLocation id) { this.id = id; }
 
@@ -108,6 +119,15 @@ public class SkillNode {
         public Builder hideInHud() { this.hudVisible = false;return this;} //使用时要在SkillType后
         public Builder showInHud() { this.hudVisible = true;return this;}
 
+        /**
+         * 设置动态额外 tooltip 行。
+         * 传入的函数在客户端渲染 tooltip 时被调用，参数为技能自身，
+         * 可根据等级、客户端数据等返回任意行。返回 null 或空列表视为无额外行。
+         */
+        public Builder tooltipExtra(Function<SkillNode, List<Component>> fn) {
+            this.tooltipExtra = fn;
+            return this;
+        }
         public Builder passiveAlways() {
             this.type = SkillType.PASSIVE; this.equippable = false; this.toggleable = false;
             this.alwaysOn = true;this.hudVisible = false;

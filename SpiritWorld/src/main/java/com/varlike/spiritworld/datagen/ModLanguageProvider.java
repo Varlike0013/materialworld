@@ -170,5 +170,22 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("skill.spiritworld.emc_affinity.desc", "-3% EMC Conversion cost per level.");
         this.add("skill.spiritworld.vision_mastery", "Vision Mastery");
         this.add("skill.spiritworld.vision_mastery.desc", "+15% vision fragment gain per level.");
+        this.add("skill.spiritworld.spirit_efficiency", "Spirit Efficiency");
+        this.add("skill.spiritworld.spirit_efficiency.desc", "Grants Efficiency I-V to the Spirit Tool.");
+        // ===== 精神护盾 =====
+        this.add("skill.spiritworld.spirit_shield", "Spirit Shield");
+        this.add("skill.spiritworld.spirit_shield.desc",
+                "Per level,incoming damage is absorbed by spirit. Requires spirit to activate.");
+        this.add("skill.tooltip.spirit_shield.ratio", "Absorb: %s%% of damage");
+        this.add("skill.tooltip.spirit_shield.cost", "Spirit cost: %s per damage");
+        this.add("skill.tooltip.spirit_shield.example", "100 damage costs %d spirit");
+        this.add("message.spiritworld.spirit_shield.insufficient", "Spirit depleted, shield failed");
+        // ===== 精神夜视 =====
+        this.add("skill.spiritworld.spirit_night_vision", "Spirit Night Vision");
+        this.add("skill.spiritworld.spirit_night_vision.desc",
+                "While active, grants night vision. Higher levels consume less spirit per second.");
+        this.add("skill.tooltip.spirit_night_vision.cost", "Consumes %s spirit/sec");
+        this.add("message.spiritworld.spirit_night_vision.no_spirit",
+                "Spirit depleted, Night Vision disabled");
     }
 }

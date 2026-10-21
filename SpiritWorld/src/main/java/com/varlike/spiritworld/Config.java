@@ -57,7 +57,9 @@ public class Config {
     public static final ModConfigSpec.DoubleValue EMC_CONVERSION_SKILL_BONUS = BUILDER
             .comment("每级技能提升的转化率系数")
             .defineInRange("emcConversionSkillBonus", 0.05, 0.0, 1.0);
-
+    public static final ModConfigSpec.DoubleValue NIGHT_VISION_BASE_COST = BUILDER
+            .comment("精神夜视消耗基础值(越低越好)")
+            .defineInRange("nightVisionBaseCostPerSecond", 3.0, 0.1, 100.0);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
@@ -73,6 +75,7 @@ public class Config {
     public static Double emcConversionBaseRate = 0.02;
     public static Double emcConversionVisionBonus = 0.05;
     public static Double emcConversionSkillBonus = 0.05;
+    public static double nightVisionBaseCostPerSecond = 3.0;
 
     /** 手动加载配置值，在 FMLCommonSetupEvent 和 ModConfigEvent.Reloading 中调用 */
     public static void loadValues() {
@@ -88,6 +91,7 @@ public class Config {
         emcConversionBaseRate = EMC_CONVERSION_BASE_RATE.get();
         emcConversionVisionBonus = EMC_CONVERSION_VISION_BONUS.get();
         emcConversionSkillBonus = EMC_CONVERSION_SKILL_BONUS.get();
+        nightVisionBaseCostPerSecond = NIGHT_VISION_BASE_COST.get();
     }
     @SubscribeEvent
     static void onReload(ModConfigEvent.Reloading event) {

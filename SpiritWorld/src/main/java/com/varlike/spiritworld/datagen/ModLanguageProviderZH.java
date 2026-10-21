@@ -170,5 +170,22 @@ public class ModLanguageProviderZH extends LanguageProvider {
         this.add("skill.spiritworld.emc_affinity.desc", "每级 -3% EMC 转化消耗。");
         this.add("skill.spiritworld.vision_mastery", "灵视精通");
         this.add("skill.spiritworld.vision_mastery.desc", "每级 +15% 灵视碎片获取。");
+        this.add("skill.spiritworld.spirit_efficiency", "精神效率");
+        this.add("skill.spiritworld.spirit_efficiency.desc", "为精神工具附加效率 I-V 附魔。");
+        // ===== 精神护盾 =====
+        this.add("skill.spiritworld.spirit_shield", "精神护盾");
+        this.add("skill.spiritworld.spirit_shield.desc",
+                "每级将受到伤害由精神力承担，需要精神力才能激活。");
+        this.add("skill.tooltip.spirit_shield.ratio", "吸收：伤害的 %s%%");
+        this.add("skill.tooltip.spirit_shield.cost", "精神力消耗：每点伤害 %s");
+        this.add("skill.tooltip.spirit_shield.example", "100 点伤害消耗 %d 精神力");
+        this.add("message.spiritworld.spirit_shield.insufficient", "精神力耗尽，护盾失效");
+        // ===== 精神夜视 =====
+        this.add("skill.spiritworld.spirit_night_vision", "精神夜视");
+        this.add("skill.spiritworld.spirit_night_vision.desc",
+                "激活时获得夜视效果，等级越高每秒消耗的精神力越少。");
+        this.add("skill.tooltip.spirit_night_vision.cost", "每秒消耗 %s 精神力");
+        this.add("message.spiritworld.spirit_night_vision.no_spirit",
+                "精神力耗尽，夜视已关闭");
     }
 }

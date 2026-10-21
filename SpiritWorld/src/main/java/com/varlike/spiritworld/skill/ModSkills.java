@@ -1,7 +1,15 @@
 package com.varlike.spiritworld.skill;
 
+import com.varlike.spiritworld.Config;
 import com.varlike.spiritworld.SpiritWorld;
+import com.varlike.spiritworld.client.ClientSpiritData;
+import com.varlike.spiritworld.event.SpiritShieldEvents;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ModSkills {
 
@@ -22,6 +30,8 @@ public class ModSkills {
             ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_tool_hoe");
     public static final ResourceLocation SPIRIT_FORTUNE_ID =
             ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_fortune");
+    public static final ResourceLocation SPIRIT_EFFICIENCY_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_efficiency");
     // ===== 精神力系 x=0 =====
     public static final ResourceLocation SPIRIT_ENDURANCE_ID = id("spirit_endurance");
     public static final ResourceLocation SPIRIT_TOUGHNESS_ID = id("spirit_toughness");
@@ -35,8 +45,30 @@ public class ModSkills {
     public static final ResourceLocation EMC_AFFINITY_ID     = id("emc_affinity");
     public static final ResourceLocation VISION_MASTERY_ID   = id("vision_mastery");
 
+    // ==== 其他 =====
+    public static final ResourceLocation SPIRIT_SHIELD_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_shield");
+    public static final ResourceLocation SPIRIT_NIGHT_VISION_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_night_vision");
+
     private static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, path);
+    }
+    // ===== 工具辅助 =====
+
+    private static final String[] ROMAN = {"", "I", "II", "III", "IV", "V"};
+
+    private static String roman(int n) {
+        return (n >= 1 && n <= 5) ? ROMAN[n] : String.valueOf(n);
+    }
+    /** 通用：读取当前等级，0 级返回空列表；否则返回单行提示 */
+    private static List<Component> currentLine(SkillNode node, String key, java.util.function.IntFunction<String> valueOf) {
+        int lv = ClientSpiritData.getSkillLevel(node.getId());
+        if (lv <= 0) return List.of();
+        return List.of(
+                Component.translatable(key, valueOf.apply(lv))
+                        .withStyle(ChatFormatting.LIGHT_PURPLE)
+        );
     }
 
     public static void registerAll() {
@@ -113,10 +145,21 @@ public class ModSkills {
                 .passiveToggle()
                 .grid(6, 2)
                 .maxLevel(3)
-                .cost(12)
+                .cost(5).costIncrement(1)
                 .requiredVisionLevel(2)
                 .prereq(TOOL_PICKAXE_ID)
                 .icon("运")
+                .build());
+        // === 效率
+        SkillTree.register(SkillNode.builder(SPIRIT_EFFICIENCY_ID)
+                .passiveAlways()
+                .grid(6, 3)                   // 时运 (6,2) 下面
+                .maxLevel(5)
+                .cost(2).costIncrement(1)
+                .costIncrement(2)
+                .prereq(TOOL_PICKAXE_ID, 1)
+                .requiredVisionLevel(1)
+                .icon("效")
                 .build());
 
         // ==================== x=0 精神力系 ====================
@@ -199,5 +242,52 @@ public class ModSkills {
                 .prereq(EMC_AFFINITY_ID)
                 .icon("精")
                 .build());
+
+        SkillTree.register(SkillNode.builder(SPIRIT_SHIELD_ID)
+                .passiveToggle()                       // 可开关，不需要装备
+                .grid(1, 3)                            // x=1, y=3（灵视系下方空位）
+                .maxLevel(5)
+                .cost(8).costIncrement(2)
+                .requiredVisionLevel(0)
+                .icon("盾")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    float ratio = Math.min(1.0f, Math.max(0, lv) * SpiritShieldEvents.RATIO_PER_LEVEL);
+                    List<Component> list = new ArrayList<>();
+                    list.add(Component.translatable("skill.tooltip.spirit_shield.ratio",
+                                    String.format("%.0f", ratio * 100))
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+                    list.add(Component.translatable("skill.tooltip.spirit_shield.cost",
+                                    String.format("%.1f", SpiritShieldEvents.SPIRIT_PER_DAMAGE))
+                            .withStyle(ChatFormatting.GRAY));
+                    if (lv > 0) {
+                        long spiritFor100 = (long) Math.ceil(100 * ratio * SpiritShieldEvents.SPIRIT_PER_DAMAGE);
+                        list.add(Component.translatable("skill.tooltip.spirit_shield.example", spiritFor100)
+                                .withStyle(ChatFormatting.DARK_GRAY));
+                    }
+                    return list;
+                })
+                .build());
+
+        SkillTree.register(SkillNode.builder(SPIRIT_NIGHT_VISION_ID)
+                .passiveToggle()                       // 开关被动
+                .grid(1, 4)                            // 灵视系下方
+                .maxLevel(5)
+                .cost(5)
+                .costIncrement(2)
+                .requiredVisionLevel(0)
+                .icon("夜")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+                    double costPerSec = Config.nightVisionBaseCostPerSecond / lv;
+                    return List.of(
+                            Component.translatable("skill.tooltip.spirit_night_vision.cost",
+                                            String.format("%.2f", costPerSec))
+                                    .withStyle(ChatFormatting.LIGHT_PURPLE)
+                    );
+                })
+                .build());
+
     }
 }
