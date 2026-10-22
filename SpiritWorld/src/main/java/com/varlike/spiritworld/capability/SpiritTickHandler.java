@@ -4,6 +4,7 @@ import com.varlike.spiritworld.Config;
 import com.varlike.spiritworld.SpiritWorld;
 import com.varlike.spiritworld.network.NetworkHandler;
 import com.varlike.spiritworld.skill.ModSkills;
+import com.varlike.spiritworld.skill.SkillValues;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -63,18 +64,16 @@ public class SpiritTickHandler {
 
         if (!active) return;
 
-        // 每 5 秒（100 tick）检查一次
-        if (player.tickCount % 100 != 0) return;
-
+        // 每 X 秒（100 tick）检查一次
+        if (player.tickCount % SkillValues.NIGHT_VISION_CHECK_INTERVAL != 0) return;
         // 如果已有充足的夜视（>= 10 秒），被动让位，不消耗精神力
         MobEffectInstance existing = player.getEffect(MobEffects.NIGHT_VISION);
-        if (existing != null && existing.getDuration() >= 200) {
-            return;
-        }
-
+        if (existing != null && existing.getDuration() >= SkillValues.NIGHT_VISION_REFRESH_TICKS) return;
         // 计算 10 秒所需精神力：每秒消耗 base/level，10 秒 = base/level*10，向上取整
-        long cost = Math.max(1L,
-                (long) Math.ceil(Config.nightVisionBaseCostPerSecond / level * 10.0));
+        double base = Config.nightVisionBaseCostPerSecond > 0
+                ? Config.nightVisionBaseCostPerSecond
+                : SkillValues.NIGHT_VISION_BASE_COST_PER_SECOND_DEFAULT;
+        long cost = Math.max(1L, (long) Math.ceil(base / level * 10.0));
 
         if (!data.consumeSpirit(cost)) {
             // 精神力不足：关闭被动、移除效果、提示
@@ -89,12 +88,8 @@ public class SpiritTickHandler {
         }
 
         // 给 10 秒夜视（220 tick 含 1 秒缓冲，避免边界闪烁）
-        player.addEffect(new MobEffectInstance(
-                MobEffects.NIGHT_VISION, 220, 0,
-                true,   // ambient（少粒子）
-                false,  // showParticles
-                true    // showIcon
-        ));
+        player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION,
+                SkillValues.NIGHT_VISION_REFRESH_TICKS + 20, 0, true, false, true));
 
         // 同步精神力到客户端（HUD 立即更新）
         NetworkHandler.syncTo(player);

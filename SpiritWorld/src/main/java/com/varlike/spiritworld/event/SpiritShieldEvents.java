@@ -5,6 +5,7 @@ import com.varlike.spiritworld.capability.ModCapabilities;
 import com.varlike.spiritworld.capability.PlayerSpirit;
 import com.varlike.spiritworld.network.NetworkHandler;
 import com.varlike.spiritworld.skill.ModSkills;
+import com.varlike.spiritworld.skill.SkillValues;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -21,9 +22,9 @@ public final class SpiritShieldEvents {
     private SpiritShieldEvents() {}
 
     /** 每级吸收比例 */
-    public  static final float RATIO_PER_LEVEL = 0.05f;
+    public static final float RATIO_PER_LEVEL = SkillValues.SHIELD_RATIO_PER_LEVEL;
     /** 每点伤害消耗的精神力（1 精神力 = 1 伤害） */
-    public  static final float SPIRIT_PER_DAMAGE = 5.0f;
+    public static final float SPIRIT_PER_DAMAGE = SkillValues.SHIELD_SPIRIT_PER_DAMAGE;
 
     @SubscribeEvent
     public static void onLivingDamagePre(LivingDamageEvent.Pre event) {

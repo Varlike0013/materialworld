@@ -187,5 +187,24 @@ public class ModLanguageProviderZH extends LanguageProvider {
         this.add("skill.tooltip.spirit_night_vision.cost", "每秒消耗 %s 精神力");
         this.add("message.spiritworld.spirit_night_vision.no_spirit",
                 "精神力耗尽，夜视已关闭");
+        // ===== 工具分支 =====
+        this.add("skill.tooltip.tool_speed.current", "挖掘速度：%s");
+        this.add("skill.tooltip.fortune.current", "时运 %s");
+        this.add("skill.tooltip.efficiency.current", "效率 %s");
+        // ===== 精神力系 =====
+        this.add("skill.tooltip.spirit_endurance.current", "当前：+%s 精神力上限");
+        this.add("skill.tooltip.spirit_toughness.current", "当前：+%s 精神力恢复");
+        this.add("skill.tooltip.spirit_strength.current", "当前：+%s%% 精神力上限");
+        this.add("skill.tooltip.spirit_surge.current", "当前：+%s%% 精神力恢复");
+        this.add("skill.tooltip.spirit_flow.current", "当前：每秒 +%s%% 精神力上限");
+        // ===== 灵视系 =====
+        this.add("skill.tooltip.vision_sharpness.current", "当前：每次击杀 +%s 灵视碎片");
+        this.add("skill.tooltip.emc_affinity.current", "当前：-%s%% EMC 转化消耗");
+        this.add("skill.tooltip.vision_mastery.current", "当前：+%s%% 灵视碎片");
+        // ===== EMC 转化 =====
+        this.add("skill.tooltip.emc_conversion.rate", "当前：每 %s EMC 转化 1 灵视碎片");
+        this.add("skill.tooltip.emc_conversion.note", "需装配到技能栏才能生效");
+        // ===== 精神源泉 =====
+        this.add("skill.tooltip.spirit_source.current", "加成：+%s%% 精神力上限，+%s%% 恢复");
     }
 }

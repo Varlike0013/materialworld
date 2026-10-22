@@ -82,6 +82,19 @@ public class ModSkills {
                 .cost(20)
                 .requiredVisionLevel(0)
                 .icon("转")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+                    int vision = ClientSpiritData.getVisionLevel();
+                    long perFragment = SkillValues.emcPerFragment(lv, vision);
+                    List<Component> list = new ArrayList<>();
+                    list.add(Component.translatable("skill.tooltip.emc_conversion.rate",
+                                    String.valueOf(perFragment))
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+                    list.add(Component.translatable("skill.tooltip.emc_conversion.note")
+                            .withStyle(ChatFormatting.GRAY));
+                    return list;
+                })
                 .build());
 
         // ===== 主技能：召唤精神工具 =====
@@ -105,6 +118,14 @@ public class ModSkills {
                 .requiredVisionLevel(1)
                 .prereq(SUMMON_TOOL_ID)
                 .icon("镐")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+                    int idx = Math.min(lv, SkillValues.TOOL_SPEED_BY_LEVEL.length - 1);
+                    return List.of(Component.translatable("skill.tooltip.tool_speed.current",
+                                    String.format("%.1f", SkillValues.TOOL_SPEED_BY_LEVEL[idx]))
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+                })
                 .build());
 
         // ===== 斧分支 =====
@@ -116,6 +137,14 @@ public class ModSkills {
                 .requiredVisionLevel(1)
                 .prereq(SUMMON_TOOL_ID)
                 .icon("斧")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+                    int idx = Math.min(lv, SkillValues.TOOL_SPEED_BY_LEVEL.length - 1);
+                    return List.of(Component.translatable("skill.tooltip.tool_speed.current",
+                                    String.format("%.1f", SkillValues.TOOL_SPEED_BY_LEVEL[idx]))
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+                })
                 .build());
 
         // ===== 铲分支 =====
@@ -127,6 +156,14 @@ public class ModSkills {
                 .requiredVisionLevel(1)
                 .prereq(SUMMON_TOOL_ID)
                 .icon("铲")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+                    int idx = Math.min(lv, SkillValues.TOOL_SPEED_BY_LEVEL.length - 1);
+                    return List.of(Component.translatable("skill.tooltip.tool_speed.current",
+                                    String.format("%.1f", SkillValues.TOOL_SPEED_BY_LEVEL[idx]))
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+                })
                 .build());
 
         // ===== 锄分支 =====
@@ -138,6 +175,14 @@ public class ModSkills {
                 .requiredVisionLevel(1)
                 .prereq(SUMMON_TOOL_ID)
                 .icon("锄")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+                    int idx = Math.min(lv, SkillValues.TOOL_SPEED_BY_LEVEL.length - 1);
+                    return List.of(Component.translatable("skill.tooltip.tool_speed.current",
+                                    String.format("%.1f", SkillValues.TOOL_SPEED_BY_LEVEL[idx]))
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+                })
                 .build());
 
         // ===== 时运：开关被动，前置为镐 =====
@@ -149,6 +194,13 @@ public class ModSkills {
                 .requiredVisionLevel(2)
                 .prereq(TOOL_PICKAXE_ID)
                 .icon("运")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+                    return List.of(Component.translatable("skill.tooltip.fortune.current",
+                                    SkillValues.roman(Math.min(lv, SkillValues.FORTUNE_MAX_LEVEL)))
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+                })
                 .build());
         // === 效率
         SkillTree.register(SkillNode.builder(SPIRIT_EFFICIENCY_ID)
@@ -156,10 +208,16 @@ public class ModSkills {
                 .grid(6, 3)                   // 时运 (6,2) 下面
                 .maxLevel(5)
                 .cost(2).costIncrement(1)
-                .costIncrement(2)
                 .prereq(TOOL_PICKAXE_ID, 1)
                 .requiredVisionLevel(1)
                 .icon("效")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+                    return List.of(Component.translatable("skill.tooltip.efficiency.current",
+                                    SkillValues.roman(Math.min(lv, SkillValues.EFFICIENCY_MAX_LEVEL)))
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+                })
                 .build());
 
         // ==================== x=0 精神力系 ====================
@@ -169,6 +227,8 @@ public class ModSkills {
                 .maxLevel(20)
                 .cost(3).costIncrement(1)
                 .icon("耐")
+                .tooltipExtra(node -> currentLine(node, "skill.tooltip.spirit_endurance.current",
+                        lv -> String.valueOf(lv * SkillValues.SPIRIT_ENDURANCE_MAX_PER_LEVEL)))
                 .build());
 
         SkillTree.register(SkillNode.builder(SPIRIT_TOUGHNESS_ID)
@@ -178,6 +238,9 @@ public class ModSkills {
                 .cost(3).costIncrement(1)
                 .prereq(SPIRIT_ENDURANCE_ID)
                 .icon("韧")
+                .tooltipExtra(node -> currentLine(node, "skill.tooltip.spirit_toughness.current",
+                        lv -> String.format("%.1f", lv * SkillValues.SPIRIT_TOUGHNESS_REGEN_PER_LEVEL)))
+
                 .build());
 
         SkillTree.register(SkillNode.builder(SPIRIT_STRENGTH_ID)
@@ -187,6 +250,8 @@ public class ModSkills {
                 .cost(5).costIncrement(2)
                 .prereq(SPIRIT_TOUGHNESS_ID)
                 .icon("健")
+                .tooltipExtra(node -> currentLine(node, "skill.tooltip.spirit_strength.current",
+                        lv -> String.format("%.0f", lv * SkillValues.SPIRIT_STRENGTH_MAX_PERCENT_PER_LEVEL * 100)))
                 .build());
 
         SkillTree.register(SkillNode.builder(SPIRIT_SURGE_ID)
@@ -196,6 +261,8 @@ public class ModSkills {
                 .cost(5).costIncrement(2)
                 .prereq(SPIRIT_STRENGTH_ID)
                 .icon("涌")
+                .tooltipExtra(node -> currentLine(node, "skill.tooltip.spirit_surge.current",
+                        lv -> String.format("%.0f", lv * SkillValues.SPIRIT_SURGE_REGEN_PERCENT_PER_LEVEL * 100)))
                 .build());
 
         SkillTree.register(SkillNode.builder(SPIRIT_FLOW_ID)
@@ -205,6 +272,8 @@ public class ModSkills {
                 .cost(10).costIncrement(3)
                 .prereq(SPIRIT_SURGE_ID)
                 .icon("洪")
+                .tooltipExtra(node -> currentLine(node, "skill.tooltip.spirit_flow.current",
+                        lv -> String.format("%.2f", lv * SkillValues.SPIRIT_FLOW_REGEN_PER_SECOND_PER_LEVEL * 100)))
                 .build());
 
         SkillTree.register(SkillNode.builder(SPIRIT_SOURCE_ID)
@@ -214,6 +283,16 @@ public class ModSkills {
                 .cost(50).costIncrement(0)
                 .prereq(SPIRIT_FLOW_ID, 3)
                 .icon("源")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+                    return List.of(
+                            Component.translatable("skill.tooltip.spirit_source.current",
+                                            String.format("%.0f", SkillValues.SPIRIT_SOURCE_MAX_PERCENT * 100),
+                                            String.format("%.0f", SkillValues.SPIRIT_SOURCE_REGEN_PERCENT * 100))
+                                    .withStyle(ChatFormatting.LIGHT_PURPLE)
+                    );
+                })
                 .build());
 
         // ==================== x=1 灵视系 ====================
@@ -223,6 +302,8 @@ public class ModSkills {
                 .maxLevel(5)
                 .cost(5).costIncrement(2)
                 .icon("锐")
+                .tooltipExtra(node -> currentLine(node, "skill.tooltip.vision_sharpness.current",
+                        lv -> String.valueOf(lv * SkillValues.VISION_SHARPNESS_FRAGMENTS_PER_LEVEL)))
                 .build());
 
         SkillTree.register(SkillNode.builder(EMC_AFFINITY_ID)
@@ -232,6 +313,8 @@ public class ModSkills {
                 .cost(5).costIncrement(2)
                 .prereq(VISION_SHARPNESS_ID)
                 .icon("亲")
+                .tooltipExtra(node -> currentLine(node, "skill.tooltip.emc_affinity.current",
+                        lv -> String.format("%.0f", lv * SkillValues.EMC_AFFINITY_COST_REDUCTION_PER_LEVEL * 100)))
                 .build());
 
         SkillTree.register(SkillNode.builder(VISION_MASTERY_ID)
@@ -241,6 +324,8 @@ public class ModSkills {
                 .cost(10).costIncrement(3)
                 .prereq(EMC_AFFINITY_ID)
                 .icon("精")
+                .tooltipExtra(node -> currentLine(node, "skill.tooltip.vision_mastery.current",
+                        lv -> String.format("%.0f", lv * SkillValues.VISION_MASTERY_FRAGMENT_PERCENT_PER_LEVEL * 100)))
                 .build());
 
         SkillTree.register(SkillNode.builder(SPIRIT_SHIELD_ID)
@@ -252,16 +337,16 @@ public class ModSkills {
                 .icon("盾")
                 .tooltipExtra(node -> {
                     int lv = ClientSpiritData.getSkillLevel(node.getId());
-                    float ratio = Math.min(1.0f, Math.max(0, lv) * SpiritShieldEvents.RATIO_PER_LEVEL);
+                    float ratio = Math.min(1.0f, Math.max(0, lv) * SkillValues.SHIELD_RATIO_PER_LEVEL);
                     List<Component> list = new ArrayList<>();
                     list.add(Component.translatable("skill.tooltip.spirit_shield.ratio",
                                     String.format("%.0f", ratio * 100))
                             .withStyle(ChatFormatting.LIGHT_PURPLE));
                     list.add(Component.translatable("skill.tooltip.spirit_shield.cost",
-                                    String.format("%.1f", SpiritShieldEvents.SPIRIT_PER_DAMAGE))
+                                    String.format("%.1f", SkillValues.SHIELD_SPIRIT_PER_DAMAGE))
                             .withStyle(ChatFormatting.GRAY));
                     if (lv > 0) {
-                        long spiritFor100 = (long) Math.ceil(100 * ratio * SpiritShieldEvents.SPIRIT_PER_DAMAGE);
+                        long spiritFor100 = (long) Math.ceil(100 * ratio * SkillValues.SHIELD_SPIRIT_PER_DAMAGE);
                         list.add(Component.translatable("skill.tooltip.spirit_shield.example", spiritFor100)
                                 .withStyle(ChatFormatting.DARK_GRAY));
                     }
@@ -280,12 +365,12 @@ public class ModSkills {
                 .tooltipExtra(node -> {
                     int lv = ClientSpiritData.getSkillLevel(node.getId());
                     if (lv <= 0) return List.of();
-                    double costPerSec = Config.nightVisionBaseCostPerSecond / lv;
-                    return List.of(
-                            Component.translatable("skill.tooltip.spirit_night_vision.cost",
-                                            String.format("%.2f", costPerSec))
-                                    .withStyle(ChatFormatting.LIGHT_PURPLE)
-                    );
+                    double base = Config.nightVisionBaseCostPerSecond > 0
+                            ? Config.nightVisionBaseCostPerSecond
+                            : SkillValues.NIGHT_VISION_BASE_COST_PER_SECOND_DEFAULT;
+                    return List.of(Component.translatable("skill.tooltip.spirit_night_vision.cost",
+                                    String.format("%.2f", base / lv))
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
                 })
                 .build());
 

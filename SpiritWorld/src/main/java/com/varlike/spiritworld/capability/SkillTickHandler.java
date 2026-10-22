@@ -6,6 +6,7 @@ import com.varlike.spiritworld.Config;
 import com.varlike.spiritworld.SpiritWorld;
 import com.varlike.spiritworld.network.NetworkHandler;
 import com.varlike.spiritworld.skill.ModSkills;
+import com.varlike.spiritworld.skill.SkillValues;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -34,11 +35,23 @@ public class SkillTickHandler {
             return;
         }
 
+        // 间隔：技能等级越高，检查越频繁
         int interval = Math.max(2, Config.emcConversionBaseInterval - (skillLevel - 1) * 3);
         if (player.tickCount % interval != 0) return;
 
-        long baseCost = Config.emcConversionEmcCost * skillLevel;
-        long emcCost = (long) Math.ceil(baseCost * data.getEmcCostMultiplier());
+        // 每碎片价格（含技能等级 + 视觉等级折扣）
+        int visionLevel = data.getVisionLevel();
+        long perFragment = SkillValues.emcPerFragment(skillLevel, visionLevel);
+
+        // 本次想消耗的 EMC（基础值 × EMC 亲和折扣）
+        long targetCost = Math.max(perFragment,
+                (long) Math.ceil(Config.emcConversionEmcCost * data.getEmcCostMultiplier()));
+
+        // 产出碎片数 = 消耗 / 每碎片价格，至少 1
+        long gain = Math.max(1L, targetCost / perFragment);
+
+        // 实际消耗对齐到 perFragment 的整数倍，避免「白嫖」或丢精度
+        long emcCost = gain * perFragment;
 
         IPlayerEMC emc = MaterialWorldAPI.getPlayerEMC(player);
         if (emc == null || emc.getBalance() < emcCost) {
@@ -50,13 +63,6 @@ public class SkillTickHandler {
         }
 
         emc.consumeBalance(emcCost);
-
-        int visionLevel = data.getVisionLevel();
-        double rate = Config.emcConversionBaseRate
-                * (1 + Config.emcConversionVisionBonus * visionLevel)
-                * (1 + Config.emcConversionSkillBonus * (skillLevel - 1));
-
-        long gain = Math.max(1, (long) Math.ceil(emcCost * rate));
         data.addVisionFragments(gain);
         data.markDirty();
 

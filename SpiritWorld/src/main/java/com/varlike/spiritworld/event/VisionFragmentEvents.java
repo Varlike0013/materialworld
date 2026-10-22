@@ -47,7 +47,7 @@ public class VisionFragmentEvents {
         PlayerSpirit data = player.getCapability(ModCapabilities.PLAYER_SPIRIT);
         if (data == null) return;
 
-        int base = getMultiplier(entity.getType()) + data.getVisionFragmentFlatBonus();
+        long base = getMultiplier(entity.getType()) + data.getVisionFragmentFlatBonus();
         double bonus = 1.0 + data.getVisionFragmentPercentBonus();
         int total = Math.max(0, (int) Math.round(base * bonus));
 

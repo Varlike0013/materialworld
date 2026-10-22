@@ -187,5 +187,24 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("skill.tooltip.spirit_night_vision.cost", "Consumes %s spirit/sec");
         this.add("message.spiritworld.spirit_night_vision.no_spirit",
                 "Spirit depleted, Night Vision disabled");
+        // ===== 工具分支 =====
+        this.add("skill.tooltip.tool_speed.current", "Mining speed: %s");
+        this.add("skill.tooltip.fortune.current", "Fortune %s");
+        this.add("skill.tooltip.efficiency.current", "Efficiency %s");
+        // ===== 精神力系 =====
+        this.add("skill.tooltip.spirit_endurance.current", "Current: +%s max spirit");
+        this.add("skill.tooltip.spirit_toughness.current", "Current: +%s spirit regen");
+        this.add("skill.tooltip.spirit_strength.current", "Current: +%s%% max spirit");
+        this.add("skill.tooltip.spirit_surge.current", "Current: +%s%% spirit regen");
+        this.add("skill.tooltip.spirit_flow.current", "Current: +%s%% max spirit per second");
+        // ===== 灵视系 =====
+        this.add("skill.tooltip.vision_sharpness.current", "Current: +%s fragments per kill");
+        this.add("skill.tooltip.emc_affinity.current", "Current: -%s%% EMC conversion cost");
+        this.add("skill.tooltip.vision_mastery.current", "Current: +%s%% vision fragments");
+        // ===== EMC 转化 =====
+        this.add("skill.tooltip.emc_conversion.rate", "Current: %s EMC per vision fragment");
+        this.add("skill.tooltip.emc_conversion.note", "Must be equipped to take effect");
+        // ===== 精神源泉 =====
+        this.add("skill.tooltip.spirit_source.current", "Bonus: +%s%% max spirit, +%s%% regen");
     }
 }

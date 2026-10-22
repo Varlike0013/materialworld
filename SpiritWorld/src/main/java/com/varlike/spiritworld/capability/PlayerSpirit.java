@@ -1,7 +1,9 @@
 package com.varlike.spiritworld.capability;
 
+import com.varlike.spiritworld.skill.ModSkills;
 import com.varlike.spiritworld.skill.SkillNode;
 import com.varlike.spiritworld.skill.SkillTree;
+import com.varlike.spiritworld.skill.SkillValues;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -228,43 +230,47 @@ public class PlayerSpirit {
 
     // ===== 技能加成 =====
     public long getSkillMaxSpiritFlatBonus() {
-        int endurance = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_ENDURANCE_ID);
-        return endurance * 10L;
+        return getSkillLevel(ModSkills.SPIRIT_ENDURANCE_ID) * SkillValues.SPIRIT_ENDURANCE_MAX_PER_LEVEL;
     }
-
     public double getSkillMaxSpiritPercentBonus() {
-        int strength = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_STRENGTH_ID);
-        int source   = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_SOURCE_ID);
-        return strength * 0.05 + source * 0.50;
+        double bonus = getSkillLevel(ModSkills.SPIRIT_STRENGTH_ID)
+                * SkillValues.SPIRIT_STRENGTH_MAX_PERCENT_PER_LEVEL;
+        if (getSkillLevel(ModSkills.SPIRIT_SOURCE_ID) > 0) {
+            bonus += SkillValues.SPIRIT_SOURCE_MAX_PERCENT;
+        }
+        return bonus;
     }
-
     public double getSkillRegenFlatBonus() {
-        int toughness = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_TOUGHNESS_ID);
-        return toughness * 0.5;
+        return getSkillLevel(ModSkills.SPIRIT_TOUGHNESS_ID)
+                * SkillValues.SPIRIT_TOUGHNESS_REGEN_PER_LEVEL;
     }
-
     public double getSkillRegenPercentBonus() {
-        int surge  = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_SURGE_ID);
-        int source = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_SOURCE_ID);
-        return surge * 0.05 + source * 0.50;
+        double bonus = getSkillLevel(ModSkills.SPIRIT_SURGE_ID)
+                * SkillValues.SPIRIT_SURGE_REGEN_PERCENT_PER_LEVEL;
+        if (getSkillLevel(ModSkills.SPIRIT_SOURCE_ID) > 0) {
+            bonus += SkillValues.SPIRIT_SOURCE_REGEN_PERCENT;
+        }
+        return bonus;
     }
-
     public double getSpiritFlowRegenPerSecond() {
-        int flow = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.SPIRIT_FLOW_ID);
-        return flow * 0.25;
+        return getSkillLevel(ModSkills.SPIRIT_FLOW_ID)
+                * SkillValues.SPIRIT_FLOW_REGEN_PER_SECOND_PER_LEVEL;
     }
 
-    public int getVisionFragmentFlatBonus() {
-        return getSkillLevel(com.varlike.spiritworld.skill.ModSkills.VISION_SHARPNESS_ID) * 2;
+    public long getVisionFragmentFlatBonus() {
+        return getSkillLevel(ModSkills.VISION_SHARPNESS_ID)
+                * SkillValues.VISION_SHARPNESS_FRAGMENTS_PER_LEVEL;
     }
 
     public double getVisionFragmentPercentBonus() {
-        return getSkillLevel(com.varlike.spiritworld.skill.ModSkills.VISION_MASTERY_ID) * 0.15;
+        return getSkillLevel(ModSkills.VISION_MASTERY_ID)
+                * SkillValues.VISION_MASTERY_FRAGMENT_PERCENT_PER_LEVEL;
     }
 
     public double getEmcCostMultiplier() {
-        int affinity = getSkillLevel(com.varlike.spiritworld.skill.ModSkills.EMC_AFFINITY_ID);
-        return Math.max(0.1, 1.0 - affinity * 0.03);
+        double reduction = getSkillLevel(ModSkills.EMC_AFFINITY_ID)
+                * SkillValues.EMC_AFFINITY_COST_REDUCTION_PER_LEVEL;
+        return Math.max(0.0, 1.0 - reduction);
     }
     // ===== 技能栏 / 装配 =====
     public static final int LOADOUT_SIZE = 6;

@@ -28,7 +28,7 @@ public final class SpiritToolBuilder {
     private SpiritToolBuilder() {}
 
     /** 每个分支等级对应的挖掘速度 */
-    private static final float[] SPEED_BY_LEVEL = {1.0f, 2.0f, 4.0f, 6.0f, 8.0f, 10.0f};
+    public static final float[] SPEED_BY_LEVEL = SkillValues.TOOL_SPEED_BY_LEVEL;
 
     public static ItemStack build(Player player, PlayerSpirit data) {
         ItemStack stack = new ItemStack(ModItems.SPIRIT_TOOL.get());
