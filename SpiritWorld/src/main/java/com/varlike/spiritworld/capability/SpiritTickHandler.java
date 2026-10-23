@@ -10,9 +10,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.food.FoodData;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @EventBusSubscriber(modid = SpiritWorld.MOD_ID)
 public class SpiritTickHandler {
@@ -23,6 +29,12 @@ public class SpiritTickHandler {
         PlayerSpirit data = player.getCapability(ModCapabilities.PLAYER_SPIRIT);
         if (data == null) return;
 
+        // 开关瞬间 / 等级变化时上限缩小，clamp 精神力
+        long effMax = data.getEffectiveMaxSpirit();
+        if (data.getSpirit() > effMax) {
+            data.setSpirit(effMax);
+            data.markDirty();
+        }
         // 1. 基础恢复
         if (Config.spiritRegenInterval > 0
                 && player.tickCount % Config.spiritRegenInterval == 0) {
@@ -42,6 +54,8 @@ public class SpiritTickHandler {
             }
         }
         handleNightVision(player, data);
+        handleSpiritSatiety(player, data);
+        handleSpiritMaintenance(player, data);
 
         // 3. 节流同步
         if (Config.syncInterval > 0
@@ -62,36 +76,65 @@ public class SpiritTickHandler {
         int level = data.getSkillLevel(ModSkills.SPIRIT_NIGHT_VISION_ID);
         boolean active = level > 0 && data.isPassiveActive(ModSkills.SPIRIT_NIGHT_VISION_ID);
 
-        if (!active) return;
+        if (!active) return;   // 关闭时不清效果，让 11 秒夜视自然过期
 
-        // 每 X 秒（100 tick）检查一次
+        // 每 5 秒检查一次
         if (player.tickCount % SkillValues.NIGHT_VISION_CHECK_INTERVAL != 0) return;
-        // 如果已有充足的夜视（>= 10 秒），被动让位，不消耗精神力
-        MobEffectInstance existing = player.getEffect(MobEffects.NIGHT_VISION);
-        if (existing != null && existing.getDuration() >= SkillValues.NIGHT_VISION_REFRESH_TICKS) return;
-        // 计算 10 秒所需精神力：每秒消耗 base/level，10 秒 = base/level*10，向上取整
-        double base = Config.nightVisionBaseCostPerSecond > 0
-                ? Config.nightVisionBaseCostPerSecond
-                : SkillValues.NIGHT_VISION_BASE_COST_PER_SECOND_DEFAULT;
-        long cost = Math.max(1L, (long) Math.ceil(base / level * 10.0));
 
-        if (!data.consumeSpirit(cost)) {
-            // 精神力不足：关闭被动、移除效果、提示
-            data.removePassive(ModSkills.SPIRIT_NIGHT_VISION_ID);
-            player.removeEffect(MobEffects.NIGHT_VISION);
-            NetworkHandler.syncTo(player);
-            player.displayClientMessage(
-                    Component.translatable("message.spiritworld.spirit_night_vision.no_spirit")
-                            .withStyle(ChatFormatting.RED),
-                    true);
+        // 剩余 >= 10 秒则不重复给药
+        MobEffectInstance existing = player.getEffect(MobEffects.NIGHT_VISION);
+        if (existing != null && existing.getDuration() >= SkillValues.NIGHT_VISION_REFRESH_TICKS) {
             return;
         }
 
-        // 给 10 秒夜视（220 tick 含 1 秒缓冲，避免边界闪烁）
-        player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION,
-                SkillValues.NIGHT_VISION_REFRESH_TICKS + 20, 0, true, false, true));
+        // 续夜视（220 tick = 11 秒，留 1 秒缓冲）
+        player.addEffect(new MobEffectInstance(
+                MobEffects.NIGHT_VISION,
+                SkillValues.NIGHT_VISION_REFRESH_TICKS + 20,
+                0, true, false, true));
+    }
+    private static void handleSpiritSatiety(ServerPlayer player, PlayerSpirit data) {
+        int level = data.getSkillLevel(ModSkills.SPIRIT_SATIETY_ID);
+        boolean active = level > 0 && data.isPassiveActive(ModSkills.SPIRIT_SATIETY_ID);
+        if (!active) return;
 
-        // 同步精神力到客户端（HUD 立即更新）
-        NetworkHandler.syncTo(player);
+        FoodData food = player.getFoodData();
+
+        // 只在不足时设置，避免每 tick 无谓写入
+        if (food.getFoodLevel() < SkillValues.SATIETY_FULL_FOOD) {
+            food.setFoodLevel(SkillValues.SATIETY_FULL_FOOD);
+        }
+        if (food.getSaturationLevel() < SkillValues.SATIETY_FULL_SATURATION) {
+            food.setSaturation(SkillValues.SATIETY_FULL_SATURATION);
+        }
+        // 清消耗累积，防止 exhaustion 触发饱食度下降
+        if (food.getExhaustionLevel() > 0.0f) {
+            food.setExhaustion(0.0f);
+        }
+    }
+    private static void handleSpiritMaintenance(ServerPlayer player, PlayerSpirit data) {
+        int lv = data.getSkillLevel(ModSkills.SPIRIT_MAINTENANCE_ID);
+        boolean active = lv > 0 && data.isPassiveActive(ModSkills.SPIRIT_MAINTENANCE_ID);
+        if (!active) return;
+
+        // 每 20 tick（1 秒）触发一次
+        if (player.tickCount % SkillValues.MAINTENANCE_INTERVAL != 0) return;
+
+        int restore = SkillValues.maintenanceRestorePerSecond(lv);
+        if (restore <= 0) return;
+
+        // 遍历主背包 + 热键栏 + 装备槽 + 副手（getContainerSize 覆盖全部）
+        List<ItemStack> damaged = new ArrayList<>();
+        Inventory inv = player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack stack = inv.getItem(i);
+            if (stack.isDamageableItem() && stack.isDamaged()) damaged.add(stack);
+        }
+        if (damaged.isEmpty()) return;
+
+        ItemStack target = damaged.get(player.getRandom().nextInt(damaged.size()));
+        int current = target.getDamageValue();
+        target.setDamageValue(Math.max(0, current - restore));
+        data.markDirty();
     }
 }

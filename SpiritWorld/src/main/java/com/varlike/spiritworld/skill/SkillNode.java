@@ -31,6 +31,14 @@ public class SkillNode {
     private final boolean hudVisible;   // 默认 true
     /** 动态额外 tooltip 行；null 表示无。仅在客户端渲染时调用。 */
     private final Function<SkillNode, List<Component>> tooltipExtra;
+    /** 未声明冷却时的哨兵值 */
+    public static final long COOLDOWN_UNSET = -1L;
+    /** 开关类默认冷却：1 秒 */
+    public static final long DEFAULT_COOLDOWN_TOGGLE = 20L;
+    /** 其他默认冷却：5 秒 */
+    public static final long DEFAULT_COOLDOWN_NORMAL = 100L;
+    /** 显式声明的冷却 tick；COOLDOWN_UNSET 表示按默认规则推导。0 表示无冷却。 */
+    private final long cooldownTicks;
 
     private SkillNode(Builder b) {
         this.id = b.id;
@@ -50,6 +58,7 @@ public class SkillNode {
         this.alwaysOn = b.alwaysOn;
         this.hudVisible = b.hudVisible;
         this.tooltipExtra = b.tooltipExtra;
+        this.cooldownTicks = b.cooldownTicks;
     }
 
     // ===== getters =====
@@ -73,6 +82,16 @@ public class SkillNode {
         if (tooltipExtra == null) return List.of();
         List<Component> out = tooltipExtra.apply(this);
         return out == null ? List.of() : out;
+    }
+    /** 显式声明的冷却 tick；返回 COOLDOWN_UNSET 表示未声明。 */
+    public long getDeclaredCooldown() { return cooldownTicks; }
+    /**
+     * 实际基础冷却（未考虑天赋乘数）。
+     * 显式声明优先；否则开关类 1 秒，其他 5 秒。
+     */
+    public long getBaseCooldownTicks() {
+        if (cooldownTicks != COOLDOWN_UNSET) return Math.max(0L, cooldownTicks);
+        return toggleable ? DEFAULT_COOLDOWN_TOGGLE : DEFAULT_COOLDOWN_NORMAL;
     }
 
     /** 从当前等级升到下一级所需的灵视点 */
@@ -102,6 +121,7 @@ public class SkillNode {
         private boolean toggleable = false;
         private boolean alwaysOn = false;
         private boolean hudVisible = true;
+        private long cooldownTicks = COOLDOWN_UNSET;
         private Function<SkillNode, List<Component>> tooltipExtra = null;
 
         private Builder(ResourceLocation id) { this.id = id; }
@@ -128,6 +148,11 @@ public class SkillNode {
             this.tooltipExtra = fn;
             return this;
         }
+        /** 显式设置冷却 tick；0 表示无冷却。 */
+        public Builder cooldown(long ticks) {
+            this.cooldownTicks = Math.max(0L, ticks);
+            return this;
+        }
         public Builder passiveAlways() {
             this.type = SkillType.PASSIVE; this.equippable = false; this.toggleable = false;
             this.alwaysOn = true;this.hudVisible = false;
@@ -140,12 +165,12 @@ public class SkillNode {
         }
         public Builder passiveEquippable() {
             this.type = SkillType.PASSIVE; this.equippable = true; this.toggleable = true;
-            this.alwaysOn = false; this.hudVisible = true;
+            this.alwaysOn = false; this.hudVisible = true;this.cooldownTicks = 1L;
             return this;
         }
         public Builder active() {
             this.type = SkillType.ACTIVE; this.equippable = true; this.toggleable = false;
-            this.alwaysOn = false; this.hudVisible = true;
+            this.alwaysOn = false; this.hudVisible = true;this.cooldownTicks = 5L;
             return this;
         }
         public Builder specialEquippable() {

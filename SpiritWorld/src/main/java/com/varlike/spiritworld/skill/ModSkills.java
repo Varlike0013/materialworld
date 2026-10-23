@@ -50,6 +50,14 @@ public class ModSkills {
             ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_shield");
     public static final ResourceLocation SPIRIT_NIGHT_VISION_ID =
             ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_night_vision");
+    public static final ResourceLocation SPIRIT_REPAIR_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_repair");
+    public static final ResourceLocation COOLDOWN_REDUCTION_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "cooldown_reduction");
+    public static final ResourceLocation SPIRIT_SATIETY_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_satiety");
+    public static final ResourceLocation SPIRIT_MAINTENANCE_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_maintenance");
 
     private static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, path);
@@ -355,24 +363,147 @@ public class ModSkills {
                 .build());
 
         SkillTree.register(SkillNode.builder(SPIRIT_NIGHT_VISION_ID)
-                .passiveToggle()                       // 开关被动
-                .grid(1, 4)                            // 灵视系下方
+                .passiveToggle()
+                .grid(1, 4)
                 .maxLevel(5)
-                .cost(5)
-                .costIncrement(2)
+                .cost(5).costIncrement(2)
                 .requiredVisionLevel(0)
                 .icon("夜")
                 .tooltipExtra(node -> {
                     int lv = ClientSpiritData.getSkillLevel(node.getId());
                     if (lv <= 0) return List.of();
-                    double base = Config.nightVisionBaseCostPerSecond > 0
-                            ? Config.nightVisionBaseCostPerSecond
-                            : SkillValues.NIGHT_VISION_BASE_COST_PER_SECOND_DEFAULT;
-                    return List.of(Component.translatable("skill.tooltip.spirit_night_vision.cost",
-                                    String.format("%.2f", base / lv))
-                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+
+                    double penalty = SkillValues.nightVisionMaxPenalty(lv);
+                    List<Component> list = new ArrayList<>();
+
+                    if (penalty > 0.0) {
+                        list.add(Component.translatable("skill.tooltip.spirit_night_vision.penalty",
+                                        String.format("%.0f", penalty * 100))
+                                .withStyle(ChatFormatting.RED));
+                    } else {
+                        list.add(Component.translatable("skill.tooltip.spirit_night_vision.penalty.none")
+                                .withStyle(ChatFormatting.GREEN));
+                    }
+
+                    return list;
                 })
                 .build());
+        SkillTree.register(SkillNode.builder(SPIRIT_REPAIR_ID)
+                .active()
+                .grid(2, 4)                       // EMC 转化(2,5) 上方
+                .maxLevel(1)
+                .cost(5).costIncrement(3)
+                .requiredVisionLevel(1)
+                .prereq(EMC_CONVERSION_ID)
+                .icon("修")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
 
+                    double perSpirit = SkillValues.repairDurabilityPerSpirit(lv);
+                    List<Component> list = new ArrayList<>();
+
+                    // 当前等级兑换比
+                    list.add(Component.translatable("skill.tooltip.spirit_repair.rate",
+                                    String.format("%.1f", perSpirit))
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+
+                    // 下一级提升预览
+                    if (lv < node.getMaxLevel()) {
+                        double nextPerSpirit = SkillValues.repairDurabilityPerSpirit(lv + 1);
+                        list.add(Component.translatable("skill.tooltip.spirit_repair.next",
+                                        String.format("%.1f", nextPerSpirit))
+                                .withStyle(ChatFormatting.GRAY));
+                    }
+
+                    return list;
+                })
+                .build());
+        SkillTree.register(SkillNode.builder(COOLDOWN_REDUCTION_ID)
+                .passiveAlways()
+                .grid(0, 7)
+                .maxLevel(5)
+                .cost(10).costIncrement(3)
+                .requiredVisionLevel(1)
+                .icon("冷")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+
+                    double reduction = SkillValues.COOLDOWN_REDUCTION_BY_LEVEL[
+                            Math.min(lv, SkillValues.COOLDOWN_REDUCTION_BY_LEVEL.length - 1)];
+                    double mult = SkillValues.cooldownMultiplier(lv);
+
+                    // 示例：默认 5 秒 / 1 秒冷却缩短后的实际值
+                    double normalSec = SkillNode.DEFAULT_COOLDOWN_NORMAL * mult / 20.0;
+                    double toggleSec = SkillNode.DEFAULT_COOLDOWN_TOGGLE * mult / 20.0;
+
+                    return List.of(
+                            Component.translatable("skill.tooltip.cooldown_reduction.current",
+                                            String.format("%.0f", reduction * 100))
+                                    .withStyle(ChatFormatting.LIGHT_PURPLE),
+                            Component.translatable("skill.tooltip.cooldown_reduction.example",
+                                            String.format("%.2f", toggleSec),
+                                            String.format("%.2f", normalSec))
+                                    .withStyle(ChatFormatting.GRAY)
+                    );
+                })
+                .build());
+        SkillTree.register(SkillNode.builder(SPIRIT_SATIETY_ID)
+                .passiveToggle()
+                .grid(1, 5)                          // 夜视 (1,4) 下面
+                .maxLevel(3)
+                .cost(8).costIncrement(3)            // 8/11/14
+                .requiredVisionLevel(1)
+                .prereq(VISION_MASTERY_ID, 1)        // 前置：灵视精通 1 级
+                .icon("饱")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+
+                    double penalty = SkillValues.satietyMaxPenalty(lv);
+                    List<Component> list = new ArrayList<>();
+
+                    if (penalty > 0.0) {
+                        list.add(Component.translatable("skill.tooltip.spirit_satiety.penalty",
+                                        String.format("%.0f", penalty * 100))
+                                .withStyle(ChatFormatting.RED));
+                    } else {
+                        list.add(Component.translatable("skill.tooltip.spirit_satiety.penalty.none")
+                                .withStyle(ChatFormatting.GREEN));
+                    }
+
+                    list.add(Component.translatable("skill.tooltip.spirit_satiety.note")
+                            .withStyle(ChatFormatting.GRAY));
+
+                    return list;
+                })
+                .build());
+        SkillTree.register(SkillNode.builder(SPIRIT_MAINTENANCE_ID)
+                .passiveToggle()
+                .grid(3, 4)                          // 精神修复 (2,4) 右侧
+                .maxLevel(3)
+                .cost(10).costIncrement(5)          // 20/30/40
+                .requiredVisionLevel(2)
+                .prereq(SPIRIT_REPAIR_ID, 3)         //前置：精神修复满级
+                .icon("维")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+
+                    int restore = SkillValues.maintenanceRestorePerSecond(lv);
+                    List<Component> list = new ArrayList<>();
+                    list.add(Component.translatable("skill.tooltip.spirit_maintenance.rate", restore)
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+
+                    if (lv < node.getMaxLevel()) {
+                        int next = SkillValues.maintenanceRestorePerSecond(lv + 1);
+                        list.add(Component.translatable("skill.tooltip.spirit_maintenance.next", next)
+                                .withStyle(ChatFormatting.GRAY));
+                    }
+
+                    return list;
+                })
+                .build());
     }
 }

@@ -9,6 +9,7 @@ public class ClientPayloadHandler {
         context.enqueueWork(() -> ClientSpiritData.update(
                 pkt.spirit(),
                 pkt.maxSpirit(),
+                pkt.baseMaxSpirit(),
                 pkt.availableVisionPoints(),
                 pkt.totalSpentVisionPoints(),
                 pkt.visionFragments(),

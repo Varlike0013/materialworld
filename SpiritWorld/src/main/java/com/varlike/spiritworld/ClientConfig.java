@@ -17,7 +17,7 @@ public class ClientConfig {
 
     public static final ModConfigSpec.BooleanValue SHOW_SPIRIT_BAR = BUILDER
             .comment("是否显示精神力条")
-            .define("showSpiritBar", true);
+            .define("showSpiritBar", false);
 
     public static final ModConfigSpec.BooleanValue SHOW_SPIRIT_TEXT = BUILDER
             .comment("是否显示精神力数值")
@@ -37,7 +37,7 @@ public class ClientConfig {
     static final ModConfigSpec SPEC = BUILDER.build();
 
     public static int spiritBarYOffset = 0;
-    public static boolean showSpiritBar = true;
+    public static boolean showSpiritBar = false;
     public static boolean showSpiritText = true;
     public static int hudPassiveMaxRows = 0;
     public static int hudPassivePerRow = 0;

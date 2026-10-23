@@ -40,14 +40,10 @@ public class Config {
 
     public static final ModConfigSpec.LongValue EMC_CONVERSION_EMC_COST = BUILDER
             .comment("EMC 转化技能每级每次消耗的 EMC")
-            .defineInRange("emcConversionEmcCost", 20L, 1L, 1000000L);
+            .defineInRange("emcConversionEmcCost", 100L, 1L, 1000000L);
     public static final ModConfigSpec.IntValue EMC_CONVERSION_BASE_INTERVAL = BUILDER
             .comment("EMC 转化技能基础触发间隔（tick）")
             .defineInRange("emcConversionBaseInterval", 20, 2, 200);
-
-    public static final ModConfigSpec.DoubleValue NIGHT_VISION_BASE_COST = BUILDER
-            .comment("精神夜视消耗基础值(越低越好)")
-            .defineInRange("nightVisionBaseCostPerSecond", 3.0, 0.1, 100.0);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
@@ -58,7 +54,7 @@ public class Config {
     public static boolean spiritClearOnLogin = false;
     public static boolean spiritClearOnDeath = false;
     public static long bottledSpiritRestoreAmount = 50L;
-    public static long emcConversionEmcCost = 20L;
+    public static long emcConversionEmcCost = 100L;
     public static int emcConversionBaseInterval = 20;
     public static double nightVisionBaseCostPerSecond = 3.0;
 
@@ -73,7 +69,6 @@ public class Config {
         bottledSpiritRestoreAmount = BOTTLED_SPIRIT_RESTORE_AMOUNT.get();
         emcConversionEmcCost = EMC_CONVERSION_EMC_COST.get();
         emcConversionBaseInterval = EMC_CONVERSION_BASE_INTERVAL.get();
-        nightVisionBaseCostPerSecond = NIGHT_VISION_BASE_COST.get();
     }
     @SubscribeEvent
     static void onReload(ModConfigEvent.Reloading event) {

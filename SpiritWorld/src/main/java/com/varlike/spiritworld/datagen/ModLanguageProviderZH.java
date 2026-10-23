@@ -183,10 +183,9 @@ public class ModLanguageProviderZH extends LanguageProvider {
         // ===== 精神夜视 =====
         this.add("skill.spiritworld.spirit_night_vision", "精神夜视");
         this.add("skill.spiritworld.spirit_night_vision.desc",
-                "激活时获得夜视效果，等级越高每秒消耗的精神力越少。");
-        this.add("skill.tooltip.spirit_night_vision.cost", "每秒消耗 %s 精神力");
-        this.add("message.spiritworld.spirit_night_vision.no_spirit",
-                "精神力耗尽，夜视已关闭");
+                "激活时获得夜视，同时降低精神力上限；等级越高惩罚越小。");
+        this.add("skill.tooltip.spirit_night_vision.penalty", "激活时精神力上限：-%s%%");
+        this.add("skill.tooltip.spirit_night_vision.penalty.none", "无精神力上限惩罚");
         // ===== 工具分支 =====
         this.add("skill.tooltip.tool_speed.current", "挖掘速度：%s");
         this.add("skill.tooltip.fortune.current", "时运 %s");
@@ -206,5 +205,34 @@ public class ModLanguageProviderZH extends LanguageProvider {
         this.add("skill.tooltip.emc_conversion.note", "需装配到技能栏才能生效");
         // ===== 精神源泉 =====
         this.add("skill.tooltip.spirit_source.current", "加成：+%s%% 精神力上限，+%s%% 恢复");
+        this.add("message.spiritworld.skill.cooldown", "技能冷却中：%s 秒");
+        // ===== 精神修复 =====
+        this.add("skill.spiritworld.spirit_repair", "精神修复");
+        this.add("skill.spiritworld.spirit_repair.desc",
+                "消耗精神力，修复主手武器/工具的耐久。");
+        this.add("skill.tooltip.spirit_repair.rate", "恢复：每点精神力 %s 耐久");
+        this.add("message.spiritworld.spirit_repair.not_damageable", "主手物品无法修复");
+        this.add("message.spiritworld.spirit_repair.full", "主手物品耐久已满");
+        this.add("message.spiritworld.spirit_repair.no_spirit", "精神力不足，无法修复");
+        this.add("message.spiritworld.spirit_repair.success",
+                "修复 %d 点耐久（消耗 %d 点精神力）");
+        this.add("skill.tooltip.spirit_repair.next", "下一级：每点精神力 %s 耐久");
+        this.add("skill.spiritworld.cooldown_reduction", "精神迅捷");
+        this.add("skill.spiritworld.cooldown_reduction.desc",
+                "减少所有技能的冷却时间，等级越高收益递减。");
+        this.add("skill.tooltip.cooldown_reduction.current", "当前：-%s%% 冷却时间");
+        this.add("skill.tooltip.cooldown_reduction.example",
+                "开关技能：%s 秒  |  普通技能：%s 秒");
+        this.add("skill.spiritworld.spirit_satiety", "精神饱食");
+        this.add("skill.spiritworld.spirit_satiety.desc",
+                "激活时饱食度始终保持满值，同时降低精神力上限；等级越高惩罚越小。");
+        this.add("skill.tooltip.spirit_satiety.penalty", "激活时精神力上限：-%s%%");
+        this.add("skill.tooltip.spirit_satiety.penalty.none", "无精神力上限惩罚");
+        this.add("skill.tooltip.spirit_satiety.note", "同时获得自然回血效果");
+        this.add("skill.spiritworld.spirit_maintenance", "精神维护");
+        this.add("skill.spiritworld.spirit_maintenance.desc",
+                "每秒为背包中任一损坏的物品恢复耐久，等级越高恢复越多。");
+        this.add("skill.tooltip.spirit_maintenance.rate", "每秒恢复 %d 点耐久");
+        this.add("skill.tooltip.spirit_maintenance.next", "下一级：每秒恢复 %d 点耐久");
     }
 }

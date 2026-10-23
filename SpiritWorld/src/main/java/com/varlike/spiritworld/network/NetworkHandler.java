@@ -36,10 +36,6 @@ public class NetworkHandler {
                 ServerboundTogglePassivePacket.STREAM_CODEC, ServerboundTogglePassivePacket::handle);
         registrar.playToServer(ServerboundUseSkillPacket.TYPE,
                 ServerboundUseSkillPacket.STREAM_CODEC, ServerboundUseSkillPacket::handle);
-        registrar.playToServer(
-                ServerboundSummonToolPacket.TYPE,
-                ServerboundSummonToolPacket.STREAM_CODEC,
-                ServerboundSummonToolPacket::handle);
     }
 
     public static void syncTo(ServerPlayer player) {
@@ -48,6 +44,7 @@ public class NetworkHandler {
         PacketDistributor.sendToPlayer(player, new ClientboundSyncSpiritPacket(
                 data.getSpirit(),
                 data.getEffectiveMaxSpirit(),
+                data.getBaseMaxSpirit(),
                 data.getAvailableVisionPoints(),
                 data.getTotalSpentVisionPoints(),
                 data.getVisionFragments(),

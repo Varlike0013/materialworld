@@ -14,6 +14,7 @@ import java.util.Set;
 public record ClientboundSyncSpiritPacket(
         long spirit,
         long maxSpirit,
+        long baseMaxSpirit,
         long availableVisionPoints,
         long totalSpentVisionPoints,
         long visionFragments,
@@ -33,6 +34,7 @@ public record ClientboundSyncSpiritPacket(
     public void encode(RegistryFriendlyByteBuf buf) {
         buf.writeLong(spirit);
         buf.writeLong(maxSpirit);
+        buf.writeLong(baseMaxSpirit);
         buf.writeLong(availableVisionPoints);
         buf.writeLong(totalSpentVisionPoints);
         buf.writeLong(visionFragments);
@@ -59,6 +61,7 @@ public record ClientboundSyncSpiritPacket(
         this(
                 buf.readLong(),          // spirit
                 buf.readLong(),          // maxSpirit
+                buf.readLong(),          // baseMaxSpirit
                 buf.readLong(),          // availableVisionPoints
                 buf.readLong(),          // totalSpentVisionPoints
                 buf.readLong(),          // visionFragments

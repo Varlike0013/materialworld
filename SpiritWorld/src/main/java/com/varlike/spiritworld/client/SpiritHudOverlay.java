@@ -114,11 +114,25 @@ public class SpiritHudOverlay {
 
         // ===== 填充 =====
         float ratio = (float) spirit / (float) maxSpirit;
+        ratio = Math.clamp(ratio, 0.0f, 1.0f);
         int filled = Math.round(BAR_WIDTH * ratio);
         if (filled > 0) {
             // 三段渐变：左深蓝 → 中亮蓝 → 右淡蓝
             graphics.fill(x, y, x + filled, y + BAR_HEIGHT, 0xFF0066CC);
             graphics.fill(x, y, x + filled, y + BAR_HEIGHT / 2, 0xFF3399FF);
+        }
+        // ===== 被扣掉的上限（红色段） =====
+        long baseMax = ClientSpiritData.getBaseMaxSpirit();
+        if (baseMax > maxSpirit) {
+            // 红色段的起点 = maxSpirit 在 bar 上的位置
+            int redStart = Math.round(BAR_WIDTH * (float) maxSpirit / (float) baseMax);
+            redStart = Math.clamp(redStart, 0, BAR_WIDTH);
+
+            if (redStart < BAR_WIDTH) {
+                // 深红底 + 亮红上半，和蓝色条风格一致
+                graphics.fill(x + redStart, y, x + BAR_WIDTH, y + BAR_HEIGHT, 0xFF8B1A1A);
+                graphics.fill(x + redStart, y, x + BAR_WIDTH, y + BAR_HEIGHT / 2, 0xFFCC4444);
+            }
         }
 
         // ===== 文本 =====
@@ -126,11 +140,9 @@ public class SpiritHudOverlay {
             Component text = Component.literal(spirit + " / " + maxSpirit);
             int textWidth = mc.font.width(text);
             int textX = x + (BAR_WIDTH - textWidth) / 2;
-            int textY = y - 10;
-
             // 阴影
-            graphics.drawString(mc.font, text, textX + 1, textY + 1, 0xFF000000, false);
-            graphics.drawString(mc.font, text, textX, textY, 0xFFFFFFFF, false);
+            graphics.drawString(mc.font, text, textX + 1, y + 1, 0xFF000000, false);
+            graphics.drawString(mc.font, text, textX, y, 0xFFFFFFFF, false);
         }
         // ===== 精神力条右侧：当前技能图标 =====
         ResourceLocation equippedId = ClientSpiritData.getEquippedSkill();

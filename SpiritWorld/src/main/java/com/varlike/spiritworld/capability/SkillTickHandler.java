@@ -35,8 +35,8 @@ public class SkillTickHandler {
             return;
         }
 
-        // 间隔：技能等级越高，检查越频繁
-        int interval = Math.max(2, Config.emcConversionBaseInterval - (skillLevel - 1) * 3);
+        // 间隔固定，不随等级变化
+        int interval = Math.max(2, Config.emcConversionBaseInterval);
         if (player.tickCount % interval != 0) return;
 
         // 每碎片价格（含技能等级 + 视觉等级折扣）
@@ -45,7 +45,7 @@ public class SkillTickHandler {
 
         // 本次想消耗的 EMC（基础值 × EMC 亲和折扣）
         long targetCost = Math.max(perFragment,
-                (long) Math.ceil(Config.emcConversionEmcCost * data.getEmcCostMultiplier()));
+                (long) Math.ceil(Config.emcConversionEmcCost * data.getEmcCostMultiplier()))*skillLevel;
 
         // 产出碎片数 = 消耗 / 每碎片价格，至少 1
         long gain = Math.max(1L, targetCost / perFragment);

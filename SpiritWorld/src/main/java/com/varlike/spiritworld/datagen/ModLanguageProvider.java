@@ -183,10 +183,9 @@ public class ModLanguageProvider extends LanguageProvider {
         // ===== 精神夜视 =====
         this.add("skill.spiritworld.spirit_night_vision", "Spirit Night Vision");
         this.add("skill.spiritworld.spirit_night_vision.desc",
-                "While active, grants night vision. Higher levels consume less spirit per second.");
-        this.add("skill.tooltip.spirit_night_vision.cost", "Consumes %s spirit/sec");
-        this.add("message.spiritworld.spirit_night_vision.no_spirit",
-                "Spirit depleted, Night Vision disabled");
+                "Grants night vision while active. Reduces max spirit; higher levels reduce less.");
+        this.add("skill.tooltip.spirit_night_vision.penalty", "Max spirit: -%s%% while active");
+        this.add("skill.tooltip.spirit_night_vision.penalty.none", "No max spirit penalty");
         // ===== 工具分支 =====
         this.add("skill.tooltip.tool_speed.current", "Mining speed: %s");
         this.add("skill.tooltip.fortune.current", "Fortune %s");
@@ -206,5 +205,37 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("skill.tooltip.emc_conversion.note", "Must be equipped to take effect");
         // ===== 精神源泉 =====
         this.add("skill.tooltip.spirit_source.current", "Bonus: +%s%% max spirit, +%s%% regen");
+        this.add("message.spiritworld.skill.cooldown", "Skill on cooldown: %ss");
+        // ===== 精神修复 =====
+        this.add("skill.spiritworld.spirit_repair", "Spirit Repair");
+        this.add("skill.spiritworld.spirit_repair.desc",
+                "Consumes spirit to repair the held weapon/tool.");
+        this.add("skill.tooltip.spirit_repair.rate", "Restore: %s durability per spirit");
+        this.add("message.spiritworld.spirit_repair.not_damageable",
+                "Held item cannot be repaired");
+        this.add("message.spiritworld.spirit_repair.full",
+                "Held item is already at full durability");
+        this.add("message.spiritworld.spirit_repair.no_spirit",
+                "Not enough spirit to repair");
+        this.add("message.spiritworld.spirit_repair.success",
+                "Repaired %d durability (consumed %d spirit)");
+        this.add("skill.tooltip.spirit_repair.next", "Next level: %s durability per spirit");
+        this.add("skill.spiritworld.cooldown_reduction", "Spirit Alacrity");
+        this.add("skill.spiritworld.cooldown_reduction.desc",
+                "Reduces all skill cooldowns. Higher levels have diminishing returns.");
+        this.add("skill.tooltip.cooldown_reduction.current", "Current: -%s%% cooldown");
+        this.add("skill.tooltip.cooldown_reduction.example",
+                "Toggle: %ss  |  Normal: %ss");
+        this.add("skill.spiritworld.spirit_satiety", "Spirit Satiety");
+        this.add("skill.spiritworld.spirit_satiety.desc",
+                "While active, keeps your hunger bar full. Reduces max spirit; higher levels reduce less.");
+        this.add("skill.tooltip.spirit_satiety.penalty", "Max spirit: -%s%% while active");
+        this.add("skill.tooltip.spirit_satiety.penalty.none", "No max spirit penalty");
+        this.add("skill.tooltip.spirit_satiety.note", "Also enables natural health regeneration");
+        this.add("skill.spiritworld.spirit_maintenance", "Spirit Maintenance");
+        this.add("skill.spiritworld.spirit_maintenance.desc",
+                "Every second, restores durability to one damaged item in your inventory. Higher levels restore more.");
+        this.add("skill.tooltip.spirit_maintenance.rate", "Restores %d durability per second");
+        this.add("skill.tooltip.spirit_maintenance.next", "Next level: %d durability per second");
     }
 }

@@ -27,9 +27,6 @@ public class PlayerSpirit {
     private long spirit = DEFAULT_MAX_SPIRIT;
     private long maxSpirit = DEFAULT_MAX_SPIRIT;
 
-    /** 临时上限加成，key 为来源 ID，value 为加成量（可正可负） */
-    private final Map<ResourceLocation, Long> maxSpiritModifiers = new HashMap<>();
-
     /** 是否已初始化 / Whether the data has been initialized */
     private transient boolean initialized = false;
 
@@ -62,17 +59,38 @@ public class PlayerSpirit {
         if (spirit > getEffectiveMaxSpirit()) spirit = getEffectiveMaxSpirit();
         markDirty();
     }
-
     /**
-     * 有效上限 = 基础上限 + 所有临时加成之和。
-     * Effective max = base max + sum of all temporary modifiers.
+     * 基础有效上限：只含临时 modifier + 技能固定/百分比加成，
+     * 不含夜视/饱食等「激活时惩罚」。
      */
+    public long getBaseMaxSpirit() {
+        long flat = maxSpirit
+                + sumModifiers()
+                + getSkillMaxSpiritFlatBonus();
+        double percent = sumPercentModifiers()
+                + getSkillMaxSpiritPercentBonus();
+        return Math.max(0L, (long) (flat * (1.0 + percent)));
+    }
+
+    /** 最终有效上限：基础值叠加所有激活惩罚 */
     public long getEffectiveMaxSpirit() {
-        long base = maxSpirit;
-        for (long v : maxSpiritModifiers.values()) base += v;
-        base += getSkillMaxSpiritFlatBonus();
-        base = (long) (base * (1.0 + getSkillMaxSpiritPercentBonus()));
-        return Math.max(0, base);
+        long total = getBaseMaxSpirit();
+
+        // 夜视惩罚
+        if (isPassiveActive(ModSkills.SPIRIT_NIGHT_VISION_ID)) {
+            int lv = getSkillLevel(ModSkills.SPIRIT_NIGHT_VISION_ID);
+            double penalty = SkillValues.nightVisionMaxPenalty(lv);
+            if (penalty > 0.0) total = (long) (total * (1.0 - penalty));
+        }
+
+        // 饱食惩罚
+        if (isPassiveActive(ModSkills.SPIRIT_SATIETY_ID)) {
+            int lv = getSkillLevel(ModSkills.SPIRIT_SATIETY_ID);
+            double penalty = SkillValues.satietyMaxPenalty(lv);
+            if (penalty > 0.0) total = (long) (total * (1.0 - penalty));
+        }
+
+        return Math.max(0L, total);
     }
 
     public void addSpirit(long amount) {
@@ -89,37 +107,112 @@ public class PlayerSpirit {
     // ==================== 临时上限加成 / Temp Max Modifiers ====================
 
     /**
-     * 添加或覆盖一个临时上限加成。
-     * Add or overwrite a temporary max-spirit modifier.
-     *
-     * @param id     来源唯一标识（例如 buff 的注册名）/ Source identifier
-     * @param amount 加成量，可为负 / Modifier amount, can be negative
+     * 单个临时上限加成条目。
+     * 同时支持固定值和百分比，二者可独立为正负。
+     */
+    public record MaxSpiritModifier(long fixed, double percent) {
+
+        public static MaxSpiritModifier fixed(long v) {
+            return new MaxSpiritModifier(v, 0.0);
+        }
+
+        public static MaxSpiritModifier percent(double p) {
+            return new MaxSpiritModifier(0L, p);
+        }
+
+        public static MaxSpiritModifier of(long fixed, double percent) {
+            return new MaxSpiritModifier(fixed, percent);
+        }
+
+        public boolean isEmpty() {
+            return fixed == 0L && Math.abs(percent) < 1.0E-9;
+        }
+    }
+
+    /** 临时上限加成（固定值 + 百分比），transient，不序列化 */
+    private final Map<ResourceLocation, MaxSpiritModifier> maxSpiritModifiers = new HashMap<>();
+
+    /**
+     * 添加或覆盖一个固定值临时加成。
+     * 等价于 {@code addMaxSpiritModifier(id, amount, 0.0)}。
      */
     public void addMaxSpiritModifier(ResourceLocation id, long amount) {
-        maxSpiritModifiers.put(id, amount);
-        if (spirit > getEffectiveMaxSpirit()) spirit = getEffectiveMaxSpirit();
+        addMaxSpiritModifier(id, amount, 0.0);
+    }
+
+    /**
+     * 添加或覆盖一个临时上限加成，同时支持固定值和百分比。
+     *
+     * @param fixed   固定值加成，可负；0 表示无
+     * @param percent 百分比加成，0.05 = +5%，-0.2 = -20%；0 表示无
+     */
+    public void addMaxSpiritModifier(ResourceLocation id, long fixed, double percent) {
+        MaxSpiritModifier m = new MaxSpiritModifier(fixed, percent);
+        if (m.isEmpty()) {
+            // 全零视作移除，避免残留空条目
+            removeMaxSpiritModifier(id);
+            return;
+        }
+        maxSpiritModifiers.put(id, m);
+        clampSpiritToMax();
         markDirty();
     }
 
-    /** 移除指定来源的临时加成 / Remove a modifier by id */
+    /** 快捷：仅百分比加成，0.05 = +5%，-0.2 = -20% */
+    public void addMaxSpiritPercentModifier(ResourceLocation id, double percent) {
+        addMaxSpiritModifier(id, 0L, percent);
+    }
+
+    /** 移除指定来源的临时加成 */
     public void removeMaxSpiritModifier(ResourceLocation id) {
         if (maxSpiritModifiers.remove(id) != null) {
-            if (spirit > getEffectiveMaxSpirit()) spirit = getEffectiveMaxSpirit();
+            clampSpiritToMax();
             markDirty();
         }
     }
 
-    /** 清空所有临时加成 / Clear all temporary modifiers */
+    /** 清空所有临时加成 */
     public void clearMaxSpiritModifiers() {
         if (!maxSpiritModifiers.isEmpty()) {
             maxSpiritModifiers.clear();
-            if (spirit > getEffectiveMaxSpirit()) spirit = getEffectiveMaxSpirit();
+            clampSpiritToMax();
             markDirty();
         }
     }
 
-    public Map<ResourceLocation, Long> getMaxSpiritModifiers() {
+    /** 固定值总和 */
+    private long sumModifiers() {
+        long sum = 0L;
+        for (MaxSpiritModifier m : maxSpiritModifiers.values()) {
+            sum += m.fixed();
+        }
+        return sum;
+    }
+
+    /** 百分比总和（0.05 + 0.05 = 0.10） */
+    private double sumPercentModifiers() {
+        double sum = 0.0;
+        for (MaxSpiritModifier m : maxSpiritModifiers.values()) {
+            sum += m.percent();
+        }
+        return sum;
+    }
+
+    /** 返回不可修改的完整加成映射 */
+    public Map<ResourceLocation, MaxSpiritModifier> getMaxSpiritModifiers() {
         return Collections.unmodifiableMap(maxSpiritModifiers);
+    }
+
+    /** 按来源查询单个加成，未设置返回 null */
+    public MaxSpiritModifier getMaxSpiritModifier(ResourceLocation id) {
+        return maxSpiritModifiers.get(id);
+    }
+
+    /** 将当前精神力夹到有效上限内（含下限 0） */
+    private void clampSpiritToMax() {
+        long eff = getEffectiveMaxSpirit();
+        if (spirit > eff) spirit = eff;
+        if (spirit < 0L) spirit = 0L;
     }
 
     // ===== 新增字段 =====
@@ -155,7 +248,52 @@ public class PlayerSpirit {
         learnedSkills.clear();
         markDirty();
     }
+    /** 技能冷却结束的 gameTime；transient，不序列化、不跨死亡复制 */
+    private final transient java.util.Map<ResourceLocation, Long> skillCooldownEnds = new java.util.HashMap<>();
+    /**
+     * 冷却倍率：1.0 表示无减少。天赋/装备可通过叠加降低此值。
+     * 最低 0.2，防止无限接近 0。
+     */
+    public double getCooldownMultiplier() {
+        int lv = getSkillLevel(ModSkills.COOLDOWN_REDUCTION_ID);
+        return SkillValues.cooldownMultiplier(lv);
+    }
+    /** 技能实际冷却 tick；0 表示无冷却 */
+    public long getEffectiveCooldown(ResourceLocation skillId) {
+        SkillNode node = SkillTree.get(skillId);
+        if (node == null) return 0L;
+        long base = node.getBaseCooldownTicks();
+        if (base <= 0) return 0L;
+        return (long) Math.ceil(base * getCooldownMultiplier());
+    }
 
+    public boolean isOnCooldown(ResourceLocation skillId, long gameTime) {
+        Long end = skillCooldownEnds.get(skillId);
+        return end != null && gameTime < end;
+    }
+
+    public long getCooldownRemaining(ResourceLocation skillId, long gameTime) {
+        Long end = skillCooldownEnds.get(skillId);
+        return end == null ? 0L : Math.max(0L, end - gameTime);
+    }
+
+    public void setCooldown(ResourceLocation skillId, long endGameTime) {
+        if (endGameTime <= 0L) {
+            skillCooldownEnds.remove(skillId);
+        } else {
+            skillCooldownEnds.put(skillId, endGameTime);
+        }
+    }
+
+    /** 清理某技能的冷却（重置技能、换装备时调用） */
+    public void clearCooldown(ResourceLocation skillId) {
+        skillCooldownEnds.remove(skillId);
+    }
+
+    /** 清理全部冷却（死亡重生、重置全部技能时调用） */
+    public void clearAllCooldowns() {
+        skillCooldownEnds.clear();
+    }
     // ===== 灵视点 =====
     public long getAvailableVisionPoints() { return availableVisionPoints; }
 
