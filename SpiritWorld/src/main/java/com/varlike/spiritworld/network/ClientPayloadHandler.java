@@ -16,6 +16,8 @@ public class ClientPayloadHandler {
                 pkt.learnedSkills(),
                 pkt.loadout(),
                 pkt.selectedSlot(),
-                pkt.activePassives()));
+                pkt.activePassives(),
+                pkt.scanRange(),
+                pkt.scanOres() ));
     }
 }

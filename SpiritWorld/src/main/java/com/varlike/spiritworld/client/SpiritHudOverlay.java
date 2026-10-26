@@ -3,9 +3,7 @@ package com.varlike.spiritworld.client;
 import com.varlike.spiritworld.ClientConfig;
 import com.varlike.spiritworld.SpiritWorld;
 import com.varlike.spiritworld.client.skill.SkillRenderer;
-import com.varlike.spiritworld.skill.SkillNode;
-import com.varlike.spiritworld.skill.SkillTree;
-import com.varlike.spiritworld.skill.SkillType;
+import com.varlike.spiritworld.skill.*;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -166,8 +164,38 @@ public class SpiritHudOverlay {
                         iconX, iconY + 20, 0xFFAAAAAA, false);
             }
         }
-
+        // ===== 飞行状态图标（新增）=====
+        renderFlightIndicator(graphics, mc, x, y);
         // ===== 精神力条上方：已激活被动图标 =====
         renderActivePassives(graphics, mc, x, y);
+    }
+    private static void renderFlightIndicator(GuiGraphics g, Minecraft mc, int barX, int barY) {
+        // 只在飞行被动激活时显示
+        boolean flightActive = ClientSpiritData.isPassiveActive(ModSkills.SPIRIT_FLIGHT_ID);
+        if (!flightActive) return;
+
+        int lv = ClientSpiritData.getSkillLevel(ModSkills.SPIRIT_FLIGHT_ID);
+        if (lv <= 0) return;
+
+        // 放在精神力条左侧，和右侧技能图标对称
+        int iconX = barX - 20;
+        int iconY = barY - 4;
+
+        // 状态色：正常飞行绿色，缓降黄色，精神力低红色
+        long spirit = ClientSpiritData.getSpirit();
+        double costPerSec = SkillValues.flightCostPerSecond(lv);
+        int borderColor;
+        if (spirit <= 0) {
+            borderColor = 0xFFFF4444;          // 红：精神力耗尽
+        } else if (spirit < costPerSec * SkillValues.FLIGHT_GLIDE_EXIT_SECONDS) {
+            borderColor = 0xFFFFD54F;          // 黄：缓降阈值
+        } else {
+            borderColor = 0xFF4CAF50;          // 绿：正常飞行
+        }
+
+        // 外框 + 符号
+        SkillRenderer.fillCircle(g, iconX + 8, iconY + 8, 8, borderColor);
+        SkillRenderer.fillCircle(g, iconX + 8, iconY + 8, 6, 0x80201030);
+        g.drawCenteredString(mc.font, "飞", iconX + 8, iconY + 4, 0xFFFFFFFF);
     }
 }

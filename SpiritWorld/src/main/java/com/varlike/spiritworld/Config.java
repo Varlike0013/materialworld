@@ -44,6 +44,11 @@ public class Config {
     public static final ModConfigSpec.IntValue EMC_CONVERSION_BASE_INTERVAL = BUILDER
             .comment("EMC 转化技能基础触发间隔（tick）")
             .defineInRange("emcConversionBaseInterval", 20, 2, 200);
+    public static final ModConfigSpec.DoubleValue SPIRIT_FLIGHT_COST_MULTIPLIER = BUILDER
+            .defineInRange("spiritFlightCostMultiplier", 1.0, 0.1, 10.0);
+
+    public static final ModConfigSpec.IntValue SCAN_MAX_ICONS = BUILDER
+            .defineInRange("scanMaxIcons", 32, 1, 256);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
@@ -56,7 +61,9 @@ public class Config {
     public static long bottledSpiritRestoreAmount = 50L;
     public static long emcConversionEmcCost = 100L;
     public static int emcConversionBaseInterval = 20;
-    public static double nightVisionBaseCostPerSecond = 3.0;
+    public static double spiritFlightCostMultiplier = 1.0;
+    /** 扫描单次最多显示的图标数（超过按距离最近截断） */
+    public static int scanMaxIcons = 32;
 
     /** 手动加载配置值，在 FMLCommonSetupEvent 和 ModConfigEvent.Reloading 中调用 */
     public static void loadValues() {
@@ -69,6 +76,8 @@ public class Config {
         bottledSpiritRestoreAmount = BOTTLED_SPIRIT_RESTORE_AMOUNT.get();
         emcConversionEmcCost = EMC_CONVERSION_EMC_COST.get();
         emcConversionBaseInterval = EMC_CONVERSION_BASE_INTERVAL.get();
+        spiritFlightCostMultiplier = SPIRIT_FLIGHT_COST_MULTIPLIER.get();
+        scanMaxIcons = SCAN_MAX_ICONS.get();
     }
     @SubscribeEvent
     static void onReload(ModConfigEvent.Reloading event) {

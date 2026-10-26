@@ -234,5 +234,37 @@ public class ModLanguageProviderZH extends LanguageProvider {
                 "每秒为背包中任一损坏的物品恢复耐久，等级越高恢复越多。");
         this.add("skill.tooltip.spirit_maintenance.rate", "每秒恢复 %d 点耐久");
         this.add("skill.tooltip.spirit_maintenance.next", "下一级：每秒恢复 %d 点耐久");
+        this.add("skill.spiritworld.spirit_flight", "精神飞行");
+        this.add("skill.spiritworld.spirit_flight.desc",
+                "激活时获得创造飞行，每秒消耗精神力；上升时消耗翻倍。");
+        this.add("skill.tooltip.spirit_flight.hover", "悬停/平飞：每秒 %s 精神力");
+        this.add("skill.tooltip.spirit_flight.rising", "上升：每秒 %s 精神力");
+        this.add("skill.tooltip.spirit_flight.next", "下一级：悬停每秒 %s 精神力");
+        this.add("message.spiritworld.spirit_flight.low_spirit",
+                "精神力不足，飞行已关闭，进入缓降");
+        // ===== 精神扫描 =====
+        this.add("skill.spiritworld.spirit_scan", "精神扫描");
+        this.add("skill.spiritworld.spirit_scan.desc",
+                "扫描附近的矿物。右键技能节点打开配置界面，设置范围和目标矿物。");
+        this.add("skill.tooltip.spirit_scan.max_range", "最大范围：%d 格");
+        this.add("skill.tooltip.spirit_scan.duration", "图标持续 %d 秒");
+        this.add("skill.tooltip.spirit_scan.next", "下一级：最大范围 %d 格");
+        this.add("skill.tooltip.spirit_scan.no_ore_selected",
+                "未选择矿物，请打开扫描配置");
+        // ===== 扫描矿物名 =====
+        this.add("spiritworld.scan.coal", "煤炭");
+        this.add("spiritworld.scan.iron", "铁矿");
+        this.add("spiritworld.scan.gold", "金矿");
+        this.add("spiritworld.scan.redstone", "红石");
+        this.add("spiritworld.scan.lapis", "青金石");
+        this.add("spiritworld.scan.diamond", "钻石");
+        this.add("spiritworld.scan.emerald", "绿宝石");
+        this.add("spiritworld.scan.ancient_debris", "古代残骸");
+        this.add("spiritworld.scan.other", "其他模组矿物");
+        // ===== 扫描结果提示 =====
+        this.add("message.spiritworld.spirit_scan.no_spirit", "精神力不足（需要 %d）");
+        this.add("message.spiritworld.spirit_scan.no_ore", "未选择矿物，请打开扫描配置");
+        this.add("message.spiritworld.spirit_scan.not_found", "未发现目标矿物");
+        this.add("message.spiritworld.spirit_scan.found", "发现 %d 处矿物");
     }
 }

@@ -3,6 +3,8 @@ package com.varlike.spiritworld.capability;
 import com.varlike.spiritworld.Config;
 import com.varlike.spiritworld.SpiritWorld;
 import com.varlike.spiritworld.network.NetworkHandler;
+import com.varlike.spiritworld.skill.ModSkills;
+import com.varlike.spiritworld.skill.SkillHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -69,7 +71,12 @@ public class SpiritGameHandler {
         if (Config.spiritClearOnLogin) {
             data.setSpirit(0L);
         }
-
+        if (data.isPassiveActive(ModSkills.SPIRIT_FLIGHT_ID)
+                && !player.isCreative() && !player.isSpectator()
+                && data.getSpirit() >= 1L) {
+            SkillHelper.setMayFly(player, true);
+            player.onUpdateAbilities();
+        }
         // 标记为“已接上存档”，此后才允许把内存数据写回 NBT，
         // 防止登录握手阶段用默认值覆盖真实存档
         data.markPersistenceReady();
@@ -81,6 +88,7 @@ public class SpiritGameHandler {
 
         // 立即落盘：老玩家同步一次，新玩家建立初始存档
         SpiritPersistence.save(player, data);
+
     }
 
     /** 玩家登出时：落盘，然后清理内存缓存 */
@@ -109,5 +117,18 @@ public class SpiritGameHandler {
             }
         }
         SpiritWorld.LOGGER.debug("关服前已保存所有在线玩家的精神世界进度");
+    }
+    @SubscribeEvent
+    public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        PlayerSpirit data = player.getCapability(ModCapabilities.PLAYER_SPIRIT, null);
+        if (data == null) return;
+
+        if (data.isPassiveActive(ModSkills.SPIRIT_FLIGHT_ID)
+                && !player.isCreative() && !player.isSpectator()
+                && data.getSpirit() >= 1L) {
+            SkillHelper.setMayFly(player, true);
+            player.onUpdateAbilities();
+        }
     }
 }

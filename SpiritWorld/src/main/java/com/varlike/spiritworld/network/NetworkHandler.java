@@ -36,6 +36,12 @@ public class NetworkHandler {
                 ServerboundTogglePassivePacket.STREAM_CODEC, ServerboundTogglePassivePacket::handle);
         registrar.playToServer(ServerboundUseSkillPacket.TYPE,
                 ServerboundUseSkillPacket.STREAM_CODEC, ServerboundUseSkillPacket::handle);
+        registrar.playToServer(ServerboundSetScanConfigPacket.TYPE,
+                ServerboundSetScanConfigPacket.STREAM_CODEC,ServerboundSetScanConfigPacket::handle
+        );
+        registrar.playToClient(ClientboundScanResultPacket.TYPE,
+                ClientboundScanResultPacket.STREAM_CODEC, ClientboundScanResultPacket::handle
+        );
     }
 
     public static void syncTo(ServerPlayer player) {
@@ -51,7 +57,9 @@ public class NetworkHandler {
                 data.getLearnedSkills(),
                 data.getLoadout(),
                 data.getSelectedSlot(),
-                data.getActivePassives()
+                data.getActivePassives(),
+                data.getScanRange(),
+                data.getScanOres()
         ));
     }
 

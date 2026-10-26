@@ -58,17 +58,15 @@ public class ModSkills {
             ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_satiety");
     public static final ResourceLocation SPIRIT_MAINTENANCE_ID =
             ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_maintenance");
+    public static final ResourceLocation SPIRIT_FLIGHT_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_flight");
+    public static final ResourceLocation SPIRIT_SCAN_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_scan");
 
     private static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, path);
     }
     // ===== 工具辅助 =====
-
-    private static final String[] ROMAN = {"", "I", "II", "III", "IV", "V"};
-
-    private static String roman(int n) {
-        return (n >= 1 && n <= 5) ? ROMAN[n] : String.valueOf(n);
-    }
     /** 通用：读取当前等级，0 级返回空列表；否则返回单行提示 */
     private static List<Component> currentLine(SkillNode node, String key, java.util.function.IntFunction<String> valueOf) {
         int lv = ClientSpiritData.getSkillLevel(node.getId());
@@ -500,6 +498,71 @@ public class ModSkills {
                         int next = SkillValues.maintenanceRestorePerSecond(lv + 1);
                         list.add(Component.translatable("skill.tooltip.spirit_maintenance.next", next)
                                 .withStyle(ChatFormatting.GRAY));
+                    }
+
+                    return list;
+                })
+                .build());
+        SkillTree.register(SkillNode.builder(SPIRIT_FLIGHT_ID)
+                .passiveToggle()
+                .grid(0, 6)
+                .maxLevel(3)
+                .cost(20).costIncrement(5)
+                .requiredVisionLevel(3)
+                .prereq(SPIRIT_ENDURANCE_ID, 5)
+                .icon("飞")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+
+                    double base = SkillValues.flightCostPerSecond(lv);
+                    List<Component> list = new ArrayList<>();
+                    list.add(Component.translatable("skill.tooltip.spirit_flight.hover",
+                                    String.format("%.1f", base))
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+                    list.add(Component.translatable("skill.tooltip.spirit_flight.rising",
+                                    String.format("%.1f", base * SkillValues.FLIGHT_RISING_MULTIPLIER))
+                            .withStyle(ChatFormatting.GRAY));
+
+                    if (lv < node.getMaxLevel()) {
+                        double next = SkillValues.flightCostPerSecond(lv + 1);
+                        list.add(Component.translatable("skill.tooltip.spirit_flight.next",
+                                        String.format("%.1f", next))
+                                .withStyle(ChatFormatting.DARK_GRAY));
+                    }
+                    return list;
+                })
+                .build());
+        SkillTree.register(SkillNode.builder(SPIRIT_SCAN_ID)
+                .active()                        // 可装备到技能栏，按 V 触发
+                .grid(5, 4)                      // 独立区域
+                .maxLevel(5)
+                .cost(15).costIncrement(10)      // 15/25/35/45/55
+                .requiredVisionLevel(2)
+                .prereq(VISION_SHARPNESS_ID, 3)  // 前置：灵视敏锐 3 级
+                .icon("扫")
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+
+                    int maxRange = SkillValues.scanRangeMax(lv);
+                    int duration = SkillValues.scanDurationSeconds(lv);
+                    List<Component> list = new ArrayList<>();
+                    list.add(Component.translatable("skill.tooltip.spirit_scan.max_range", maxRange)
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+                    list.add(Component.translatable("skill.tooltip.spirit_scan.duration", duration)
+                            .withStyle(ChatFormatting.GRAY));
+
+                    if (lv < node.getMaxLevel()) {
+                        int nextRange = SkillValues.scanRangeMax(lv + 1);
+                        list.add(Component.translatable("skill.tooltip.spirit_scan.next", nextRange)
+                                .withStyle(ChatFormatting.DARK_GRAY));
+                    }
+
+                    // 未选择矿物时提示
+                    if (ClientSpiritData.getScanOres().isEmpty()) {
+                        list.add(Component.translatable("skill.tooltip.spirit_scan.no_ore_selected")
+                                .withStyle(ChatFormatting.RED));
                     }
 
                     return list;

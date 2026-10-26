@@ -479,6 +479,32 @@ public class PlayerSpirit {
         this.spiritToolActive = active;
         markDirty();
     }
+
+    /** 飞行消耗累积器，transient，不序列化 */
+    private transient double flightCostAccum = 0.0;
+    public double getFlightCostAccum() { return flightCostAccum; }
+    public void setFlightCostAccum(double v) { flightCostAccum = v; }
+
+    /** 缓降状态标记，transient */
+    private transient boolean flightGliding = false;
+    public boolean isFlightGliding() { return flightGliding; }
+    public void setFlightGliding(boolean v) { flightGliding = v; }
+    /** 玩家配置的扫描范围（格），步长 2，范围 8~等级上限 */
+    private int scanRange = SkillValues.SCAN_RANGE_MIN;
+
+    /** 玩家勾选的矿物标识集合 */
+    private Set<ResourceLocation> scanOres = new HashSet<>();
+
+    public int getScanRange() { return scanRange; }
+    public void setScanRange(int range) { scanRange = Math.max(SkillValues.SCAN_RANGE_MIN, range); }
+
+    public Set<ResourceLocation> getScanOres() { return scanOres; }
+    public void setScanOres(Set<ResourceLocation> ores) {
+        this.scanOres = ores == null ? new HashSet<>() : new HashSet<>(ores);
+    }
+    public void toggleScanOre(ResourceLocation oreId) {
+        if (!scanOres.remove(oreId)) scanOres.add(oreId);
+    }
     // ==================== 初始化 / Initialization ====================
 
     public boolean isInitialized() {
@@ -507,6 +533,8 @@ public class PlayerSpirit {
         this.activePassives.addAll(other.activePassives);
         this.spiritToolActive = other.spiritToolActive;
         this.visionFragments = other.visionFragments;
+        this.scanRange = other.scanRange;
+        this.scanOres = new HashSet<>(other.scanOres);
         markDirty();
     }
 
@@ -537,6 +565,14 @@ public class PlayerSpirit {
         tag.put("activePassives", passiveList);
         tag.putBoolean("spiritToolActive", spiritToolActive);
         tag.putLong("visionFragments", visionFragments);
+        tag.putInt("scanRange", scanRange);
+        {
+            ListTag list = new ListTag();
+            for (ResourceLocation id : scanOres) {
+                list.add(StringTag.valueOf(id.toString()));
+            }
+            tag.put("scanOres", list);
+        }
 
         return tag;
     }
@@ -582,6 +618,17 @@ public class PlayerSpirit {
         this.spiritToolActive = tag.getBoolean("spiritToolActive");
         this.visionFragments = tag.getLong("visionFragments");
         if (spirit > getEffectiveMaxSpirit()) spirit = getEffectiveMaxSpirit();
+        if (tag.contains("scanRange")) {
+            scanRange = tag.getInt("scanRange");
+        }
+        scanOres.clear();
+        if (tag.contains("scanOres")) {
+            ListTag list = tag.getList("scanOres", Tag.TAG_STRING);
+            for (int i = 0; i < list.size(); i++) {
+                ResourceLocation id = ResourceLocation.tryParse(list.getString(i));
+                if (id != null) scanOres.add(id);
+            }
+        }
         initialized = true;
         persistenceReady = true;
         markDirty();

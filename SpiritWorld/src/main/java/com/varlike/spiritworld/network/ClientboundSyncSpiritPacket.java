@@ -21,7 +21,9 @@ public record ClientboundSyncSpiritPacket(
         Map<ResourceLocation, Integer> learnedSkills,
         ResourceLocation[] loadout,
         int selectedSlot,
-        Set<ResourceLocation> activePassives
+        Set<ResourceLocation> activePassives,
+        int scanRange,
+        Set<ResourceLocation> scanOres
 ) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<ClientboundSyncSpiritPacket> TYPE =
@@ -55,6 +57,11 @@ public record ClientboundSyncSpiritPacket(
         for (ResourceLocation id : activePassives) {
             buf.writeResourceLocation(id);
         }
+        buf.writeVarInt(scanRange);
+        buf.writeVarInt(scanOres.size());
+        for (ResourceLocation id : scanOres) {
+            buf.writeResourceLocation(id);
+        }
     }
 
     public ClientboundSyncSpiritPacket(RegistryFriendlyByteBuf buf) {
@@ -68,7 +75,9 @@ public record ClientboundSyncSpiritPacket(
                 readMap(buf),            // learnedSkills
                 readLoadout(buf),        // loadout
                 buf.readVarInt(),        // selectedSlot
-                readPassives(buf)        // activePassives
+                readPassives(buf),       // activePassives
+                buf.readVarInt(),        // scanRange
+                readPassives(buf)        // scanOres
         );
     }
 

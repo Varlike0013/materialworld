@@ -237,5 +237,39 @@ public class ModLanguageProvider extends LanguageProvider {
                 "Every second, restores durability to one damaged item in your inventory. Higher levels restore more.");
         this.add("skill.tooltip.spirit_maintenance.rate", "Restores %d durability per second");
         this.add("skill.tooltip.spirit_maintenance.next", "Next level: %d durability per second");
+        this.add("skill.spiritworld.spirit_flight", "Spirit Flight");
+        this.add("skill.spiritworld.spirit_flight.desc",
+                "While active, grants creative flight. Consumes spirit per second; rising costs double.");
+        this.add("skill.tooltip.spirit_flight.hover", "Hover/glide: %s spirit/sec");
+        this.add("skill.tooltip.spirit_flight.rising", "Rising: %s spirit/sec");
+        this.add("skill.tooltip.spirit_flight.next", "Next level: %s spirit/sec hover");
+        this.add("message.spiritworld.spirit_flight.low_spirit",
+                "Spirit low, flight disabled. Slow falling engaged.");
+        // ===== 精神扫描 =====
+        this.add("skill.spiritworld.spirit_scan", "Spirit Scan");
+        this.add("skill.spiritworld.spirit_scan.desc",
+                "Scan nearby ores. Right-click the skill node to configure range and target ores.");
+        this.add("skill.tooltip.spirit_scan.max_range", "Max range: %d blocks");
+        this.add("skill.tooltip.spirit_scan.duration", "Icons last %d sec");
+        this.add("skill.tooltip.spirit_scan.next", "Next level: max range %d");
+        this.add("skill.tooltip.spirit_scan.no_ore_selected",
+                "No ore selected, open scan config");
+
+// ===== 扫描矿物名（配置界面 + 图标显示用）=====
+        this.add("spiritworld.scan.coal", "Coal");
+        this.add("spiritworld.scan.iron", "Iron");
+        this.add("spiritworld.scan.gold", "Gold");
+        this.add("spiritworld.scan.redstone", "Redstone");
+        this.add("spiritworld.scan.lapis", "Lapis");
+        this.add("spiritworld.scan.diamond", "Diamond");
+        this.add("spiritworld.scan.emerald", "Emerald");
+        this.add("spiritworld.scan.ancient_debris", "Ancient Debris");
+        this.add("spiritworld.scan.other", "Other Mod Ores");
+
+// ===== 扫描结果提示 =====
+        this.add("message.spiritworld.spirit_scan.no_spirit", "Not enough spirit (need %d)");
+        this.add("message.spiritworld.spirit_scan.no_ore", "No ore selected, open scan config");
+        this.add("message.spiritworld.spirit_scan.not_found", "No target ores found");
+        this.add("message.spiritworld.spirit_scan.found", "Found %d ore cluster(s)");
     }
 }

@@ -15,6 +15,8 @@ public class ClientSpiritData {
     private static long baseMaxSpirit = 0L;
     private static long visionFragments = 0L;
     private static final Map<ResourceLocation, Integer> learnedSkills = new HashMap<>();
+    private static int scanRange = 8;
+    private static Set<ResourceLocation> scanOres = new HashSet<>();
 
     public static long getSpirit() { return spirit; }
     public static long getMaxSpirit() { return maxSpirit; }
@@ -25,6 +27,8 @@ public class ClientSpiritData {
     public static Map<ResourceLocation, Integer> getLearnedSkills() {
         return Collections.unmodifiableMap(learnedSkills);
     }
+    public static int getScanRange() { return scanRange; }
+    public static Set<ResourceLocation> getScanOres() { return scanOres; }
 
     public static int getSkillLevel(ResourceLocation id) {
         return learnedSkills.getOrDefault(id, 0);
@@ -87,7 +91,8 @@ public class ClientSpiritData {
                               Map<ResourceLocation, Integer> newSkills,
                               ResourceLocation[] newLoadout,
                               int newSelectedSlot,
-                              Set<ResourceLocation> newPassives) {
+                              Set<ResourceLocation> newPassives,
+                              int newScanRange, Set<ResourceLocation> newScanOres) {
         maxSpirit = Math.max(0L, newMaxSpirit);
         spirit = Math.clamp(newSpirit, 0L, maxSpirit);
         availableVisionPoints = newAvail;
@@ -102,5 +107,7 @@ public class ClientSpiritData {
         selectedSlot = newSelectedSlot;
         activePassives.clear();
         activePassives.addAll(newPassives);
+        scanRange = Math.max(8, newScanRange);
+        scanOres = newScanOres == null ? new HashSet<>() : new HashSet<>(newScanOres);
     }
 }

@@ -1,5 +1,8 @@
 package com.varlike.spiritworld.skill;
 
+import com.varlike.spiritworld.SpiritWorld;
+import net.minecraft.resources.ResourceLocation;
+
 /**
  * 所有技能的效果数值集中声明处。
  * 计算层（PlayerSpirit / SpiritShieldEvents / SpiritToolBuilder / ...）
@@ -184,4 +187,114 @@ public final class SkillValues {
         if (level <= 0) return 0;
         return MAINTENANCE_RESTORE_PER_LEVEL * level;
     }
+    // ==================== 精神飞行 ====================
+    /** 各等级悬停每秒消耗，索引 0 为占位 */
+    public static final double[] FLIGHT_COST_PER_SECOND_BY_LEVEL = {
+            0.0,   // 0 级（未学）
+            3.0,   // Lv1
+            2.5,   // Lv2
+            2.0    // Lv3
+    };
+
+    /** 上升消耗倍率（相对悬停） */
+    public static final double FLIGHT_RISING_MULTIPLIER = 2.0;
+
+    /** 缓降状态恢复飞行所需的最低精神力（秒数） */
+    public static final double FLIGHT_GLIDE_EXIT_SECONDS = 5.0;
+
+    public static double flightCostPerSecond(int level) {
+        if (level <= 0 || level >= FLIGHT_COST_PER_SECOND_BY_LEVEL.length) return 0.0;
+        return FLIGHT_COST_PER_SECOND_BY_LEVEL[level];
+    }
+    // ==================== 精神扫描 ====================
+
+    /** 各等级范围上限（格），索引 0 为占位 */
+    public static final int[] SCAN_RANGE_MAX_BY_LEVEL = {
+            0,   // 0 级（未学）
+            16,  // Lv1
+            24,  // Lv2
+            32,  // Lv3
+            40,  // Lv4
+            48   // Lv5
+    };
+
+    /** 各等级图标持续秒数，索引 0 为占位 */
+    public static final int[] SCAN_DURATION_BY_LEVEL = {
+            0,   // 0 级
+            5,   // Lv1
+            7,   // Lv2
+            9,   // Lv3
+            11,  // Lv4
+            13   // Lv5
+    };
+
+    /** 扫描配置滑块的最小值 */
+    public static final int SCAN_RANGE_MIN = 8;
+
+    /** 扫描配置滑块步长 */
+    public static final int SCAN_RANGE_STEP = 2;
+
+    /** 扫描冷却（tick），基础 3 秒，受精神迅捷影响 */
+    public static final long SCAN_BASE_COOLDOWN_TICKS = 60L;
+
+    public static int scanRangeMax(int level) {
+        if (level <= 0 || level >= SCAN_RANGE_MAX_BY_LEVEL.length) return 0;
+        return SCAN_RANGE_MAX_BY_LEVEL[level];
+    }
+
+    public static int scanDurationSeconds(int level) {
+        if (level <= 0 || level >= SCAN_DURATION_BY_LEVEL.length) return 0;
+        return SCAN_DURATION_BY_LEVEL[level];
+    }
+
+    /** 按范围平方计算精神力消耗：ceil(range² / 128) */
+    public static long scanCostForRange(int range) {
+        if (range <= 0) return 0L;
+        long sq = (long) range * range;
+        return Math.max(1L, (sq + 127L) / 128L);
+    }
+
+// ---------- 可扫描矿物标识 ----------
+
+    private static ResourceLocation scanId(String name) {
+        return ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "scan/" + name);
+    }
+
+    public static final ResourceLocation SCAN_COAL          = scanId("coal");
+    public static final ResourceLocation SCAN_IRON          = scanId("iron");
+    public static final ResourceLocation SCAN_GOLD          = scanId("gold");
+    public static final ResourceLocation SCAN_REDSTONE      = scanId("redstone");
+    public static final ResourceLocation SCAN_LAPIS         = scanId("lapis");
+    public static final ResourceLocation SCAN_DIAMOND       = scanId("diamond");
+    public static final ResourceLocation SCAN_EMERALD       = scanId("emerald");
+    public static final ResourceLocation SCAN_ANCIENT_DEBRIS = scanId("ancient_debris");
+    public static final ResourceLocation SCAN_OTHER         = scanId("other");
+
+    /** 该矿物标识解锁所需等级 */
+    public static int scanOreUnlockLevel(ResourceLocation oreId) {
+        if (SCAN_COAL.equals(oreId) || SCAN_IRON.equals(oreId)) return 1;
+        if (SCAN_GOLD.equals(oreId) || SCAN_REDSTONE.equals(oreId) || SCAN_LAPIS.equals(oreId)) return 2;
+        if (SCAN_DIAMOND.equals(oreId) || SCAN_EMERALD.equals(oreId)) return 3;
+        if (SCAN_ANCIENT_DEBRIS.equals(oreId)) return 4;
+        if (SCAN_OTHER.equals(oreId)) return 5;
+        return Integer.MAX_VALUE;   // 未知标识，永不解锁
+    }
+
+    /** 按技能等级返回所有已解锁矿物标识（用于界面展示，不读玩家勾选） */
+    public static java.util.Set<ResourceLocation> unlockedOres(int level) {
+        java.util.Set<ResourceLocation> set = new java.util.HashSet<>();
+        for (ResourceLocation id : ALL_SCAN_ORES) {
+            if (scanOreUnlockLevel(id) <= level) set.add(id);
+        }
+        return set;
+    }
+
+    /** 固定顺序的矿物标识列表，用于配置界面按顺序显示 */
+    public static final java.util.List<ResourceLocation> ALL_SCAN_ORES = java.util.List.of(
+            SCAN_COAL, SCAN_IRON,
+            SCAN_GOLD, SCAN_REDSTONE, SCAN_LAPIS,
+            SCAN_DIAMOND, SCAN_EMERALD,
+            SCAN_ANCIENT_DEBRIS,
+            SCAN_OTHER
+    );
 }
