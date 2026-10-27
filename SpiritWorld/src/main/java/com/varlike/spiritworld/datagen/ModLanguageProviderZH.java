@@ -266,5 +266,10 @@ public class ModLanguageProviderZH extends LanguageProvider {
         this.add("message.spiritworld.spirit_scan.no_ore", "未选择矿物，请打开扫描配置");
         this.add("message.spiritworld.spirit_scan.not_found", "未发现目标矿物");
         this.add("message.spiritworld.spirit_scan.found", "发现 %d 处矿物");
+        // ===== 扫描配置界面 =====
+        this.add("screen.spiritworld.scan_config.title", "精神扫描配置");
+        this.add("screen.spiritworld.scan_config.range", "范围：%d 格");
+        this.add("screen.spiritworld.scan_config.cost", "每次扫描消耗：%d 精神力");
+        this.add("screen.spiritworld.loadout.scan_config", "扫描配置");
     }
 }

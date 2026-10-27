@@ -1,0 +1,684 @@
+{
+  "schema": "SpiritWorld-ClassFunction",
+  "purpose": "记录类、函数、关键数值声明。修改逻辑或平衡数值时优先查此文件。",
+  "projectInfo": {
+    "minecraftVersion": "1.21.1",
+    "neoforgeVersion": "21.1.256",
+    "modId": "spiritworld(com.varlike.spiritworld)",
+    "modName": "SpiritWorld(精神世界)",
+    "prerequisite": "materialworld(物质世界)"
+  },
+  "keyValueDeclarations": {
+    "SkillValues": {
+      "path": "src/main/java/com/varlike/spiritworld/skill/SkillValues.java",
+      "purpose": "全部技能效果数值集中声明，计算层与显示层共用，禁止硬编码。",
+      "constants": {
+        "spirit系": {
+          "SPIRIT_ENDURANCE_MAX_PER_LEVEL": 10,
+          "SPIRIT_TOUGHNESS_REGEN_PER_LEVEL": 0.5,
+          "SPIRIT_STRENGTH_MAX_PERCENT_PER_LEVEL": 0.05,
+          "SPIRIT_SURGE_REGEN_PERCENT_PER_LEVEL": 0.05,
+          "SPIRIT_FLOW_REGEN_PER_SECOND_PER_LEVEL": 0.0025,
+          "SPIRIT_SOURCE_MAX_PERCENT": 0.5,
+          "SPIRIT_SOURCE_REGEN_PERCENT": 0.5
+        },
+        "vision系": {
+          "VISION_SHARPNESS_FRAGMENTS_PER_LEVEL": 2,
+          "EMC_AFFINITY_COST_REDUCTION_PER_LEVEL": 0.03,
+          "VISION_MASTERY_FRAGMENT_PERCENT_PER_LEVEL": 0.15
+        },
+        "EMC转化": {
+          "EMC_CONVERSION_COST_BASE": 100,
+          "EMC_CONVERSION_COST_STEP": 15,
+          "VISION_CONVERSION_DISCOUNT_PER_LEVEL": 0.02,
+          "VISION_CONVERSION_DISCOUNT_CAP": 0.5,
+          "method_emcPerFragment": "emcPerFragment(skillLevel[, visionLevel])"
+        },
+        "召唤工具": {
+          "SUMMON_TOOL_SPIRIT_COST": 10
+        },
+        "精神修复": {
+          "REPAIR_DURABILITY_PER_SPIRIT_BY_LEVEL": [0, 2.0, 3.0, 4.5],
+          "REPAIR_MIN_SPIRIT": 1,
+          "method_repairDurabilityPerSpirit": "repairDurabilityPerSpirit(int level)"
+        },
+        "精神维护": {
+          "MAINTENANCE_RESTORE_PER_LEVEL": 3,
+          "MAINTENANCE_INTERVAL": 20,
+          "method_maintenanceRestorePerSecond": "maintenanceRestorePerSecond(int level) = 3 × level"
+        },
+        "精神护盾": {
+          "SHIELD_RATIO_PER_LEVEL": 0.5,
+          "SHIELD_SPIRIT_PER_DAMAGE": 5.0
+        },
+        "精神夜视": {
+          "NIGHT_VISION_MAX_PENALTY": [0, 0.12, 0.08, 0.04, 0, 0],
+          "NIGHT_VISION_REFRESH_TICKS": 200,
+          "NIGHT_VISION_CHECK_INTERVAL": 100,
+          "method_nightVisionMaxPenalty": "nightVisionMaxPenalty(int level)"
+        },
+        "精神饱食": {
+          "SATIETY_MAX_PENALTY": [0, 0.10, 0.05, 0],
+          "SATIETY_FULL_FOOD": 20,
+          "SATIETY_FULL_SATURATION": 5.0,
+          "method_satietyMaxPenalty": "satietyMaxPenalty(int level)"
+        },
+        "冷却缩减": {
+          "COOLDOWN_REDUCTION_BY_LEVEL": [0, 0.10, 0.18, 0.25, 0.30, 0.33],
+          "COOLDOWN_MULTIPLIER_MIN": 0.2,
+          "method_cooldownMultiplier": "cooldownMultiplier(int level)"
+        },
+        "精神飞行": {
+          "FLIGHT_COST_PER_SECOND_BY_LEVEL": [0, 3.0, 2.5, 2.0],
+          "FLIGHT_RISING_MULTIPLIER": 2.0,
+          "FLIGHT_GLIDE_EXIT_SECONDS": 5.0,
+          "method_flightCostPerSecond": "flightCostPerSecond(int level)"
+        },
+        "精神扫描": {
+          "SCAN_RANGE_MAX_BY_LEVEL": [0, 16, 24, 32, 40, 48],
+          "SCAN_DURATION_BY_LEVEL": [0, 5, 7, 9, 11, 13],
+          "SCAN_RANGE_MIN": 8,
+          "SCAN_RANGE_STEP": 2,
+          "SCAN_BASE_COOLDOWN_TICKS": 60,
+          "method_scanCostForRange": "scanCostForRange(range) = ceil(range² / 128)",
+          "method_scanRangeMax": "scanRangeMax(int level)",
+          "method_scanDurationSeconds": "scanDurationSeconds(int level)",
+          "method_scanOreUnlockLevel": "scanOreUnlockLevel(ResourceLocation)",
+          "method_unlockedOres": "unlockedOres(int level)"
+        },
+        "精神扫描矿物ID": {
+          "SCAN_COAL": "spiritworld:scan/coal",
+          "SCAN_IRON": "spiritworld:scan/iron",
+          "SCAN_GOLD": "spiritworld:scan/gold",
+          "SCAN_REDSTONE": "spiritworld:scan/redstone",
+          "SCAN_LAPIS": "spiritworld:scan/lapis",
+          "SCAN_DIAMOND": "spiritworld:scan/diamond",
+          "SCAN_EMERALD": "spiritworld:scan/emerald",
+          "SCAN_ANCIENT_DEBRIS": "spiritworld:scan/ancient_debris",
+          "SCAN_OTHER": "spiritworld:scan/other",
+          "ALL_SCAN_ORES": "按上述顺序的固定列表"
+        },
+        "工具速度": {
+          "TOOL_SPEED_BY_LEVEL": [1.0, 2.0, 4.0, 6.0, 8.0, 10.0]
+        },
+        "附魔上限": {
+          "FORTUNE_MAX_LEVEL": 3,
+          "EFFICIENCY_MAX_LEVEL": 5
+        }
+      }
+    },
+    "SkillNodeCooldown": {
+      "COOLDOWN_UNSET": -1,
+      "DEFAULT_COOLDOWN_TOGGLE": 20,
+      "DEFAULT_COOLDOWN_NORMAL": 100,
+      "说明": "显式 cooldown 优先；否则 toggleable=true 默认 1 秒，其他默认 5 秒"
+    },
+    "skillLayout": {
+      "grid": "x 0-6, y 0-5",
+      "x0Spirit": [
+        { "coord": "(0,0)", "name": "精神耐力", "maxLevel": 20, "base": 3, "inc": 1, "effect": "+10 上限/级" },
+        { "coord": "(0,1)", "name": "精神韧性", "maxLevel": 20, "base": 3, "inc": 1, "effect": "+0.5 恢复/级" },
+        { "coord": "(0,2)", "name": "精神强健", "maxLevel": 10, "base": 5, "inc": 2, "effect": "+5% 上限/级" },
+        { "coord": "(0,3)", "name": "精神涌动", "maxLevel": 10, "base": 5, "inc": 2, "effect": "+5% 恢复/级" },
+        { "coord": "(0,4)", "name": "精神洪流", "maxLevel": 5, "base": 10, "inc": 3, "effect": "每秒回复 0.25%×等级" },
+        { "coord": "(0,5)", "name": "精神源泉", "maxLevel": 1, "base": 50, "effect": "前置 精神洪流≥3，+50% 上限&恢复" }
+      ],
+      "x1Vision": [
+        { "coord": "(1,0)", "name": "灵视敏锐", "maxLevel": 5, "base": 5, "inc": 2, "effect": "+2 灵视碎片/级" },
+        { "coord": "(1,1)", "name": "EMC 亲和", "maxLevel": 5, "base": 5, "inc": 2, "effect": "前置 EMC 转化，-3% EMC 转化消耗/级" },
+        { "coord": "(1,2)", "name": "灵视精通", "maxLevel": 3, "base": 10, "inc": 3, "effect": "+15% 灵视碎片/级" },
+        { "coord": "(1,3)", "name": "精神护盾", "maxLevel": 5, "base": 8, "inc": 2, "effect": "每级 10% 伤害由精神力承担（封顶 100%），1 伤害 = 5 精神力" },
+        { "coord": "(1,4)", "name": "精神夜视", "maxLevel": 5, "base": 5, "inc": 2, "effect": "夜视，激活时上限 -12/-8/-4/0/0%，无精神力消耗" },
+        { "coord": "(1,5)", "name": "精神饱食", "maxLevel": 3, "base": 8, "inc": 3, "effect": "饱食度+饱和度保持满，激活时上限 -10/-5/0%" }
+      ],
+      "x2Tool": [
+        { "coord": "(2,5)", "name": "EMC 转化", "maxLevel": 5 },
+        { "coord": "(2,2)", "name": "召唤精神工具", "maxLevel": 1, "prereq": "EMC 转化" },
+        { "coord": "(2,0)", "name": "铲", "maxLevel": 5, "prereq": "召唤工具" },
+        { "coord": "(2,4)", "name": "精神修复", "maxLevel": 3, "prereq": "EMC 转化" }
+      ],
+      "x3Aux": [
+        { "coord": "(3,4)", "name": "精神维护", "maxLevel": 3, "prereq": "精神修复 Lv3" },
+        { "coord": "(3,4)", "name": "冷却缩减", "maxLevel": 5, "effect": "-10/18/25/30/33% 冷却" }
+      ],
+      "x4Tool": [
+        { "coord": "(4,0)", "name": "锄", "maxLevel": 5, "prereq": "召唤工具" },
+        { "coord": "(4,1)", "name": "斧", "maxLevel": 5, "prereq": "召唤工具" },
+        { "coord": "(4,2)", "name": "镐", "maxLevel": 5, "prereq": "召唤工具" }
+      ],
+      "x5Scan": [
+        { "coord": "(5,4)", "name": "精神扫描", "maxLevel": 5, "prereq": "灵视敏锐 Lv3", "effect": "扫描附近矿物，穿墙显示图标" }
+      ],
+      "x6Tool": [
+        { "coord": "(6,2)", "name": "时运", "maxLevel": 3, "prereq": "镐" },
+        { "coord": "(6,3)", "name": "效率", "maxLevel": 5, "prereq": "镐 Lv1" }
+      ],
+      "x0Flight": [
+        { "coord": "(0,6)", "name": "精神飞行", "maxLevel": 3, "prereq": "精神耐力 Lv5", "effect": "创造飞行，悬停 3.0/2.5/2.0 每秒，上升×2" }
+      ]
+    },
+    "visionFragmentSystem": {
+      "multipliers": {
+        "default": 1,
+        "enderDragon": 100,
+        "wither": 50,
+        "warden": 30,
+        "elderGuardian": 20,
+        "ravager/evoker/illusioner": 5,
+        "piglinBrute/hoglin/blaze/witherSkeleton": 3,
+        "enderman/shulker/ghast": 2
+      },
+      "formula": "total = round((倍率 + 灵视敏锐×2) × (1 + 灵视精通×0.15))",
+      "autoConvert": "累计 100 碎片 → 1 灵视点"
+    },
+    "networkPackets": {
+      "c2s": [
+        "ServerboundLearnSkillPacket",
+        "ServerboundSetLoadoutPacket",
+        "ServerboundSetSelectedSlotPacket",
+        "ServerboundTogglePassivePacket",
+        "ServerboundUseSkillPacket",
+        "ServerboundSummonToolPacket",
+        "ServerboundRequestSyncPacket",
+        "ServerboundSetScanConfigPacket(int range, Set<ResourceLocation> ores)"
+      ],
+      "s2c": [
+        "ClientboundSyncSpiritPacket",
+        "ClientboundScanResultPacket(List<OreIcon> icons, int durationSeconds)"
+      ],
+      "ClientboundSyncSpiritPacketFields": [
+        "spirit", "maxSpirit", "baseMaxSpirit", "availableVisionPoints",
+        "totalSpentVisionPoints", "visionFragments",
+        "learnedSkills", "loadout", "selectedSlot", "activePassives",
+        "scanRange", "scanOres"
+      ],
+      "注意": "encode / decode / syncTo 三处字段顺序必须严格一致，否则字节错位导致客户端崩溃。"
+    },
+    "hudSpiritBarKeyValues": {
+      "BAR_WIDTH": 81,
+      "BAR_HEIGHT": 5,
+      "FOOD_BAR_BOTTOM_OFFSET": 39,
+      "GAP": 2,
+      "LAYER_ID": "spiritworld:spirit_bar",
+      "ratioClamp": "clamp(spirit/maxSpirit, 0, 1) 防越界",
+      "上限惩罚红色段": "baseMax > maxSpirit 时，maxSpirit 到 bar 末端画深红底+亮红上半",
+      "flightIndicator": "barX-20 处画状态色圆（绿=正常/黄=低于缓降阈值/红=耗尽）"
+    },
+    "spiritToolKeyValues": {
+      "summonCost": 10,
+      "miningCost": { "钻石级": 5, "铁级": 4, "石级": 3, "其他": "1-4" },
+      "fortuneLevels": "1-3 对应 I-III",
+      "efficiencyLevels": "1-5 对应 I-V",
+      "fortuneAndEfficiency": "共用同一个 ItemEnchantments.Mutable 一次性 set，clamp 到最大等级"
+    },
+    "dataComponents": {
+      "ModDataComponents.SPIRIT_STORED": "DataComponentType<SpiritStored>",
+      "SpiritStored.CODEC": "持久化编解码器",
+      "SpiritStored.STREAM_CODEC": "网络同步编解码器"
+    },
+    "recipes": [
+      "精神铁秘戒: 4 铁锭菱形",
+      "精神金秘戒: 4 金锭菱形",
+      "精神钻秘戒: 4 钻石菱形",
+      "spirit_salt_from_smelting: 瓶装精神力 → 精神盐, 0.3 exp, 200 tick",
+      "spirit_salt_from_blasting: 高炉, 100 tick"
+    ]
+  },
+  "classAndFunctionLog": [
+    {
+      "className": "SpiritWorld",
+      "location": "src/main/java/com/varlike/spiritworld/SpiritWorld.java",
+      "methods": [
+        { "name": "SpiritWorld(IEventBus, ModContainer)", "purpose": "主构造函数，注册能力、物品、创造标签和配置。" },
+        { "name": "变更", "purpose": "新增 MaterialWorldAPI.addToAddonTab 调用，BOTTLED_SPIRIT 加入物质世界附属标签，分组 materialworld.addon_group.spirit_world。" }
+      ]
+    },
+    {
+      "className": "SkillValues",
+      "location": "src/main/java/com/varlike/spiritworld/skill/SkillValues.java",
+      "methods": [
+        { "name": "常量 + 计算方法", "purpose": "全量见 keyValueDeclarations.SkillValues。所有计算层与 tooltip 显示层引用此文件，禁止硬编码。" },
+        { "name": "roman(int)", "purpose": "数字转罗马数字，用于时运/效率显示。" }
+      ]
+    },
+    {
+      "className": "SkillHelper",
+      "location": "src/main/java/com/varlike/spiritworld/skill/SkillHelper.java",
+      "methods": [
+        { "name": "mayFly(Player)", "purpose": "通过 CREATIVE_FLIGHT 属性读取是否允许飞行。" },
+        { "name": "setMayFly(Player, boolean)", "purpose": "设置 CREATIVE_FLIGHT 1.0/0.0，替代弃用的 abilities.mayfly。" },
+        { "name": "setFlying(Player, boolean)", "purpose": "设置 abilities.flying（未弃用）。" },
+        { "name": "setFlightState(Player, boolean, boolean)", "purpose": "一次性设置允许飞行 + 当前飞行并 onUpdateAbilities。" }
+      ]
+    },
+    {
+      "className": "ClientSkillHelper",
+      "location": "src/main/java/com/varlike/spiritworld/client/skill/ClientSkillHelper.java",
+      "methods": [
+        { "name": "openScanConfig(Screen parent)", "purpose": "打开扫描配置界面；未学/无玩家/已在界面时静默忽略。" }
+      ]
+    },
+    {
+      "className": "PlayerSpirit",
+      "location": "src/main/java/com/varlike/spiritworld/capability/PlayerSpirit.java",
+      "methods": [
+        { "name": "MaxSpiritModifier(long fixed, double percent)", "purpose": "临时上限加成 record，isEmpty 判断全零。" },
+        { "name": "maxSpiritModifiers", "purpose": "Map<ResourceLocation, MaxSpiritModifier>，transient，不序列化。" },
+        { "name": "getBaseMaxSpirit()", "purpose": "maxSpirit + Σfixed + Σfixed_skills，×(1 + Σpercent + Σpercent_skills)。不含夜视/饱食惩罚。" },
+        { "name": "getEffectiveMaxSpirit()", "purpose": "baseMax × (1-夜视惩罚) × (1-饱食惩罚)，clamp ≥ 0。" },
+        { "name": "addMaxSpiritModifier(ResourceLocation, long) / (ResourceLocation, long, double) / addMaxSpiritPercentModifier(ResourceLocation, double)", "purpose": "固定值 / 固定+百分比 / 仅百分比，同 id 覆盖，clamp 精神力。" },
+        { "name": "removeMaxSpiritModifier / clearMaxSpiritModifiers / getMaxSpiritModifier / getMaxSpiritModifiers / clampSpiritToMax", "purpose": "移除、清空、查询、视图、夹取精神力。" },
+        { "name": "getSkillMaxSpiritFlatBonus / getSkillMaxSpiritPercentBonus / getSkillRegenFlatBonus / getSkillRegenPercentBonus / getSpiritFlowRegenPerSecond / getVisionFragmentFlatBonus / getVisionFragmentPercentBonus / getEmcCostMultiplier", "purpose": "各技能数值加成，全部引用 SkillValues。" },
+        { "name": "getCooldownMultiplier()", "purpose": "由 cooldown_reduction 技能决定，最低 0.2。" },
+        { "name": "getEffectiveCooldown(ResourceLocation)", "purpose": "ceil(base × multiplier)。" },
+        { "name": "isOnCooldown / getCooldownRemaining / setCooldown / clearCooldown / clearAllCooldowns", "purpose": "skillCooldownEnds（transient Map）读写，死亡/登出清空。" },
+        { "name": "getScanRange / setScanRange / getScanOres / setScanOres / toggleScanOre", "purpose": "扫描配置字段读写，随存档持久化。" },
+        { "name": "getFlightCostAccum / setFlightCostAccum / isFlightGliding / setFlightGliding", "purpose": "飞行累积器和缓降状态（transient）。" },
+        { "name": "save / load / copyFrom", "purpose": "NBT 持久化，含 scanRange / scanOres / 技能栏 / 被动 / 碎片等全部进度。" }
+      ]
+    },
+    {
+      "className": "PlayerSpiritProvider",
+      "location": "src/main/java/com/varlike/spiritworld/capability/PlayerSpiritProvider.java",
+      "methods": [
+        { "name": "getCapability(Entity, Void)", "purpose": "首次创建数据：上限按配置、精神力 0，初始化 EMC_CONVERSION_ID lv1 并装配到 0 号槽。" },
+        { "name": "remove(UUID)", "purpose": "登出清理内存。" }
+      ]
+    },
+    {
+      "className": "ModCapabilities",
+      "location": "src/main/java/com/varlike/spiritworld/capability/ModCapabilities.java",
+      "methods": [
+        { "name": "PROVIDER / PLAYER_SPIRIT", "purpose": "静态 Provider 与 EntityCapability。" },
+        { "name": "register(RegisterCapabilitiesEvent)", "purpose": "注册玩家实体能力。" }
+      ]
+    },
+    {
+      "className": "SpiritPersistence",
+      "location": "src/main/java/com/varlike/spiritworld/capability/SpiritPersistence.java",
+      "methods": [
+        { "name": "save(ServerPlayer, PlayerSpirit)", "purpose": "写入玩家 persistentData。" },
+        { "name": "load(ServerPlayer, PlayerSpirit)", "purpose": "从 persistentData 恢复，返回是否有存档。" }
+      ]
+    },
+    {
+      "className": "SpiritGameHandler",
+      "location": "src/main/java/com/varlike/spiritworld/capability/SpiritGameHandler.java",
+      "methods": [
+        { "name": "onPlayerClone(PlayerEvent.Clone)", "purpose": "死亡重生：copyFrom + clearMaxSpiritModifiers + 按配置清零精神力 + 立即落盘。" },
+        { "name": "onPlayerLogin(PlayerEvent.PlayerLoggedInEvent)", "purpose": "load → 按配置清零 → 重新应用飞行 mayFly → markPersistenceReady → syncTo → save。" },
+        { "name": "onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent)", "purpose": "保存 → PROVIDER.remove(uuid)。不调用客户端类。" },
+        { "name": "onServerStopping(ServerStoppingEvent)", "purpose": "关服前遍历在线玩家保存。" },
+        { "name": "onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent)", "purpose": "切维度后若飞行激活且精神力 ≥ 1，重设 mayFly。" }
+      ]
+    },
+    {
+        "className": "SpiritTickHandler",
+        "location": "src/main/java/com/varlike/spiritworld/capability/SpiritTickHandler.java",
+        "methods": [
+            { "name": "onPlayerTick(PlayerTickEvent.Post)", "purpose": "服务端每 tick：① 按 getEffectiveMaxSpirit clamp 精神力；② 按 Config.spiritRegenInterval 恢复（base + getSkillRegenFlatBonus，×(1 + getSkillRegenPercentBonus)）；③ 每 20 tick 按 getSpiritFlowRegenPerSecond 回复上限百分比（精神洪流）；④ 调度 handleNightVision / handleSpiritSatiety / handleSpiritMaintenance；⑤ 按 Config.syncInterval 节流 syncTo；⑥ 每 1200 tick 落盘 SpiritPersistence.save（需 isPersistenceReady）。【注意：当前未调用 handleSpiritFlight，需补一行】" },
+            { "name": "handleNightVision(ServerPlayer, PlayerSpirit)", "purpose": "被动激活时每 NIGHT_VISION_CHECK_INTERVAL（100 tick）检查，剩余 < NIGHT_VISION_REFRESH_TICKS（200）时续 220 tick 夜视；无精神力消耗；关闭时不清效果自然过期。" },
+            { "name": "handleSpiritSatiety(ServerPlayer, PlayerSpirit)", "purpose": "被动激活时每 tick 保证 foodLevel=20 / saturation=5.0 / exhaustion=0，只在不足时写入，触发原版自然回血。" },
+            { "name": "handleSpiritMaintenance(ServerPlayer, PlayerSpirit)", "purpose": "被动激活时每 MAINTENANCE_INTERVAL（20 tick）遍历 Inventory.getContainerSize()（背包 36 + 盔甲 4 + 副手 1），收集所有损坏物品，随机选一件恢复 3×lv 耐久，markDirty。" },
+            { "name": "handleSpiritFlight(ServerPlayer, PlayerSpirit)", "purpose": "状态机：① 被动关闭 → setFlightState(false,false) + 清 Slow Falling + 清 accum/gliding；② 创造/旁观不干预；③ 缓降中且 spirit ≥ baseCost × 5 → 退出缓降恢复 mayFly，否则继续 Slow Falling；④ 正常飞行按 rising（deltaMovement.y > 0.05）判断消耗 ×2 或 ×1，累积器扣精神力，耗尽进入缓降并提示；⑤ 确保 mayFly = true；⑥ 按 syncInterval 节流同步。【当前未被 onPlayerTick 调用】" }
+        ]
+    },
+    {
+        "className": "SkillTickHandler",
+        "location": "src/main/java/com/varlike/spiritworld/capability/SkillTickHandler.java",
+        "methods": [
+            { "name": "onPlayerTick(PlayerTickEvent.Post)", "purpose": "服务端每 tick：被动 EMC_CONVERSION_ID 激活时调用 processEmcConversion。职责仅限技能 tick 逻辑，与精神力恢复/落盘分离。" },
+            { "name": "processEmcConversion(ServerPlayer, PlayerSpirit)", "purpose": "① 等级 ≤ 0 直接关闭被动；② 按 Config.emcConversionBaseInterval 固定间隔触发；③ perFragment = SkillValues.emcPerFragment(skillLevel, visionLevel)；④ targetCost = max(perFragment, ceil(Config.emcConversionEmcCost × emcCostMultiplier)) × skillLevel；⑤ gain = max(1, targetCost / perFragment)；⑥ emcCost = gain × perFragment（对齐整数倍）；⑦ EMC 不足则关闭被动 + syncTo + 聊天栏提示 no_emc；⑧ 扣 EMC + addVisionFragments(gain) + markDirty；⑨ 按 syncInterval 节流同步。" }
+        ]
+    },
+    {
+      "className": "SpiritShieldEvents",
+      "location": "src/main/java/com/varlike/spiritworld/event/SpiritShieldEvents.java",
+      "methods": [
+        { "name": "RATIO_PER_LEVEL / SPIRIT_PER_DAMAGE", "purpose": "公开常量（来自 SkillValues），供 tooltip 引用。" },
+        { "name": "onLivingDamagePre(LivingDamageEvent.Pre)", "purpose": "伤害按等级比例由精神力承担，不足按剩余吸收，BYPASSES_INVULNERABILITY 不吸收。" }
+      ]
+    },
+    {
+      "className": "SpiritToolEvents",
+      "location": "src/main/java/com/varlike/spiritworld/event/SpiritToolEvents.java",
+      "methods": [
+        { "name": "onItemToss(ItemTossEvent)", "purpose": "Q 丢弃即销毁。" },
+        { "name": "onPlayerClone(PlayerEvent.Clone)", "purpose": "死亡销毁工具，重生后尝试自动召唤。" },
+        { "name": "trySummonOnRespawn(ServerPlayer)", "purpose": "重生时按空位和技能召唤。" },
+        { "name": "onBlockBreak(BlockEvent.BreakEvent)", "purpose": "挖掘消耗精神力，不足取消。" }
+      ]
+    },
+    {
+      "className": "VisionFragmentEvents",
+      "location": "src/main/java/com/varlike/spiritworld/event/VisionFragmentEvents.java",
+      "methods": [
+        { "name": "MULTIPLIERS / getMultiplier(EntityType)", "purpose": "怪物倍率表。" },
+        { "name": "onLivingDeath(LivingDeathEvent)", "purpose": "击杀给碎片，满 100 自动转灵视点。" }
+      ]
+    },
+    {
+      "className": "NetworkHandler",
+      "location": "src/main/java/com/varlike/spiritworld/network/NetworkHandler.java",
+      "methods": [
+        { "name": "register(RegisterPayloadHandlersEvent)", "purpose": "注册全部 C2S/S2C 包。" },
+        { "name": "syncTo(ServerPlayer)", "purpose": "发送 ClientboundSyncSpiritPacket，12 字段。" }
+      ]
+    },
+    {
+      "className": "ClientboundSyncSpiritPacket",
+      "location": "src/main/java/com/varlike/spiritworld/network/ClientboundSyncSpiritPacket.java",
+      "methods": [
+        { "name": "encode / ClientboundSyncSpiritPacket(RegistryFriendlyByteBuf) / readMap / readLoadout / readPassives / type()", "purpose": "12 字段严格对称编解码，readPassives 复用于 activePassives 和 scanOres。" }
+      ]
+    },
+    {
+      "className": "ClientPayloadHandler",
+      "location": "src/main/java/com/varlike/spiritworld/network/ClientPayloadHandler.java",
+      "methods": [
+        { "name": "handleSyncSpirit(...)", "purpose": "客户端 12 字段写入 ClientSpiritData.update。" }
+      ]
+    },
+    {
+      "className": "ServerboundUseSkillPacket",
+      "location": "src/main/java/com/varlike/spiritworld/network/ServerboundUseSkillPacket.java",
+      "methods": [
+        { "name": "handle(...)", "purpose": "冷却前置 → 执行 → 成功 setCooldown。开关必定成功，主动技能由 handler 返回 boolean。" },
+        { "name": "handleSummonTool(...)", "purpose": "内联召唤，已有工具/无空位/精神力不足失败，成功返回 true。" },
+        { "name": "handleSpiritRepair(...)", "purpose": "按 lv 取兑换比，按需消耗，成功返回 true。" }
+      ]
+    },
+    {
+      "className": "ServerboundSetScanConfigPacket",
+      "location": "src/main/java/com/varlike/spiritworld/network/ServerboundSetScanConfigPacket.java",
+      "methods": [
+        { "name": "encode / readOres / handle / type()", "purpose": "校验等级 → clamp range 对齐步长 → 过滤未解锁矿物 → 存储并 syncTo。" }
+      ]
+    },
+    {
+      "className": "ClientboundScanResultPacket",
+      "location": "src/main/java/com/varlike/spiritworld/network/ClientboundScanResultPacket.java",
+      "methods": [
+        { "name": "OreIcon(x, y, z, iconItem, count)", "purpose": "图标数据（质心 + 代表物品 + 块数）。" },
+        { "name": "encode / readIcons / handle / type()", "purpose": "编解码图标列表和持续秒数，客户端写入 ClientScanData。" }
+      ]
+    },
+    {
+      "className": "ClientSpiritData",
+      "location": "src/main/java/com/varlike/spiritworld/client/ClientSpiritData.java",
+      "methods": [
+        { "name": "getSpirit / getMaxSpirit / getBaseMaxSpirit / getVisionLevel / getAvailableVisionPoints / getTotalSpentVisionPoints / getVisionFragments", "purpose": "只读访问器。" },
+        { "name": "getLearnedSkills / getSkillLevel / getLoadoutSlot / getSelectedSlot / getEquippedSkill / getActivePassives / isPassiveActive", "purpose": "技能与装配查询。" },
+        { "name": "getScanRange / getScanOres", "purpose": "扫描配置访问器。" },
+        { "name": "update(12 参数)", "purpose": "spirit clamp 到 maxSpirit，集合复制防外部修改。" }
+      ]
+    },
+    {
+      "className": "ClientScanData",
+      "location": "src/main/java/com/varlike/spiritworld/client/ClientScanData.java",
+      "methods": [
+        { "name": "setIcons / getActiveIcons / getFadeRatio / clear", "purpose": "扫描结果缓存，过期自动清空，提供淡出比例，登出/切维度清空。" }
+      ]
+    },
+    {
+      "className": "SpiritScanClientEvents",
+      "location": "src/main/java/com/varlike/spiritworld/client/SpiritScanClientEvents.java",
+      "methods": [
+        { "name": "onLoggingOut(ClientPlayerNetworkEvent.LoggingOut)", "purpose": "客户端登出清空 ClientScanData。" },
+        { "name": "onClone(ClientPlayerNetworkEvent.Clone)", "purpose": "客户端重生/切维度清空。" }
+      ]
+    },
+    {
+      "className": "Config",
+      "location": "src/main/java/com/varlike/spiritworld/Config.java",
+      "methods": [
+        { "name": "基础配置", "purpose": "spiritRegenAmount / spiritRegenInterval / defaultMaxSpirit / syncInterval / spiritClearOnLogin / spiritClearOnDeath / bottledSpiritRestoreAmount。" },
+        { "name": "EMC / 夜视 / 飞行 / 扫描配置", "purpose": "emcConversion* / nightVisionBaseCostPerSecond（保留未使用）/ spiritFlightCostMultiplier / scanMaxIcons。" },
+        { "name": "onLoad(ModConfigEvent)", "purpose": "同步所有静态字段。" }
+      ]
+    },
+    {
+      "className": "ClientConfig",
+      "location": "src/main/java/com/varlike/spiritworld/ClientConfig.java",
+      "methods": [
+        { "name": "spiritBarYOffset / showSpiritBar / showSpiritText", "purpose": "精神力条显示配置。" },
+        { "name": "hudPassiveMaxRows / hudPassivePerRow / hudPassiveIconSize", "purpose": "HUD 被动图标行列和尺寸。" },
+        { "name": "onLoad(ModConfigEvent)", "purpose": "同步到静态字段。" }
+      ]
+    },
+    {
+      "className": "SpiritHudOverlay",
+      "location": "src/main/java/com/varlike/spiritworld/client/SpiritHudOverlay.java",
+      "methods": [
+        { "name": "onRegisterGuiLayers(RegisterGuiLayersEvent)", "purpose": "注册精神力条 GUI 层。" },
+        { "name": "renderSpiritBar(...)", "purpose": "绘制背景、空槽、蓝色填充（ratio clamp）、上限惩罚红色段、可选文本。" },
+        { "name": "renderActivePassives(...)", "purpose": "精神力条上方已激活被动图标。" },
+        { "name": "renderFlightIndicator(...)", "purpose": "精神力条左侧飞行状态色圆（绿/黄/红）。" }
+      ]
+    },
+    {
+      "className": "SkillType",
+      "location": "src/main/java/com/varlike/spiritworld/skill/SkillType.java",
+      "methods": [
+        { "name": "ACTIVE / PASSIVE / SPECIAL", "purpose": "三种技能类型。" }
+      ]
+    },
+    {
+      "className": "SkillNode",
+      "location": "src/main/java/com/varlike/spiritworld/skill/SkillNode.java",
+      "methods": [
+        { "name": "Prerequisite(ResourceLocation, int)", "purpose": "前置条件 record。" },
+        { "name": "COOLDOWN_UNSET / DEFAULT_COOLDOWN_TOGGLE / DEFAULT_COOLDOWN_NORMAL", "purpose": "冷却常量。" },
+        { "name": "getDeclaredCooldown / getBaseCooldownTicks()", "purpose": "显式声明优先，否则 toggleable ? 20 : 100。" },
+        { "name": "getExtraTooltip()", "purpose": "调用 tooltipExtra，null 安全。" },
+        { "name": "getCostForNextLevel(int)", "purpose": "baseCost + current × costIncrement。" },
+        { "name": "Builder.cooldown(long) / tooltipExtra(Function) / passiveAlways / passiveToggle / passiveEquippable / active / activeToggleable / specialEquippable / specialDisplay / build()", "purpose": "链式构建。" }
+      ]
+    },
+    {
+      "className": "SkillTree",
+      "location": "src/main/java/com/varlike/spiritworld/skill/SkillTree.java",
+      "methods": [
+        { "name": "register / get / getAll / getHud / exists / clear", "purpose": "注册、查询、清空。" }
+      ]
+    },
+    {
+      "className": "ModSkills",
+      "location": "src/main/java/com/varlike/spiritworld/skill/ModSkills.java",
+      "methods": [
+        { "name": "registerAll()", "purpose": "注册全部技能，含所有 tooltipExtra 动态显示（挖掘速度、罗马数字、当前加成、护盾比例、夜视/饱食惩罚、修复兑换比、维护恢复量、飞行消耗、扫描范围）。" }
+      ]
+    },
+    {
+      "className": "SkillRefundHelper",
+      "location": "src/main/java/com/varlike/spiritworld/skill/SkillRefundHelper.java",
+      "methods": [
+        { "name": "resetSkill / resetAllSkills", "purpose": "级联重置并返还累计消耗。" },
+        { "name": "calculateTotalCost(SkillNode, int)", "purpose": "level×base + inc×level×(level-1)/2。" },
+        { "name": "collectWithDescendants(ResourceLocation)", "purpose": "BFS 收集所有直接/间接依赖。" }
+      ]
+    },
+    {
+      "className": "SpiritToolBuilder",
+      "location": "src/main/java/com/varlike/spiritworld/skill/SpiritToolBuilder.java",
+      "methods": [
+        { "name": "build(Player, PlayerSpirit)", "purpose": "构造 Tool 规则，Fortune 与 Efficiency 共用同一个 Mutable 一次性 set，clamp。" },
+        { "name": "getMiningCost(BlockState)", "purpose": "按标签和硬度返回消耗。" },
+        { "name": "tagOf(Player, TagKey<Block>)", "purpose": "解析标签。" }
+      ]
+    },
+    {
+      "className": "SpiritScanHandler",
+      "location": "src/main/java/com/varlike/spiritworld/skill/SpiritScanHandler.java",
+      "methods": [
+        { "name": "VANILLA_ORES / REPRESENTATIVE_ITEMS / ALL_VANILLA_ORE_BLOCKS", "purpose": "8 种原版矿物方块列表与代表物品映射。" },
+        { "name": "handleSpiritScan(ServerPlayer, PlayerSpirit)", "purpose": "检查精神力/目标 → 遍历 → BFS → 排序截断 → 扣 + sync + 发包，返回是否冷却。" },
+        { "name": "resolveTargets(PlayerSpirit, int)", "purpose": "勾选 ID 解析为 Block→Item，SCAN_OTHER 走 c:ores 排除原版 8 种。" },
+        { "name": "scanAround(ServerPlayer, int, Map)", "purpose": "球形遍历，BFS 26 邻域合并，质心作图标，按距离排序截断到 scanMaxIcons。" }
+      ]
+    },
+    {
+      "className": "SkillRenderer",
+      "location": "src/main/java/com/varlike/spiritworld/client/skill/SkillRenderer.java",
+      "methods": [
+        { "name": "fillSquare / fillCircle / fillHexagon / fillShape / fillGlow", "purpose": "形状、边框、光晕绘制。" }
+      ]
+    },
+    {
+      "className": "SkillTreeScreen",
+      "location": "src/main/java/com/varlike/spiritworld/client/skill/SkillTreeScreen.java",
+      "methods": [
+        { "name": "init / render / getState / renderConnections / renderNodes / renderTopBar / renderTooltip", "purpose": "网格、节点、连线、顶栏、tooltip（追加 getExtraTooltip）。" },
+        { "name": "mouseClicked", "purpose": "Widget → 右键 SPIRIT_SCAN_ID 打开配置 → 左键加点 → 空白拖动。" },
+        { "name": "mouseReleased / mouseDragged / mouseScrolled", "purpose": "拖动与滚轮。" },
+        { "name": "renderBackground(...)", "purpose": "空实现，避免遮罩。" }
+      ]
+    },
+    {
+      "className": "SkillLoadoutScreen",
+      "location": "src/main/java/com/varlike/spiritworld/client/skill/SkillLoadoutScreen.java",
+      "methods": [
+        { "name": "init / render / renderSkillList / renderPassiveToggles / getSkillNodeAt / mouseClicked / renderBackground", "purpose": "6 槽环形 + 技能列表 + 被动开关 + 条件显示扫描配置按钮。" }
+      ]
+    },
+    {
+      "className": "RadialMenuScreen",
+      "location": "src/main/java/com/varlike/spiritworld/client/skill/RadialMenuScreen.java",
+      "methods": [
+        { "name": "render / renderBackground / mouseReleased / onClose", "purpose": "圆环 6 扇区，中心镂空无遮罩，松开确认。" }
+      ]
+    },
+    {
+      "className": "ScanConfigScreen",
+      "location": "src/main/java/com/varlike/spiritworld/client/skill/ScanConfigScreen.java",
+      "methods": [
+        { "name": "init / render / onClose", "purpose": "滑块 + 3 列勾选框 + 关闭时发送配置。" },
+        { "name": "RangeSlider.updateMessage / applyValue", "purpose": "按步长 2 对齐 clamp。" },
+        { "name": "OreCheckbox.onPress / refreshLabel", "purpose": "勾选切换，未解锁不可点击。" }
+      ]
+    },
+    {
+      "className": "SpiritScanRenderer",
+      "location": "src/main/java/com/varlike/spiritworld/client/skill/SpiritScanRenderer.java",
+      "methods": [
+        { "name": "onRenderLevelStage(RenderLevelStageEvent)", "purpose": "AFTER_TRANSLUCENT_BLOCKS 阶段，disableDepthTest 穿墙，billboard，SEE_THROUGH 文字。" }
+      ]
+    },
+    {
+      "className": "SpiritKeyBindings",
+      "location": "src/main/java/com/varlike/spiritworld/client/SpiritKeyBindings.java",
+      "methods": [
+        { "name": "OPEN_SKILL_TREE(K) / OPEN_LOADOUT(L) / OPEN_RADIAL(G) / USE_SKILL(V)", "purpose": "按键映射，分类 key.categories.materialworld。" }
+      ]
+    },
+    {
+      "className": "SpiritClientEvents",
+      "location": "src/main/java/com/varlike/spiritworld/client/SpiritClientEvents.java",
+      "methods": [
+        { "name": "onRegisterKeys / onClientTick", "purpose": "注册按键；tick 检测打开 Screen 或发送 UseSkillPacket。" }
+      ]
+    },
+    {
+      "className": "ModItems",
+      "location": "src/main/java/com/varlike/spiritworld/registry/ModItems.java",
+      "methods": [
+        { "name": "ITEMS / BOTTLED_SPIRIT / SPIRIT_SALT / SPIRIT_TOOL / SPIRIT_IRON_RING / SPIRIT_GOLD_RING / SPIRIT_DIAMOND_RING / register", "purpose": "物品注册。" }
+      ]
+    },
+    {
+      "className": "BottledSpiritItem",
+      "location": "src/main/java/com/varlike/spiritworld/item/BottledSpiritItem.java",
+      "methods": [
+        { "name": "use / getUseAnimation / getUseDuration / finishUsingItem", "purpose": "饮用 32 tick，恢复 Config.bottledSpiritRestoreAmount，返还玻璃瓶，满时仍消耗提示。" }
+      ]
+    },
+    {
+      "className": "SpiritRingItem",
+      "location": "src/main/java/com/varlike/spiritworld/item/SpiritRingItem.java",
+      "methods": [
+        { "name": "getCapacity / getStored / setStored / use / useOn / appendHoverText", "purpose": "容量、SpiritStored 读写、右键存取、炼药锅转化、tooltip。" }
+      ]
+    },
+    {
+      "className": "SpiritToolItem",
+      "location": "src/main/java/com/varlike/spiritworld/item/SpiritToolItem.java",
+      "methods": [
+        { "name": "inventoryTick(...)", "purpose": "每 tick 检查召唤技能是否有效，无效销毁。" },
+        { "name": "appendHoverText(...)", "purpose": "显示各分支等级、时运等级、绑定提示。" },
+        { "name": "levelName(int)", "purpose": "等级数字转翻译组件。" }
+      ]
+    },
+    {
+      "className": "SpiritCauldronBlock",
+      "location": "src/main/java/com/varlike/spiritworld/block/SpiritCauldronBlock.java",
+      "methods": [
+        { "name": "SpiritCauldronBlock(Properties)", "purpose": "降水类型 NONE。" },
+        { "name": "useItemOn(...)", "purpose": "玻璃瓶取瓶装精神力，水位 -1，0 变空，返回 ItemInteractionResult。" },
+        { "name": "getInteractionShape(...)", "purpose": "完整碰撞形状。" }
+      ]
+    },
+    {
+      "className": "ModBlocks",
+      "location": "src/main/java/com/varlike/spiritworld/registry/ModBlocks.java",
+      "methods": [
+        { "name": "BLOCKS / SPIRIT_CAULDRON / register", "purpose": "方块注册。" }
+      ]
+    },
+    {
+      "className": "ModDataComponents",
+      "location": "src/main/java/com/varlike/spiritworld/component/ModDataComponents.java",
+      "methods": [
+        { "name": "SPIRIT_STORED / register", "purpose": "DataComponentType 注册。" }
+      ]
+    },
+    {
+      "className": "SpiritStored",
+      "location": "src/main/java/com/varlike/spiritworld/component/SpiritStored.java",
+      "methods": [
+        { "name": "amount / CODEC / STREAM_CODEC", "purpose": "存储值、持久化和同步编解码。" }
+      ]
+    },
+    {
+      "className": "ModItemModelProvider",
+      "location": "src/main/java/com/varlike/spiritworld/datagen/ModItemModelProvider.java",
+      "methods": [
+        { "name": "registerModels()", "purpose": "BOTTLED_SPIRIT / SPIRIT_SALT 基础 2D 模型。" }
+      ]
+    },
+    {
+      "className": "ModLanguageProvider",
+      "location": "src/main/java/com/varlike/spiritworld/datagen/ModLanguageProvider.java",
+      "methods": [
+        { "name": "addTranslations()", "purpose": "en_us 翻译。" }
+      ]
+    },
+    {
+      "className": "ModLanguageProviderZH",
+      "location": "src/main/java/com/varlike/spiritworld/datagen/ModLanguageProviderZH.java",
+      "methods": [
+        { "name": "addTranslations()", "purpose": "zh_cn 翻译，与 en_us 一一对应。" }
+      ]
+    },
+    {
+      "className": "DataGenerators",
+      "location": "src/main/java/com/varlike/spiritworld/datagen/DataGenerators.java",
+      "methods": [
+        { "name": "gatherData(GatherDataEvent)", "purpose": "注册全部 Provider，使用 includeClient。" }
+      ]
+    },
+    {
+      "className": "ModRecipeProvider",
+      "location": "src/main/java/com/varlike/spiritworld/datagen/ModRecipeProvider.java",
+      "methods": [
+        { "name": "buildRecipes(RecipeOutput)", "purpose": "戒指配方 + 精神盐熔炉/高炉。" }
+      ]
+    },
+    {
+      "className": "ModBlockStateProvider",
+      "location": "src/main/java/com/varlike/spiritworld/datagen/ModBlockStateProvider.java",
+      "methods": [
+        { "name": "registerStatesAndModels()", "purpose": "SPIRIT_CAULDRON blockstate，引用原版 water_cauldron 模型。" }
+      ]
+    }
+  ]
+}

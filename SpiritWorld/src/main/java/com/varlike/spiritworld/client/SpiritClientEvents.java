@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -61,6 +62,16 @@ public class SpiritClientEvents {
             while (SpiritKeyBindings.USE_SKILL.consumeClick()) {
                 PacketDistributor.sendToServer(new ServerboundUseSkillPacket());
             }
+        }
+        /** 客户端登出：清空扫描图标缓存 */
+        @SubscribeEvent
+        public static void onScanLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+            ClientScanData.clear();
+        }
+        /** 客户端重生 / 切维度：LocalPlayer 被替换，旧图标失效 */
+        @SubscribeEvent
+        public static void onScanClone(ClientPlayerNetworkEvent.Clone event) {
+            ClientScanData.clear();
         }
     }
 }

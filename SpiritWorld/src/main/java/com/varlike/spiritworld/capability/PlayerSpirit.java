@@ -1,9 +1,6 @@
 package com.varlike.spiritworld.capability;
 
-import com.varlike.spiritworld.skill.ModSkills;
-import com.varlike.spiritworld.skill.SkillNode;
-import com.varlike.spiritworld.skill.SkillTree;
-import com.varlike.spiritworld.skill.SkillValues;
+import com.varlike.spiritworld.skill.*;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -64,33 +61,11 @@ public class PlayerSpirit {
      * 不含夜视/饱食等「激活时惩罚」。
      */
     public long getBaseMaxSpirit() {
-        long flat = maxSpirit
-                + sumModifiers()
-                + getSkillMaxSpiritFlatBonus();
-        double percent = sumPercentModifiers()
-                + getSkillMaxSpiritPercentBonus();
-        return Math.max(0L, (long) (flat * (1.0 + percent)));
+        return SpiritMaxCalculator.baseMax(this);
     }
-
     /** 最终有效上限：基础值叠加所有激活惩罚 */
     public long getEffectiveMaxSpirit() {
-        long total = getBaseMaxSpirit();
-
-        // 夜视惩罚
-        if (isPassiveActive(ModSkills.SPIRIT_NIGHT_VISION_ID)) {
-            int lv = getSkillLevel(ModSkills.SPIRIT_NIGHT_VISION_ID);
-            double penalty = SkillValues.nightVisionMaxPenalty(lv);
-            if (penalty > 0.0) total = (long) (total * (1.0 - penalty));
-        }
-
-        // 饱食惩罚
-        if (isPassiveActive(ModSkills.SPIRIT_SATIETY_ID)) {
-            int lv = getSkillLevel(ModSkills.SPIRIT_SATIETY_ID);
-            double penalty = SkillValues.satietyMaxPenalty(lv);
-            if (penalty > 0.0) total = (long) (total * (1.0 - penalty));
-        }
-
-        return Math.max(0L, total);
+        return SpiritMaxCalculator.effectiveMax(this);
     }
 
     public void addSpirit(long amount) {
@@ -180,24 +155,6 @@ public class PlayerSpirit {
         }
     }
 
-    /** 固定值总和 */
-    private long sumModifiers() {
-        long sum = 0L;
-        for (MaxSpiritModifier m : maxSpiritModifiers.values()) {
-            sum += m.fixed();
-        }
-        return sum;
-    }
-
-    /** 百分比总和（0.05 + 0.05 = 0.10） */
-    private double sumPercentModifiers() {
-        double sum = 0.0;
-        for (MaxSpiritModifier m : maxSpiritModifiers.values()) {
-            sum += m.percent();
-        }
-        return sum;
-    }
-
     /** 返回不可修改的完整加成映射 */
     public Map<ResourceLocation, MaxSpiritModifier> getMaxSpiritModifiers() {
         return Collections.unmodifiableMap(maxSpiritModifiers);
@@ -255,16 +212,12 @@ public class PlayerSpirit {
      * 最低 0.2，防止无限接近 0。
      */
     public double getCooldownMultiplier() {
-        int lv = getSkillLevel(ModSkills.COOLDOWN_REDUCTION_ID);
-        return SkillValues.cooldownMultiplier(lv);
+        return SkillCooldownCalculator.multiplier(this);
     }
+
     /** 技能实际冷却 tick；0 表示无冷却 */
     public long getEffectiveCooldown(ResourceLocation skillId) {
-        SkillNode node = SkillTree.get(skillId);
-        if (node == null) return 0L;
-        long base = node.getBaseCooldownTicks();
-        if (base <= 0) return 0L;
-        return (long) Math.ceil(base * getCooldownMultiplier());
+        return SkillCooldownCalculator.effectiveTicks(this, skillId);
     }
 
     public boolean isOnCooldown(ResourceLocation skillId, long gameTime) {
@@ -368,47 +321,31 @@ public class PlayerSpirit {
 
     // ===== 技能加成 =====
     public long getSkillMaxSpiritFlatBonus() {
-        return getSkillLevel(ModSkills.SPIRIT_ENDURANCE_ID) * SkillValues.SPIRIT_ENDURANCE_MAX_PER_LEVEL;
+        return SkillBonusCalculator.maxSpiritFlat(this);
     }
     public double getSkillMaxSpiritPercentBonus() {
-        double bonus = getSkillLevel(ModSkills.SPIRIT_STRENGTH_ID)
-                * SkillValues.SPIRIT_STRENGTH_MAX_PERCENT_PER_LEVEL;
-        if (getSkillLevel(ModSkills.SPIRIT_SOURCE_ID) > 0) {
-            bonus += SkillValues.SPIRIT_SOURCE_MAX_PERCENT;
-        }
-        return bonus;
+        return SkillBonusCalculator.maxSpiritPercent(this);
     }
     public double getSkillRegenFlatBonus() {
-        return getSkillLevel(ModSkills.SPIRIT_TOUGHNESS_ID)
-                * SkillValues.SPIRIT_TOUGHNESS_REGEN_PER_LEVEL;
+        return SkillBonusCalculator.regenFlat(this);
     }
     public double getSkillRegenPercentBonus() {
-        double bonus = getSkillLevel(ModSkills.SPIRIT_SURGE_ID)
-                * SkillValues.SPIRIT_SURGE_REGEN_PERCENT_PER_LEVEL;
-        if (getSkillLevel(ModSkills.SPIRIT_SOURCE_ID) > 0) {
-            bonus += SkillValues.SPIRIT_SOURCE_REGEN_PERCENT;
-        }
-        return bonus;
+        return SkillBonusCalculator.regenPercent(this);
     }
     public double getSpiritFlowRegenPerSecond() {
-        return getSkillLevel(ModSkills.SPIRIT_FLOW_ID)
-                * SkillValues.SPIRIT_FLOW_REGEN_PER_SECOND_PER_LEVEL;
+        return SkillBonusCalculator.flowRegenPerSecond(this);
     }
 
     public long getVisionFragmentFlatBonus() {
-        return getSkillLevel(ModSkills.VISION_SHARPNESS_ID)
-                * SkillValues.VISION_SHARPNESS_FRAGMENTS_PER_LEVEL;
+        return SkillBonusCalculator.visionFragmentFlat(this);
     }
 
     public double getVisionFragmentPercentBonus() {
-        return getSkillLevel(ModSkills.VISION_MASTERY_ID)
-                * SkillValues.VISION_MASTERY_FRAGMENT_PERCENT_PER_LEVEL;
+        return SkillBonusCalculator.visionFragmentPercent(this);
     }
 
     public double getEmcCostMultiplier() {
-        double reduction = getSkillLevel(ModSkills.EMC_AFFINITY_ID)
-                * SkillValues.EMC_AFFINITY_COST_REDUCTION_PER_LEVEL;
-        return Math.max(0.0, 1.0 - reduction);
+        return SkillBonusCalculator.emcCostMultiplier(this);
     }
     // ===== 技能栏 / 装配 =====
     public static final int LOADOUT_SIZE = 6;

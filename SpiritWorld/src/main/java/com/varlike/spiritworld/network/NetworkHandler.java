@@ -21,9 +21,7 @@ public class NetworkHandler {
 
         registrar.playToClient(
                 ClientboundSyncSpiritPacket.TYPE,
-                ClientboundSyncSpiritPacket.STREAM_CODEC,
-                ClientPayloadHandler::handleSyncSpirit);
-
+                ClientboundSyncSpiritPacket.STREAM_CODEC, ClientboundSyncSpiritPacket::handle);
         registrar.playToServer(ServerboundRequestSyncPacket.TYPE,
                 ServerboundRequestSyncPacket.STREAM_CODEC, ServerboundRequestSyncPacket::handle);
         registrar.playToServer(ServerboundLearnSkillPacket.TYPE,

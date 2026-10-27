@@ -3,11 +3,7 @@ package com.varlike.spiritworld.network;
 import com.varlike.spiritworld.SpiritWorld;
 import com.varlike.spiritworld.capability.ModCapabilities;
 import com.varlike.spiritworld.capability.PlayerSpirit;
-import com.varlike.spiritworld.skill.ModSkills;
-import com.varlike.spiritworld.skill.SkillNode;
-import com.varlike.spiritworld.skill.SkillTree;
-import com.varlike.spiritworld.skill.SkillValues;
-import com.varlike.spiritworld.skill.SpiritToolBuilder;
+import com.varlike.spiritworld.skill.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -72,6 +68,8 @@ public record ServerboundUseSkillPacket() implements CustomPacketPayload {
                 executed = handleSummonTool(player, data);
             } else if (id.equals(ModSkills.SPIRIT_REPAIR_ID)) {
                 executed = handleSpiritRepair(player, data);
+            } else if (id.equals(ModSkills.SPIRIT_SCAN_ID)) {
+                executed = SpiritScanHandler.handleSpiritScan(player, data);
             }
 
             // ===== 成功才进入冷却 =====

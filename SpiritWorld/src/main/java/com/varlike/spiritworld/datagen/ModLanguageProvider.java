@@ -255,7 +255,7 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("skill.tooltip.spirit_scan.no_ore_selected",
                 "No ore selected, open scan config");
 
-// ===== 扫描矿物名（配置界面 + 图标显示用）=====
+        // ===== 扫描矿物名（配置界面 + 图标显示用）=====
         this.add("spiritworld.scan.coal", "Coal");
         this.add("spiritworld.scan.iron", "Iron");
         this.add("spiritworld.scan.gold", "Gold");
@@ -266,10 +266,15 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("spiritworld.scan.ancient_debris", "Ancient Debris");
         this.add("spiritworld.scan.other", "Other Mod Ores");
 
-// ===== 扫描结果提示 =====
+        // ===== 扫描结果提示 =====
         this.add("message.spiritworld.spirit_scan.no_spirit", "Not enough spirit (need %d)");
         this.add("message.spiritworld.spirit_scan.no_ore", "No ore selected, open scan config");
         this.add("message.spiritworld.spirit_scan.not_found", "No target ores found");
         this.add("message.spiritworld.spirit_scan.found", "Found %d ore cluster(s)");
+        // ===== 扫描配置界面 =====
+        this.add("screen.spiritworld.scan_config.title", "Spirit Scan Config");
+        this.add("screen.spiritworld.scan_config.range", "Range: %d blocks");
+        this.add("screen.spiritworld.scan_config.cost", "Spirit cost: %d per scan");
+        this.add("screen.spiritworld.loadout.scan_config", "Scan Config");
     }
 }

@@ -3,6 +3,7 @@ package com.varlike.spiritworld.client.skill;
 import com.varlike.spiritworld.client.ClientSpiritData;
 import com.varlike.spiritworld.network.ServerboundLearnSkillPacket;
 import com.varlike.spiritworld.network.ServerboundRequestSyncPacket;
+import com.varlike.spiritworld.skill.ModSkills;
 import com.varlike.spiritworld.skill.SkillNode;
 import com.varlike.spiritworld.skill.SkillTree;
 import net.minecraft.ChatFormatting;
@@ -317,7 +318,7 @@ public class SkillTreeScreen extends Screen {
         long range = nextThreshold - curThreshold;
         if (range > 0) {
             float ratio = (float) (spent - curThreshold) / range;
-            int filled = (int) (barWidth * Math.max(0, Math.min(1, ratio)));
+            int filled = (int) (barWidth * Math.clamp(ratio, 0, 1));
             g.fill(barLeft, barTop, barLeft + filled, barTop + barHeight, 0xFF9C27B0);
         }
         g.drawString(this.font,
@@ -454,9 +455,19 @@ public class SkillTreeScreen extends Screen {
         // Widget 优先（切换按钮）
         if (super.mouseClicked(mouseX, mouseY, button)) return true;
 
-        if (button != 0) return false;
-
         SkillNode node = getHoveredNode((int) mouseX, (int) mouseY);
+
+        if (button == 1) {
+            if (node != null
+                    && node.getId().equals(ModSkills.SPIRIT_SCAN_ID)
+                    && ClientSpiritData.getSkillLevel(node.getId()) > 0) {
+                ClientSkillHelper.openScanConfig(this);
+                return true;
+            }
+            return false;
+        }
+
+        if (button != 0) return false;
         if (node != null) {
             tryLearn(node);
             return true;

@@ -1,10 +1,12 @@
 package com.varlike.spiritworld.network;
 
 import com.varlike.spiritworld.SpiritWorld;
+import com.varlike.spiritworld.client.ClientSpiritData;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +34,22 @@ public record ClientboundSyncSpiritPacket(
 
     public static final StreamCodec<RegistryFriendlyByteBuf, ClientboundSyncSpiritPacket> STREAM_CODEC =
             StreamCodec.ofMember(ClientboundSyncSpiritPacket::encode, ClientboundSyncSpiritPacket::new);
+
+    public static void handle(ClientboundSyncSpiritPacket pkt, IPayloadContext context) {
+        context.enqueueWork(() -> ClientSpiritData.update(
+                pkt.spirit(),
+                pkt.maxSpirit(),
+                pkt.baseMaxSpirit(),
+                pkt.availableVisionPoints(),
+                pkt.totalSpentVisionPoints(),
+                pkt.visionFragments(),
+                pkt.learnedSkills(),
+                pkt.loadout(),
+                pkt.selectedSlot(),
+                pkt.activePassives(),
+                pkt.scanRange(),
+                pkt.scanOres() ));
+    }
 
     public void encode(RegistryFriendlyByteBuf buf) {
         buf.writeLong(spirit);

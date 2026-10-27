@@ -4,6 +4,7 @@ import com.varlike.spiritworld.client.ClientSpiritData;
 import com.varlike.spiritworld.network.ServerboundSetLoadoutPacket;
 import com.varlike.spiritworld.network.ServerboundSetSelectedSlotPacket;
 import com.varlike.spiritworld.network.ServerboundTogglePassivePacket;
+import com.varlike.spiritworld.skill.ModSkills;
 import com.varlike.spiritworld.skill.SkillNode;
 import com.varlike.spiritworld.skill.SkillTree;
 import com.varlike.spiritworld.skill.SkillType;
@@ -96,6 +97,13 @@ public class SkillLoadoutScreen extends Screen {
                             }
                         })
                 .bounds(bx, by, 60, 18).build());
+        if (ClientSpiritData.getSkillLevel(ModSkills.SPIRIT_SCAN_ID) > 0) {
+            by += 22;
+            addRenderableWidget(Button.builder(
+                            Component.translatable("screen.spiritworld.loadout.scan_config"),
+                            b -> ClientSkillHelper.openScanConfig(this))
+                    .bounds(bx, by, 60, 18).build());
+        }
     }
 
     @Override
