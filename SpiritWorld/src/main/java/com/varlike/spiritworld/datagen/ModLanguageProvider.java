@@ -276,5 +276,73 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("screen.spiritworld.scan_config.range", "Range: %d blocks");
         this.add("screen.spiritworld.scan_config.cost", "Spirit cost: %d per scan");
         this.add("screen.spiritworld.loadout.scan_config", "Scan Config");
+        // ===== 魔力聚集器 =====
+        this.add("block.spiritworld.spirit_collector_basic", "Spirit Collector (Basic)");
+        this.add("block.spiritworld.spirit_collector_advanced", "Spirit Collector (Advanced)");
+        this.add("block.spiritworld.spirit_collector_ultimate", "Spirit Collector (Ultimate)");
+        this.add("gui.spiritworld.collector.tier", "Tier %d");
+        this.add("gui.spiritworld.collector.amount", "%d / %d");
+        this.add("gui.spiritworld.collector.speed", "%d / sec");
+        this.add("gui.spiritworld.collector.percent", "%s%%");
+        this.add("gui.spiritworld.collector.remaining", "%d s to full");
+        this.add("gui.spiritworld.collector.full", "Full");
+        // ===== 魔力属性 =====
+        this.add("gui.spiritworld.mana_type.none",   "Neutral");
+        this.add("gui.spiritworld.mana_type.fire",   "Fire");
+        this.add("gui.spiritworld.mana_type.water",  "Water");
+        this.add("gui.spiritworld.mana_type.wind",   "Wind");
+        this.add("gui.spiritworld.mana_type.earth",  "Earth");
+        this.add("gui.spiritworld.mana_type.spirit", "Spirit");
+        // ===== 聚集器信息 =====
+        this.add("gui.spiritworld.collector.type",      "Type: %s");
+        this.add("gui.spiritworld.collector.mana_entry", "%s: %d / %d");
+        this.add("gui.spiritworld.collector.total",     "Total: %d / %d");
+        // ===== 魔力核心 =====
+        this.add("block.spiritworld.spirit_core", "Spirit Core");
+        this.add("block.spiritworld.mana_block", "Mana Block");
+        this.add("block.spiritworld.mana_slab", "Mana Slab");
+        this.add("block.spiritworld.mana_stairs", "Mana Stairs");
+        this.add("item.spiritworld.mana_brick", "Mana Brick");
+        // ===== 核心信息 =====
+        this.add("gui.spiritworld.spirit_core.capacity", "%d / %d");
+        this.add("gui.spiritworld.spirit_core.bonus", "Capacity bonus: +%d");
+        this.add("gui.spiritworld.spirit_core.mana_entry", "%s: %d");
+        this.add("gui.spiritworld.spirit_core.collectors", "Nearby collectors: %d");
+        // ===== 核心交互 =====
+        this.add("message.spiritworld.spirit_core.insufficient",
+                "Not enough mana (need %d Spirit + %d Earth)");
+        this.add("message.spiritworld.spirit_core.produced", "Produced a Mana Brick");
+        this.add("block.spiritworld.spirit_forge", "Spirit Forge");
+        this.add("gui.spiritworld.spirit_forge.select", "Select a recipe");
+        this.add("gui.spiritworld.spirit_forge.cost",   "%s: %d");
+        this.add("gui.spiritworld.spirit_forge.time",   "Time: %ds");
+        this.add("gui.spiritworld.spirit_forge.output", "%s x%d");
+        this.add("gui.spiritworld.spirit_forge.progress", "%ds / %ds");
+        this.add("gui.spiritworld.spirit_forge.no_recipe", "No recipe selected");
+        this.add("gui.spiritworld.spirit_forge.core", "Core: %s");
+        this.add("gui.spiritworld.spirit_forge.core.found", "In range");
+        this.add("gui.spiritworld.spirit_forge.core.missing", "Out of range");
+        this.add("gui.spiritworld.forge.start",             "Start");
+        this.add("gui.spiritworld.forge.cancel",            "Cancel");
+        this.add("gui.spiritworld.forge.target",            "Target: %d / Completed: %d");
+        this.add("gui.spiritworld.forge.target.infinite",   "Infinite / Completed: %d");
+        this.add("gui.spiritworld.forge.crafting_other",    "Crafting: %s");
+        this.add("item.spiritworld.mana_crystal_basic", "Mana Crystal (Basic)");
+        this.add("item.spiritworld.mana_crystal_advanced", "Mana Crystal (Advanced)");
+        this.add("item.spiritworld.mana_crystal_ultimate", "Mana Crystal (Ultimate)");
+        this.add("tooltip.spiritworld.mana_crystal.capacity", "Mana: %d / %d");
+        this.add("tooltip.spiritworld.mana_crystal.entry", "%s: %d");
+        this.add("tooltip.spiritworld.mana_crystal.hint", "Shift+Right-click a collector/core to insert");
+        this.add("item.spiritworld.mana_clay", "Mana Clay");
+        this.add("item.spiritworld.mana_alloy", "Mana Alloy");
+        this.add("item.spiritworld.mana_alloy_helmet", "Mana Alloy Helmet");
+        this.add("item.spiritworld.mana_alloy_chestplate", "Mana Alloy Chestplate");
+        this.add("item.spiritworld.mana_alloy_leggings", "Mana Alloy Leggings");
+        this.add("item.spiritworld.mana_alloy_boots", "Mana Alloy Boots");
+        this.add("item.spiritworld.mana_alloy_sword", "Mana Alloy Sword");
+        this.add("item.spiritworld.mana_alloy_pickaxe", "Mana Alloy Pickaxe");
+        this.add("item.spiritworld.mana_alloy_axe", "Mana Alloy Axe");
+        this.add("item.spiritworld.mana_alloy_shovel", "Mana Alloy Shovel");
+        this.add("item.spiritworld.mana_alloy_hoe", "Mana Alloy Hoe");
     }
 }

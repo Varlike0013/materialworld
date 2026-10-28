@@ -1,5 +1,7 @@
 package com.varlike.spiritworld;
 
+import com.varlike.spiritworld.client.SpiritCoreScreen;
+import com.varlike.spiritworld.registry.ModMenus;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -8,6 +10,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
@@ -27,5 +30,9 @@ public class SpiritWorldClient {
 
         SpiritWorld.LOGGER.info("精神世界：客户端初始化");
         SpiritWorld.LOGGER.info("玩家名：{}", Minecraft.getInstance().getUser().getName());
+    }
+    @SubscribeEvent
+    public static void onRegisterScreens(RegisterMenuScreensEvent event) {
+        event.register(ModMenus.SPIRIT_CORE.get(), SpiritCoreScreen::new);
     }
 }

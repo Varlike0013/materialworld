@@ -18,6 +18,11 @@ public class ModDataComponents {
                             .persistent(SpiritStored.CODEC)
                             .networkSynchronized(SpiritStored.STREAM_CODEC)
                             .build());
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<CrystalMana>> CRYSTAL_MANA =
+            DATA_COMPONENTS.register("crystal_mana", () -> DataComponentType.<CrystalMana>builder()
+                    .persistent(CrystalMana.CODEC)
+                    .networkSynchronized(CrystalMana.STREAM_CODEC)
+                    .build());
 
     public static void register(IEventBus modEventBus) {
         DATA_COMPONENTS.register(modEventBus);

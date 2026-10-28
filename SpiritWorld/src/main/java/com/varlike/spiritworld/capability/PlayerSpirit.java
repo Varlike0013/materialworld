@@ -11,31 +11,64 @@ import java.util.*;
 
 /**
  * 玩家精神力与灵视数据。
- * Player spirit and spirit-vision data.
+ * <p>
+ * 数据域：
+ * <ol>
+ *   <li>精神力核心（spirit / maxSpirit / 临时 modifier）</li>
+ *   <li>技能进度（learnedSkills / 灵视点 / 灵视碎片 / 灵视等级）</li>
+ *   <li>技能栏（loadout / selectedSlot / activePassives）</li>
+ *   <li>冷却（transient，不序列化）</li>
+ *   <li>临时状态（工具 / 飞行 / 扫描）</li>
+ *   <li>flags（initialized / dirty / persistenceReady）</li>
+ * </ol>
+ * 计算逻辑委托：{@link SpiritMaxCalculator} / {@link SkillBonusCalculator} / {@link SkillCooldownCalculator}。
  */
 public class PlayerSpirit {
 
-    /** 精神力上限默认值 / Default max spirit */
+    // ==================== 常量 ====================
+
     public static final long DEFAULT_MAX_SPIRIT = 100L;
-
-    /** 灵视等级上限 / Max vision level */
     public static final int MAX_VISION_LEVEL = 10;
+    public static final int LOADOUT_SIZE = 6;
 
+    // ==================== 字段区 ====================
+
+    // ----- 1. 精神力核心 -----
     private long spirit = DEFAULT_MAX_SPIRIT;
     private long maxSpirit = DEFAULT_MAX_SPIRIT;
+    /** 临时上限加成（固定值 + 百分比），transient，不序列化 */
+    private final Map<ResourceLocation, MaxSpiritModifier> maxSpiritModifiers = new HashMap<>();
+    /** 带小数的精神力恢复累积器 */
+    private transient double regenAccumulator = 0;
 
-    /** 是否已初始化 / Whether the data has been initialized */
+    // ----- 2. 技能进度 -----
+    private final Map<ResourceLocation, Integer> learnedSkills = new HashMap<>();
+    private long availableVisionPoints = 0L;
+    private long totalSpentVisionPoints = 0L;
+    private long visionFragments = 0L;
+
+    // ----- 3. 技能栏 -----
+    private final ResourceLocation[] loadout = new ResourceLocation[LOADOUT_SIZE];
+    private int selectedSlot = 0;
+    private final Set<ResourceLocation> activePassives = new HashSet<>();
+
+    // ----- 4. 冷却（transient，不序列化、不跨死亡复制）-----
+    private final transient Map<ResourceLocation, Long> skillCooldownEnds = new HashMap<>();
+
+    // ----- 5. 临时状态 -----
+    private boolean spiritToolActive = false;
+    private transient double flightCostAccum = 0.0;
+    private transient boolean flightGliding = false;
+    private int scanRange = SkillValues.SCAN_RANGE_MIN;
+    private Set<ResourceLocation> scanOres = new HashSet<>();
+
+    // ----- 6. flags -----
     private transient boolean initialized = false;
-
-    /** 脏标记，用于节流同步 / Dirty flag for throttled sync */
     private transient boolean dirty = false;
-
-    /**
-     * 是否已经和存档对接过（load 成功或登录流程走完）。
-     * 登录握手阶段玩家可能先被 tick，此时若把默认值写回 NBT 会覆盖真实存档。
-     */
+    /** 是否已经和存档对接过（登录握手阶段禁止把默认值写回 NBT） */
     private transient boolean persistenceReady = false;
-    // ==================== 精神力 / Spirit ====================
+
+    // ==================== 1. 精神力核心 ====================
 
     public long getSpirit() {
         return spirit;
@@ -43,7 +76,7 @@ public class PlayerSpirit {
 
     public void setSpirit(long value) {
         long old = this.spirit;
-        this.spirit = clamp(value, 0, getEffectiveMaxSpirit());
+        this.spirit = Math.clamp(value, 0, getEffectiveMaxSpirit());
         if (this.spirit != old) markDirty();
     }
 
@@ -56,14 +89,13 @@ public class PlayerSpirit {
         if (spirit > getEffectiveMaxSpirit()) spirit = getEffectiveMaxSpirit();
         markDirty();
     }
-    /**
-     * 基础有效上限：只含临时 modifier + 技能固定/百分比加成，
-     * 不含夜视/饱食等「激活时惩罚」。
-     */
+
+    /** 基础上限：maxSpirit + 临时 modifier + 技能加成，不含夜视/饱食惩罚 */
     public long getBaseMaxSpirit() {
         return SpiritMaxCalculator.baseMax(this);
     }
-    /** 最终有效上限：基础值叠加所有激活惩罚 */
+
+    /** 最终上限：基础值叠加所有激活惩罚 */
     public long getEffectiveMaxSpirit() {
         return SpiritMaxCalculator.effectiveMax(this);
     }
@@ -79,14 +111,23 @@ public class PlayerSpirit {
         return true;
     }
 
-    // ==================== 临时上限加成 / Temp Max Modifiers ====================
+    /** 带小数的精神力恢复，累积到整数再加 */
+    public void addSpiritWithFraction(double amount) {
+        if (amount <= 0) return;
+        this.regenAccumulator += amount;
+        long whole = (long) this.regenAccumulator;
+        if (whole > 0) {
+            this.regenAccumulator -= whole;
+            addSpirit(whole);
+        }
+    }
+
+    // ==================== 2. 临时上限加成 ====================
 
     /**
-     * 单个临时上限加成条目。
-     * 同时支持固定值和百分比，二者可独立为正负。
+     * 单个临时上限加成条目。固定值和百分比可独立为正负。
      */
     public record MaxSpiritModifier(long fixed, double percent) {
-
         public static MaxSpiritModifier fixed(long v) {
             return new MaxSpiritModifier(v, 0.0);
         }
@@ -104,27 +145,19 @@ public class PlayerSpirit {
         }
     }
 
-    /** 临时上限加成（固定值 + 百分比），transient，不序列化 */
-    private final Map<ResourceLocation, MaxSpiritModifier> maxSpiritModifiers = new HashMap<>();
-
-    /**
-     * 添加或覆盖一个固定值临时加成。
-     * 等价于 {@code addMaxSpiritModifier(id, amount, 0.0)}。
-     */
     public void addMaxSpiritModifier(ResourceLocation id, long amount) {
         addMaxSpiritModifier(id, amount, 0.0);
     }
 
     /**
-     * 添加或覆盖一个临时上限加成，同时支持固定值和百分比。
+     * 添加或覆盖临时上限加成。
      *
-     * @param fixed   固定值加成，可负；0 表示无
-     * @param percent 百分比加成，0.05 = +5%，-0.2 = -20%；0 表示无
+     * @param fixed   固定值，可负；0 表示无
+     * @param percent 百分比，0.05 = +5%，-0.2 = -20%；0 表示无
      */
     public void addMaxSpiritModifier(ResourceLocation id, long fixed, double percent) {
         MaxSpiritModifier m = new MaxSpiritModifier(fixed, percent);
         if (m.isEmpty()) {
-            // 全零视作移除，避免残留空条目
             removeMaxSpiritModifier(id);
             return;
         }
@@ -133,12 +166,10 @@ public class PlayerSpirit {
         markDirty();
     }
 
-    /** 快捷：仅百分比加成，0.05 = +5%，-0.2 = -20% */
     public void addMaxSpiritPercentModifier(ResourceLocation id, double percent) {
         addMaxSpiritModifier(id, 0L, percent);
     }
 
-    /** 移除指定来源的临时加成 */
     public void removeMaxSpiritModifier(ResourceLocation id) {
         if (maxSpiritModifiers.remove(id) != null) {
             clampSpiritToMax();
@@ -146,7 +177,6 @@ public class PlayerSpirit {
         }
     }
 
-    /** 清空所有临时加成 */
     public void clearMaxSpiritModifiers() {
         if (!maxSpiritModifiers.isEmpty()) {
             maxSpiritModifiers.clear();
@@ -155,29 +185,25 @@ public class PlayerSpirit {
         }
     }
 
-    /** 返回不可修改的完整加成映射 */
     public Map<ResourceLocation, MaxSpiritModifier> getMaxSpiritModifiers() {
         return Collections.unmodifiableMap(maxSpiritModifiers);
     }
 
-    /** 按来源查询单个加成，未设置返回 null */
     public MaxSpiritModifier getMaxSpiritModifier(ResourceLocation id) {
         return maxSpiritModifiers.get(id);
     }
 
-    /** 将当前精神力夹到有效上限内（含下限 0） */
+    /** 将精神力夹到有效上限内（含下限 0） */
     private void clampSpiritToMax() {
         long eff = getEffectiveMaxSpirit();
         if (spirit > eff) spirit = eff;
         if (spirit < 0L) spirit = 0L;
     }
 
-    // ===== 新增字段 =====
-    private final Map<ResourceLocation, Integer> learnedSkills = new HashMap<>();
-    private long availableVisionPoints = 0L;
-    private long totalSpentVisionPoints = 0L;
+    // ==================== 3. 技能进度 ====================
 
-    // ===== 技能相关 =====
+    // ----- 3.1 已学技能 -----
+
     public int getSkillLevel(ResourceLocation id) {
         return learnedSkills.getOrDefault(id, 0);
     }
@@ -205,17 +231,114 @@ public class PlayerSpirit {
         learnedSkills.clear();
         markDirty();
     }
-    /** 技能冷却结束的 gameTime；transient，不序列化、不跨死亡复制 */
-    private final transient java.util.Map<ResourceLocation, Long> skillCooldownEnds = new java.util.HashMap<>();
-    /**
-     * 冷却倍率：1.0 表示无减少。天赋/装备可通过叠加降低此值。
-     * 最低 0.2，防止无限接近 0。
-     */
+
+    // ----- 3.2 灵视点 -----
+
+    public long getAvailableVisionPoints() {
+        return availableVisionPoints;
+    }
+
+    public void setAvailableVisionPoints(long v) {
+        this.availableVisionPoints = Math.max(0, v);
+        markDirty();
+    }
+
+    public void addVisionPoints(long v) {
+        this.availableVisionPoints += v;
+        markDirty();
+    }
+
+    public boolean consumeVisionPoints(long v) {
+        if (v < 0 || availableVisionPoints < v) return false;
+        availableVisionPoints -= v;
+        markDirty();
+        return true;
+    }
+
+    public long getTotalSpentVisionPoints() {
+        return totalSpentVisionPoints;
+    }
+
+    public void setTotalSpentVisionPoints(long v) {
+        this.totalSpentVisionPoints = Math.max(0, v);
+        markDirty();
+    }
+
+    public void addSpentVisionPoints(long v) {
+        this.totalSpentVisionPoints += v;
+        markDirty();
+    }
+
+    // ----- 3.3 灵视等级（由已消耗点数动态计算）-----
+
+    public int getVisionLevel() {
+        int level = 0;
+        while ((long) (level + 1) * (level + 2) / 2 * 10 <= totalSpentVisionPoints) {
+            level++;
+        }
+        return level;
+    }
+
+    public boolean isVisionAtLeast(int level) {
+        return getVisionLevel() >= level;
+    }
+
+    // ----- 3.4 灵视碎片 -----
+
+    public long getVisionFragments() {
+        return visionFragments;
+    }
+
+    public void addVisionFragments(long amount) {
+        if (amount <= 0) return;
+        this.visionFragments += amount;
+        while (this.visionFragments >= 100) {
+            this.visionFragments -= 100;
+            this.availableVisionPoints += 1;
+        }
+        markDirty();
+    }
+
+    // ==================== 4. 技能加成（委托 Calculator）====================
+
+    public long getSkillMaxSpiritFlatBonus() {
+        return SkillBonusCalculator.maxSpiritFlat(this);
+    }
+
+    public double getSkillMaxSpiritPercentBonus() {
+        return SkillBonusCalculator.maxSpiritPercent(this);
+    }
+
+    public double getSkillRegenFlatBonus() {
+        return SkillBonusCalculator.regenFlat(this);
+    }
+
+    public double getSkillRegenPercentBonus() {
+        return SkillBonusCalculator.regenPercent(this);
+    }
+
+    public double getSpiritFlowRegenPerSecond() {
+        return SkillBonusCalculator.flowRegenPerSecond(this);
+    }
+
+    public long getVisionFragmentFlatBonus() {
+        return SkillBonusCalculator.visionFragmentFlat(this);
+    }
+
+    public double getVisionFragmentPercentBonus() {
+        return SkillBonusCalculator.visionFragmentPercent(this);
+    }
+
+    public double getEmcCostMultiplier() {
+        return SkillBonusCalculator.emcCostMultiplier(this);
+    }
+
+    // ==================== 5. 冷却 ====================
+
     public double getCooldownMultiplier() {
         return SkillCooldownCalculator.multiplier(this);
     }
 
-    /** 技能实际冷却 tick；0 表示无冷却 */
     public long getEffectiveCooldown(ResourceLocation skillId) {
         return SkillCooldownCalculator.effectiveTicks(this, skillId);
     }
@@ -238,122 +361,16 @@ public class PlayerSpirit {
         }
     }
 
-    /** 清理某技能的冷却（重置技能、换装备时调用） */
     public void clearCooldown(ResourceLocation skillId) {
         skillCooldownEnds.remove(skillId);
     }
 
-    /** 清理全部冷却（死亡重生、重置全部技能时调用） */
     public void clearAllCooldowns() {
         skillCooldownEnds.clear();
     }
-    // ===== 灵视点 =====
-    public long getAvailableVisionPoints() { return availableVisionPoints; }
 
-    public void setAvailableVisionPoints(long v) {
-        this.availableVisionPoints = Math.max(0, v);
-        markDirty();
-    }
+    // ==================== 6. 技能栏 ====================
 
-    public void addVisionPoints(long v) {
-        this.availableVisionPoints += v;
-        markDirty();
-    }
-
-    public boolean consumeVisionPoints(long v) {
-        if (v < 0 || availableVisionPoints < v) return false;
-        availableVisionPoints -= v;
-        markDirty();
-        return true;
-    }
-
-    public long getTotalSpentVisionPoints() { return totalSpentVisionPoints; }
-
-    public void setTotalSpentVisionPoints(long v) {
-        this.totalSpentVisionPoints = Math.max(0, v);
-        markDirty();
-    }
-
-    public void addSpentVisionPoints(long v) {
-        this.totalSpentVisionPoints += v;
-        markDirty();
-    }
-
-    // ===== 灵视等级：根据已消耗点数动态计算 =====
-    // ==================== 灵视 / Spirit Vision ====================
-
-    public int getVisionLevel() {
-        int level = 0;
-        while ((long)(level + 1) * (level + 2) / 2 * 10 <= totalSpentVisionPoints) {
-            level++;
-        }
-        return level;
-    }
-
-    public boolean isVisionAtLeast(int level) {
-        return getVisionLevel() >= level;
-    }
-    //
-    private long visionFragments = 0;
-    private transient double regenAccumulator = 0;
-    public long getVisionFragments() { return visionFragments; }
-
-    public void addVisionFragments(long amount) {
-        if (amount <= 0) return;
-        this.visionFragments += amount;
-        while (this.visionFragments >= 100) {
-            this.visionFragments -= 100;
-            this.availableVisionPoints += 1;
-        }
-        markDirty();
-    }
-
-    /** 带小数的精神力恢复，累积到整数再加 */
-    public void addSpiritWithFraction(double amount) {
-        if (amount <= 0) return;
-        this.regenAccumulator += amount;
-        long whole = (long) this.regenAccumulator;
-        if (whole > 0) {
-            this.regenAccumulator -= whole;
-            addSpirit(whole);
-        }
-    }
-
-    // ===== 技能加成 =====
-    public long getSkillMaxSpiritFlatBonus() {
-        return SkillBonusCalculator.maxSpiritFlat(this);
-    }
-    public double getSkillMaxSpiritPercentBonus() {
-        return SkillBonusCalculator.maxSpiritPercent(this);
-    }
-    public double getSkillRegenFlatBonus() {
-        return SkillBonusCalculator.regenFlat(this);
-    }
-    public double getSkillRegenPercentBonus() {
-        return SkillBonusCalculator.regenPercent(this);
-    }
-    public double getSpiritFlowRegenPerSecond() {
-        return SkillBonusCalculator.flowRegenPerSecond(this);
-    }
-
-    public long getVisionFragmentFlatBonus() {
-        return SkillBonusCalculator.visionFragmentFlat(this);
-    }
-
-    public double getVisionFragmentPercentBonus() {
-        return SkillBonusCalculator.visionFragmentPercent(this);
-    }
-
-    public double getEmcCostMultiplier() {
-        return SkillBonusCalculator.emcCostMultiplier(this);
-    }
-    // ===== 技能栏 / 装配 =====
-    public static final int LOADOUT_SIZE = 6;
-
-    private final ResourceLocation[] loadout = new ResourceLocation[LOADOUT_SIZE];
-    private int selectedSlot = 0;
-    private final Set<ResourceLocation> activePassives = new HashSet<>();
-    // ===== 技能栏 =====
     public ResourceLocation getLoadoutSlot(int slot) {
         if (slot < 0 || slot >= LOADOUT_SIZE) return null;
         return loadout[slot];
@@ -369,7 +386,9 @@ public class PlayerSpirit {
         return loadout.clone();
     }
 
-    public int getSelectedSlot() { return selectedSlot; }
+    public int getSelectedSlot() {
+        return selectedSlot;
+    }
 
     public void setSelectedSlot(int slot) {
         if (slot < 0 || slot >= LOADOUT_SIZE) return;
@@ -381,7 +400,8 @@ public class PlayerSpirit {
         return getLoadoutSlot(selectedSlot);
     }
 
-    // ===== 被动 =====
+    // ----- 6.1 被动 -----
+
     public Set<ResourceLocation> getActivePassives() {
         return Collections.unmodifiableSet(activePassives);
     }
@@ -396,53 +416,67 @@ public class PlayerSpirit {
         markDirty();
     }
 
-    /**
-     * 判断某被动技能当前是否生效。
-     * 常驻被动只要学了就生效；其他被动需要 activePassives 中包含。
-     */
+    /** 常驻被动只要学了就生效；其他被动需要 activePassives 中包含。 */
     public boolean isPassiveActive(ResourceLocation id) {
+        if (getSkillLevel(id) <= 0) return false;
         SkillNode node = SkillTree.get(id);
         if (node == null) return false;
-        if (getSkillLevel(id) <= 0) return false;
         if (node.isAlwaysOn()) return true;
         return activePassives.contains(id);
     }
-    // ===== 精神工具状态 =====
-    private boolean spiritToolActive = false;
 
-    public boolean isSpiritToolActive() { return spiritToolActive; }
+    // ==================== 7. 精神工具状态 ====================
+
+    public boolean isSpiritToolActive() {
+        return spiritToolActive;
+    }
 
     public void setSpiritToolActive(boolean active) {
         this.spiritToolActive = active;
         markDirty();
     }
 
-    /** 飞行消耗累积器，transient，不序列化 */
-    private transient double flightCostAccum = 0.0;
-    public double getFlightCostAccum() { return flightCostAccum; }
-    public void setFlightCostAccum(double v) { flightCostAccum = v; }
+    // ==================== 8. 飞行状态（transient）====================
 
-    /** 缓降状态标记，transient */
-    private transient boolean flightGliding = false;
-    public boolean isFlightGliding() { return flightGliding; }
-    public void setFlightGliding(boolean v) { flightGliding = v; }
-    /** 玩家配置的扫描范围（格），步长 2，范围 8~等级上限 */
-    private int scanRange = SkillValues.SCAN_RANGE_MIN;
+    public double getFlightCostAccum() {
+        return flightCostAccum;
+    }
 
-    /** 玩家勾选的矿物标识集合 */
-    private Set<ResourceLocation> scanOres = new HashSet<>();
+    public void setFlightCostAccum(double v) {
+        flightCostAccum = v;
+    }
 
-    public int getScanRange() { return scanRange; }
-    public void setScanRange(int range) { scanRange = Math.max(SkillValues.SCAN_RANGE_MIN, range); }
+    public boolean isFlightGliding() {
+        return flightGliding;
+    }
 
-    public Set<ResourceLocation> getScanOres() { return scanOres; }
+    public void setFlightGliding(boolean v) {
+        flightGliding = v;
+    }
+
+    // ==================== 9. 扫描配置 ====================
+
+    public int getScanRange() {
+        return scanRange;
+    }
+
+    public void setScanRange(int range) {
+        scanRange = Math.max(SkillValues.SCAN_RANGE_MIN, range);
+    }
+
+    public Set<ResourceLocation> getScanOres() {
+        return scanOres;
+    }
+
     public void setScanOres(Set<ResourceLocation> ores) {
         this.scanOres = ores == null ? new HashSet<>() : new HashSet<>(ores);
     }
+
     public void toggleScanOre(ResourceLocation oreId) {
         if (!scanOres.remove(oreId)) scanOres.add(oreId);
     }
-    // ==================== 初始化 / Initialization ====================
+
+    // ==================== 10. 初始化 / 持久化 ====================
 
     public boolean isInitialized() {
         return initialized;
@@ -452,36 +486,52 @@ public class PlayerSpirit {
         this.initialized = true;
     }
 
-    // ==================== 复制与序列化 / Copy & Serialization ====================
+    // ----- 10.1 复制 -----
 
     public void copyFrom(PlayerSpirit other) {
+        // 精神力核心
         this.spirit = other.spirit;
         this.maxSpirit = other.maxSpirit;
         this.maxSpiritModifiers.clear();
         this.maxSpiritModifiers.putAll(other.maxSpiritModifiers);
-        this.initialized = other.initialized;
+
+        // 技能进度
         this.learnedSkills.clear();
         this.learnedSkills.putAll(other.learnedSkills);
         this.availableVisionPoints = other.availableVisionPoints;
         this.totalSpentVisionPoints = other.totalSpentVisionPoints;
+        this.visionFragments = other.visionFragments;
+
+        // 技能栏
         System.arraycopy(other.loadout, 0, this.loadout, 0, LOADOUT_SIZE);
         this.selectedSlot = other.selectedSlot;
         this.activePassives.clear();
         this.activePassives.addAll(other.activePassives);
+
+        // 临时状态
         this.spiritToolActive = other.spiritToolActive;
-        this.visionFragments = other.visionFragments;
         this.scanRange = other.scanRange;
         this.scanOres = new HashSet<>(other.scanOres);
+
+        // flags（flightCostAccum / flightGliding / skillCooldownEnds 是 transient，不复制）
+        this.initialized = other.initialized;
+
         markDirty();
     }
 
+    // ----- 10.2 序列化 -----
+
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
+
+        // 精神力核心
         tag.putLong("spirit", spirit);
         tag.putLong("maxSpirit", maxSpirit);
+
+        // 技能进度
         tag.putLong("availableVisionPoints", availableVisionPoints);
         tag.putLong("totalSpentVisionPoints", totalSpentVisionPoints);
-
+        tag.putLong("visionFragments", visionFragments);
         CompoundTag skillsTag = new CompoundTag();
         learnedSkills.forEach((id, lvl) -> skillsTag.putInt(id.toString(), lvl));
         tag.put("learnedSkills", skillsTag);
@@ -493,23 +543,20 @@ public class PlayerSpirit {
         }
         tag.put("loadout", loadoutTag);
         tag.putInt("selectedSlot", selectedSlot);
-
-        // 激活的被动
         ListTag passiveList = new ListTag();
         for (ResourceLocation pid : activePassives) {
             passiveList.add(StringTag.valueOf(pid.toString()));
         }
         tag.put("activePassives", passiveList);
+
+        // 临时状态
         tag.putBoolean("spiritToolActive", spiritToolActive);
-        tag.putLong("visionFragments", visionFragments);
         tag.putInt("scanRange", scanRange);
-        {
-            ListTag list = new ListTag();
-            for (ResourceLocation id : scanOres) {
-                list.add(StringTag.valueOf(id.toString()));
-            }
-            tag.put("scanOres", list);
+        ListTag scanList = new ListTag();
+        for (ResourceLocation id : scanOres) {
+            scanList.add(StringTag.valueOf(id.toString()));
         }
+        tag.put("scanOres", scanList);
 
         return tag;
     }
@@ -521,12 +568,14 @@ public class PlayerSpirit {
         Arrays.fill(this.loadout, null);
         this.activePassives.clear();
 
+        // 精神力核心
         this.spirit = tag.getLong("spirit");
         this.maxSpirit = tag.contains("maxSpirit") ? tag.getLong("maxSpirit") : DEFAULT_MAX_SPIRIT;
+
+        // 技能进度
         this.availableVisionPoints = tag.getLong("availableVisionPoints");
         this.totalSpentVisionPoints = tag.getLong("totalSpentVisionPoints");
-
-        learnedSkills.clear();
+        this.visionFragments = tag.getLong("visionFragments");
         CompoundTag skillsTag = tag.getCompound("learnedSkills");
         for (String key : skillsTag.getAllKeys()) {
             ResourceLocation id = ResourceLocation.tryParse(key);
@@ -536,6 +585,7 @@ public class PlayerSpirit {
             }
         }
 
+        // 技能栏
         CompoundTag loadoutTag = tag.getCompound("loadout");
         for (int i = 0; i < LOADOUT_SIZE; i++) {
             String key = "slot" + i;
@@ -545,53 +595,53 @@ public class PlayerSpirit {
         }
         selectedSlot = tag.getInt("selectedSlot");
         if (selectedSlot < 0 || selectedSlot >= LOADOUT_SIZE) selectedSlot = 0;
-
-        activePassives.clear();
         ListTag passiveList = tag.getList("activePassives", Tag.TAG_STRING);
         for (int i = 0; i < passiveList.size(); i++) {
             ResourceLocation pid = ResourceLocation.tryParse(passiveList.getString(i));
             if (pid != null) activePassives.add(pid);
         }
+
+        // 临时状态
         this.spiritToolActive = tag.getBoolean("spiritToolActive");
-        this.visionFragments = tag.getLong("visionFragments");
-        if (spirit > getEffectiveMaxSpirit()) spirit = getEffectiveMaxSpirit();
         if (tag.contains("scanRange")) {
             scanRange = tag.getInt("scanRange");
         }
         scanOres.clear();
         if (tag.contains("scanOres")) {
-            ListTag list = tag.getList("scanOres", Tag.TAG_STRING);
-            for (int i = 0; i < list.size(); i++) {
-                ResourceLocation id = ResourceLocation.tryParse(list.getString(i));
+            ListTag scanList = tag.getList("scanOres", Tag.TAG_STRING);
+            for (int i = 0; i < scanList.size(); i++) {
+                ResourceLocation id = ResourceLocation.tryParse(scanList.getString(i));
                 if (id != null) scanOres.add(id);
             }
         }
+
+        // 上限缩小时 clamp
+        if (spirit > getEffectiveMaxSpirit()) spirit = getEffectiveMaxSpirit();
+
         initialized = true;
         persistenceReady = true;
         markDirty();
     }
 
-    // ==================== Dirty ====================
+    // ----- 10.3 dirty / persistenceReady -----
 
-    public void markDirty() { this.dirty = true; }
-    public boolean isDirty() { return dirty; }
-    public void clearDirty() { this.dirty = false; }
-
-    /** 存档是否已经对接完成 */
-    public boolean isPersistenceReady() { return persistenceReady; }
-
-    /** 标记存档已对接（登录载入完成 / 新玩家建立存档后调用） */
-    public void markPersistenceReady() { this.persistenceReady = true; }
-
-    // ==================== 工具 / Utils ====================
-
-    private static long clamp(long v, long min, long max) {
-        return Math.max(min, Math.min(max, v));
+    public void markDirty() {
+        this.dirty = true;
     }
 
-    private static int clamp(int v, int min, int max) {
-        return Math.max(min, Math.min(max, v));
+    public boolean isDirty() {
+        return dirty;
     }
 
+    public void clearDirty() {
+        this.dirty = false;
+    }
 
+    public boolean isPersistenceReady() {
+        return persistenceReady;
+    }
+
+    public void markPersistenceReady() {
+        this.persistenceReady = true;
+    }
 }

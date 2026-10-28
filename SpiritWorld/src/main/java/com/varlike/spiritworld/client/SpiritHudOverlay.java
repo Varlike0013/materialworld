@@ -2,13 +2,21 @@ package com.varlike.spiritworld.client;
 
 import com.varlike.spiritworld.ClientConfig;
 import com.varlike.spiritworld.SpiritWorld;
+import com.varlike.spiritworld.api.SpiritInfoHolder;
+import com.varlike.spiritworld.api.SpiritInfoLine;
 import com.varlike.spiritworld.client.skill.SkillRenderer;
 import com.varlike.spiritworld.skill.*;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -32,15 +40,18 @@ public class SpiritHudOverlay {
 
     private static final ResourceLocation LAYER_ID =
             ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_bar");
+    public static final ResourceLocation SPIRIT_INFO_LAYER_ID =
+            ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, "spirit_info");
 
     @SubscribeEvent
     public static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
-        // 在饥饿条之上渲染（视觉上会叠加，Y 坐标由我们自己控制到饥饿条上方）
+        // 精神力条：在饥饿条之上渲染，Y 坐标由 renderSpiritBar 内部控制在饥饿条上方
         event.registerAbove(
-                VanillaGuiLayers.FOOD_LEVEL,
-                LAYER_ID,
+                VanillaGuiLayers.FOOD_LEVEL, LAYER_ID,
                 SpiritHudOverlay::renderSpiritBar
         );
+        // 灵视信息：最顶层，确保不被其他 HUD 遮挡
+        event.registerAboveAll(SPIRIT_INFO_LAYER_ID, SpiritHudOverlay::renderSpiritInfo);
     }
     // ===== 被动图标渲染方法 =====
     private static void renderActivePassives(GuiGraphics graphics, Minecraft mc, int barX, int barY) {
@@ -198,4 +209,82 @@ public class SpiritHudOverlay {
         SkillRenderer.fillCircle(g, iconX + 8, iconY + 8, 6, 0x80201030);
         g.drawCenteredString(mc.font, "飞", iconX + 8, iconY + 4, 0xFFFFFFFF);
     }
+    private static final int INFO_LINE_HEIGHT = 11;
+    private static final int INFO_RIGHT_PADDING = 12;
+    private static final int INFO_BG_PADDING_X = 4;
+    private static final int INFO_BG_PADDING_Y = 3;
+
+    private static void renderSpiritInfo(GuiGraphics g, DeltaTracker deltaTracker) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.options.hideGui) return;
+        if (mc.level == null || mc.player == null) return;
+        if (mc.hitResult == null) return;
+
+        // 1. 从指向目标获取 SpiritInfoHolder
+        SpiritInfoHolder holder = resolveTargetHolder(mc);
+        if (holder == null) return;
+
+        // 2. 取原始信息
+        List<SpiritInfoLine> raw = holder.getSpiritInfo();
+        if (raw == null || raw.isEmpty()) return;
+
+        // 3. 按玩家灵视等级过滤
+        int visionLevel = ClientSpiritData.getVisionLevel();
+        List<Component> lines = new ArrayList<>();
+        for (SpiritInfoLine line : raw) {
+            if (line.isVisibleAt(visionLevel)) lines.add(line.text());
+        }
+        if (lines.isEmpty()) return;   // 灵视等级不足，全部过滤 → 不显示
+
+        // 4. 半透明背景 + 右对齐 + 垂直居中
+        drawInfoPanel(g, mc, lines);
+    }
+
+    /** 准星命中 BLOCK → 取 BE，命中 ENTITY → 取 Entity；都检查 SpiritInfoHolder */
+    private static SpiritInfoHolder resolveTargetHolder(Minecraft mc) {
+        HitResult hit = mc.hitResult;
+        if (hit instanceof BlockHitResult blockHit) {
+            BlockPos pos = blockHit.getBlockPos();
+            BlockEntity be = mc.level.getBlockEntity(pos);
+            if (be instanceof SpiritInfoHolder holder) return holder;
+        } else if (hit instanceof EntityHitResult entityHit) {
+            Entity e = entityHit.getEntity();
+            if (e instanceof SpiritInfoHolder holder) return holder;
+        }
+        return null;
+    }
+
+    /** 画半透明背景板 + 右对齐 + 垂直居中 */
+    private static void drawInfoPanel(GuiGraphics g, Minecraft mc, List<Component> lines) {
+        // 计算最大行宽
+        int maxWidth = 0;
+        for (Component line : lines) {
+            maxWidth = Math.max(maxWidth, mc.font.width(line));
+        }
+
+        int totalHeight = lines.size() * INFO_LINE_HEIGHT;
+        int guiW = g.guiWidth();
+        int guiH = g.guiHeight();
+
+        int startY = (guiH - totalHeight) / 2;
+        int rightX = guiW - INFO_RIGHT_PADDING;
+        int textLeft = rightX - maxWidth;
+
+        // 背景框：覆盖所有文字 + padding
+        int bgLeft = textLeft - INFO_BG_PADDING_X;
+        int bgTop = startY - INFO_BG_PADDING_Y;
+        int bgRight = rightX + INFO_BG_PADDING_X;
+        int bgBottom = startY + totalHeight + INFO_BG_PADDING_Y;
+        g.fill(bgLeft, bgTop, bgRight, bgBottom, 0x80000000);   // 50% 黑底
+
+        // 逐行渲染，右对齐
+        for (int i = 0; i < lines.size(); i++) {
+            Component line = lines.get(i);
+            int textW = mc.font.width(line);
+            int x = rightX - textW;
+            int y = startY + i * INFO_LINE_HEIGHT;
+            g.drawString(mc.font, line, x, y, 0xFFFFFFFF, true);
+        }
+    }
+
 }

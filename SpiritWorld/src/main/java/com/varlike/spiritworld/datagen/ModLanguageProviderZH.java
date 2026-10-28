@@ -271,5 +271,73 @@ public class ModLanguageProviderZH extends LanguageProvider {
         this.add("screen.spiritworld.scan_config.range", "范围：%d 格");
         this.add("screen.spiritworld.scan_config.cost", "每次扫描消耗：%d 精神力");
         this.add("screen.spiritworld.loadout.scan_config", "扫描配置");
+        // ===== 魔力聚集器 =====
+        this.add("block.spiritworld.spirit_collector_basic", "魔力聚集器（基础）");
+        this.add("block.spiritworld.spirit_collector_advanced", "魔力聚集器（进阶）");
+        this.add("block.spiritworld.spirit_collector_ultimate", "魔力聚集器（终极）");
+        this.add("gui.spiritworld.collector.tier", "等级 %d");
+        this.add("gui.spiritworld.collector.amount", "%d / %d");
+        this.add("gui.spiritworld.collector.speed", "%d / 秒");
+        this.add("gui.spiritworld.collector.percent", "%s%%");
+        this.add("gui.spiritworld.collector.remaining", "剩余 %d 秒");
+        this.add("gui.spiritworld.collector.full", "已满");
+        // ===== 魔力属性 =====
+        this.add("gui.spiritworld.mana_type.none",   "无属性");
+        this.add("gui.spiritworld.mana_type.fire",   "火属性");
+        this.add("gui.spiritworld.mana_type.water",  "水属性");
+        this.add("gui.spiritworld.mana_type.wind",   "风属性");
+        this.add("gui.spiritworld.mana_type.earth",  "土属性");
+        this.add("gui.spiritworld.mana_type.spirit", "精神属性");
+        // ===== 聚集器信息 =====
+        this.add("gui.spiritworld.collector.type",      "属性：%s");
+        this.add("gui.spiritworld.collector.mana_entry", "%s：%d / %d");
+        this.add("gui.spiritworld.collector.total",     "总计：%d / %d");
+        // ===== 魔力核心 =====
+        this.add("block.spiritworld.spirit_core", "魔力核心");
+        this.add("block.spiritworld.mana_block", "魔力方块");
+        this.add("block.spiritworld.mana_slab", "魔力台阶");
+        this.add("block.spiritworld.mana_stairs", "魔力楼梯");
+        this.add("item.spiritworld.mana_brick", "魔力砖");
+        // ===== 核心信息 =====
+        this.add("gui.spiritworld.spirit_core.capacity", "%d / %d");
+        this.add("gui.spiritworld.spirit_core.bonus", "容量加成：+%d");
+        this.add("gui.spiritworld.spirit_core.mana_entry", "%s：%d");
+        this.add("gui.spiritworld.spirit_core.collectors", "范围聚集器：%d");
+        // ===== 核心交互 =====
+        this.add("message.spiritworld.spirit_core.insufficient",
+                "魔力不足（需要 %d 精神 + %d 土）");
+        this.add("message.spiritworld.spirit_core.produced", "产出 1 魔力砖");
+        this.add("block.spiritworld.spirit_forge", "魔力合成台");
+        this.add("gui.spiritworld.spirit_forge.select", "请选择配方");
+        this.add("gui.spiritworld.spirit_forge.cost",   "%s：%d");
+        this.add("gui.spiritworld.spirit_forge.time",   "时间：%d 秒");
+        this.add("gui.spiritworld.spirit_forge.output", "%s ×%d");
+        this.add("gui.spiritworld.spirit_forge.progress", "%d / %d 秒");
+        this.add("gui.spiritworld.spirit_forge.no_recipe", "未选择配方");
+        this.add("gui.spiritworld.spirit_forge.core", "魔力核心：%s");
+        this.add("gui.spiritworld.spirit_forge.core.found", "范围内");
+        this.add("gui.spiritworld.spirit_forge.core.missing", "范围外");
+        this.add("gui.spiritworld.forge.start",             "开始炼成");
+        this.add("gui.spiritworld.forge.cancel",            "取消");
+        this.add("gui.spiritworld.forge.target",            "目标：%d / 已完成：%d");
+        this.add("gui.spiritworld.forge.target.infinite",   "无限循环 / 已完成：%d");
+        this.add("gui.spiritworld.forge.crafting_other",    "正在炼成：%s");
+        this.add("item.spiritworld.mana_crystal_basic", "魔力水晶（基础）");
+        this.add("item.spiritworld.mana_crystal_advanced", "魔力水晶（进阶）");
+        this.add("item.spiritworld.mana_crystal_ultimate", "魔力水晶（终极）");
+        this.add("tooltip.spiritworld.mana_crystal.capacity", "魔力：%d / %d");
+        this.add("tooltip.spiritworld.mana_crystal.entry", "%s：%d");
+        this.add("tooltip.spiritworld.mana_crystal.hint", "Shift+右键装入聚集器或核心");
+        this.add("item.spiritworld.mana_clay", "魔力黏土");
+        this.add("item.spiritworld.mana_alloy", "魔力合金锭");
+        this.add("item.spiritworld.mana_alloy_helmet", "魔力合金头盔");
+        this.add("item.spiritworld.mana_alloy_chestplate", "魔力合金胸甲");
+        this.add("item.spiritworld.mana_alloy_leggings", "魔力合金护腿");
+        this.add("item.spiritworld.mana_alloy_boots", "魔力合金靴子");
+        this.add("item.spiritworld.mana_alloy_sword", "魔力合金剑");
+        this.add("item.spiritworld.mana_alloy_pickaxe", "魔力合金镐");
+        this.add("item.spiritworld.mana_alloy_axe", "魔力合金斧");
+        this.add("item.spiritworld.mana_alloy_shovel", "魔力合金铲");
+        this.add("item.spiritworld.mana_alloy_hoe", "魔力合金锄");
     }
 }

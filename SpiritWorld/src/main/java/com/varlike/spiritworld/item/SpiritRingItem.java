@@ -109,50 +109,6 @@ public class SpiritRingItem extends Item {
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
     }
 
-    // ==================== 右键方块：炼药锅转化 ====================
-
-    @Override
-    public InteractionResult useOn(UseOnContext context) {
-        Level level = context.getLevel();
-        BlockPos pos = context.getClickedPos();
-        BlockState state = level.getBlockState(pos);
-        Player player = context.getPlayer();
-        ItemStack stack = context.getItemInHand();
-
-        // 只处理含水炼药锅
-        if (!state.is(Blocks.WATER_CAULDRON)) {
-            return InteractionResult.PASS;
-        }
-
-        if (!(player instanceof ServerPlayer sp)) {
-            return InteractionResult.SUCCESS;
-        }
-
-        // 消耗 100 精神力
-        PlayerSpirit data = sp.getCapability(ModCapabilities.PLAYER_SPIRIT);
-        if (data == null) return InteractionResult.PASS;
-
-        final long COST = 100L;
-        if (data.getSpirit() < COST) {
-            sp.sendSystemMessage(Component.translatable(
-                    "message.spiritworld.ring.not_enough", COST));
-            return InteractionResult.FAIL;
-        }
-
-        // 转换为精神药水炼药锅（保持水位）
-        int waterLevel = state.getValue(LayeredCauldronBlock.LEVEL);
-        BlockState spiritState = ModBlocks.SPIRIT_CAULDRON.get().defaultBlockState()
-                .setValue(LayeredCauldronBlock.LEVEL, waterLevel);
-
-        data.consumeSpirit(COST);
-        NetworkHandler.syncTo(sp);
-
-        level.setBlockAndUpdate(pos, spiritState);
-        level.levelEvent(1047, pos, 0); // 炼药锅使用音效
-
-        sp.sendSystemMessage(Component.translatable("message.spiritworld.ring.converted"));
-        return InteractionResult.SUCCESS;
-    }
 
     // ==================== Tooltip ====================
 
