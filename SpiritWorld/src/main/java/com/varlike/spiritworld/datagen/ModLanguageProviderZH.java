@@ -339,5 +339,11 @@ public class ModLanguageProviderZH extends LanguageProvider {
         this.add("item.spiritworld.mana_alloy_axe", "魔力合金斧");
         this.add("item.spiritworld.mana_alloy_shovel", "魔力合金铲");
         this.add("item.spiritworld.mana_alloy_hoe", "魔力合金锄");
+        this.add("item.spiritworld.mana_alloy_arrow", "魔力合金箭");
+        this.add("effect.spiritworld.mana_alloy_set", "魔力合金套装");
+        this.add("item.spiritworld.mana_alloy_bow", "魔力合金弓");
+        this.add("enchantment.spiritworld.double_shot", "双发快射");
+        this.add("enchantment.spiritworld.double_shot.desc",
+                "射出主箭后 0.1 秒再射出一根小箭，等级提升伤害：25% / 50% / 75%。");
     }
 }

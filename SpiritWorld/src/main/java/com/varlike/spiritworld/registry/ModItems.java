@@ -1,14 +1,12 @@
 package com.varlike.spiritworld.registry;
 
 import com.varlike.spiritworld.SpiritWorld;
-import com.varlike.spiritworld.item.BottledSpiritItem;
-import com.varlike.spiritworld.item.ManaCrystalItem;
-import com.varlike.spiritworld.item.SpiritRingItem;
-import com.varlike.spiritworld.item.SpiritToolItem;
+import com.varlike.spiritworld.item.*;
 import net.minecraft.world.item.*;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.world.item.Item.Properties;
 
 public class ModItems {
 
@@ -116,4 +114,10 @@ public class ModItems {
                     ManaToolTier.INSTANCE,
                     new Item.Properties().attributes(
                             HoeItem.createAttributes(ManaToolTier.INSTANCE, -3.0f, 0.0f))));
+    public static final DeferredItem<ManaAlloyArrowItem> MANA_ALLOY_ARROW =
+            ITEMS.register("mana_alloy_arrow", () -> new ManaAlloyArrowItem(new Item.Properties()));
+    // 魔力合金弓：耐久 1200（原版弓 384），拉弓速度不变
+    public static final DeferredItem<BowItem> MANA_ALLOY_BOW =
+            ITEMS.register("mana_alloy_bow", () -> new BowItem(
+                    new Item.Properties().durability(1200).enchantable(18)));
 }

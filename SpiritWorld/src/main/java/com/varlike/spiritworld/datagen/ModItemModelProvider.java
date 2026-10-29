@@ -34,5 +34,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         basicItem(ModItems.MANA_ALLOY_AXE.get());
         basicItem(ModItems.MANA_ALLOY_SHOVEL.get());
         basicItem(ModItems.MANA_ALLOY_HOE.get());
+        basicItem(ModItems.MANA_ALLOY_ARROW.get());
+        basicItem(ModItems.MANA_ALLOY_BOW.get());
     }
 }

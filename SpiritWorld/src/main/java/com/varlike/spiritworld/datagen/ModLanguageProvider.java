@@ -344,5 +344,11 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("item.spiritworld.mana_alloy_axe", "Mana Alloy Axe");
         this.add("item.spiritworld.mana_alloy_shovel", "Mana Alloy Shovel");
         this.add("item.spiritworld.mana_alloy_hoe", "Mana Alloy Hoe");
+        this.add("item.spiritworld.mana_alloy_arrow", "Mana Alloy Arrow");
+        this.add("effect.spiritworld.mana_alloy_set", "Mana Alloy Set");
+        this.add("item.spiritworld.mana_alloy_bow", "Mana Alloy Bow");
+        this.add("enchantment.spiritworld.double_shot", "Double Shot");
+        this.add("enchantment.spiritworld.double_shot.desc",
+                "Fires an additional small arrow 0.1s later. Level increases damage: 25% / 50% / 75%.");
     }
 }

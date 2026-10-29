@@ -13,6 +13,9 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import com.varlike.spiritworld.entity.ModEntities;
+import net.minecraft.client.renderer.entity.ArrowRenderer;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 public class SpiritClientEvents {
 
@@ -25,6 +28,10 @@ public class SpiritClientEvents {
             event.register(SpiritKeyBindings.OPEN_RADIAL);
             event.register(SpiritKeyBindings.USE_SKILL);
         }
+    }
+    @SubscribeEvent
+    public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.MANA_ALLOY_ARROW.get(), ManaAlloyArrowRenderer::new);
     }
 
     @EventBusSubscriber(modid = SpiritWorld.MOD_ID, value = Dist.CLIENT)

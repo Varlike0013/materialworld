@@ -226,5 +226,24 @@ public class ModRecipeProvider extends RecipeProvider {
                 .pattern("A A").pattern("A A")
                 .define('A', alloy)
                 .unlockedBy("has_alloy", has(alloy)).save(output);
+        // 4 魔力合金箭（箭身 = 魔力合金锭）
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.MANA_ALLOY_ARROW.get(), 4)
+                .pattern("A")
+                .pattern("S")
+                .pattern("F")
+                .define('A', ModItems.MANA_ALLOY.get())
+                .define('S', Items.STICK)
+                .define('F', Items.FEATHER)
+                .unlockedBy("has_alloy", has(ModItems.MANA_ALLOY.get()))
+                .save(output);
+        //魔力合金弓
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.MANA_ALLOY_BOW.get())
+                .pattern(" AS")
+                .pattern("A S")
+                .pattern(" AS")
+                .define('A', ModItems.MANA_ALLOY.get())
+                .define('S', Items.STRING)
+                .unlockedBy("has_alloy", has(ModItems.MANA_ALLOY.get()))
+                .save(output);
     }
 }

@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.varlike.materialworld.api.MaterialWorldAPI;
 import com.varlike.spiritworld.capability.ModCapabilities;
 import com.varlike.spiritworld.component.ModDataComponents;
+import com.varlike.spiritworld.entity.ModEntities;
 import com.varlike.spiritworld.registry.ModBlockEntities;
 import com.varlike.spiritworld.registry.ModBlocks;
 import com.varlike.spiritworld.registry.ModItems;
@@ -42,6 +43,7 @@ public class SpiritWorld {
         ModSkills.registerAll();
         ModBlockEntities.register(modEventBus);
         ModMenus.register(modEventBus);
+        ModEntities.register(modEventBus);
         registerCreativeTabContents();
 
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
@@ -69,6 +71,8 @@ public class SpiritWorld {
         addToSpiritTab(ModItems.MANA_ALLOY_AXE);
         addToSpiritTab(ModItems.MANA_ALLOY_SHOVEL);
         addToSpiritTab(ModItems.MANA_ALLOY_HOE);
+        addToSpiritTab(ModItems.MANA_ALLOY_ARROW);
+        addToSpiritTab(ModItems.MANA_ALLOY_BOW);
 
         // 方块
         addToSpiritTab(ModBlocks.SPIRIT_COLLECTOR_BASIC);
