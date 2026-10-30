@@ -345,5 +345,32 @@ public class ModLanguageProviderZH extends LanguageProvider {
         this.add("enchantment.spiritworld.double_shot", "双发快射");
         this.add("enchantment.spiritworld.double_shot.desc",
                 "射出主箭后 0.1 秒再射出一根小箭，等级提升伤害：25% / 50% / 75%。");
+        this.add("block.spiritworld.mana_relay_1", "魔力中继器 I");
+        this.add("block.spiritworld.mana_relay_2", "魔力中继器 II");
+        this.add("block.spiritworld.mana_relay_3", "魔力中继器 III");
+        this.add("gui.spiritworld.relay.efficiency", "当前效率: %s%%");
+        this.add("gui.spiritworld.relay.children", "子节点: %d / %d");
+        this.add("gui.spiritworld.relay.disconnected", "状态: 游离 (未连接)");
+        this.add("gui.spiritworld.collector.efficiency", "传输效率: %s%%");
+        this.add("gui.spiritworld.collector.disconnected", "状态: 游离 (无连接)");
+        this.add("gui.spiritworld.core.network_btn", "魔力链接");
+        this.add("gui.spiritworld.core.back_to_craft", "返回合成");
+        this.add("gui.spiritworld.forge.start", "开始");
+        this.add("gui.spiritworld.forge.cancel", "取消");
+        this.add("gui.spiritworld.forge.target", "目标：%d / 已完成：%d");
+        this.add("gui.spiritworld.forge.target.infinite", "无限循环 / 已完成：%d");
+        this.add("gui.spiritworld.forge.crafting_other", "正在炼成：%s");
+        this.add("gui.spiritworld.forge.rebuild", "重构全网");
+        this.add("gui.spiritworld.core.network_title", "魔力网络拓扑");
+        this.add("gui.spiritworld.network.node_detail", "--- 节点详情 ---");
+        this.add("gui.spiritworld.network.pos", "坐标：%s");
+        this.add("gui.spiritworld.network.total_mana", "总魔力：%d / %d");
+        this.add("gui.spiritworld.network.pull_details", "[抽取明细]");
+        this.add("gui.spiritworld.network.pull_line", "每秒 从 %s 获取 %s 魔力 %d");
+        this.add("gui.spiritworld.network.efficiency", "传输效率：%s%%");
+        this.add("gui.spiritworld.network.stock", "当前库存：%d / %d");
+        this.add("gui.spiritworld.network.type", "魔力属性：%s");
+        this.add("gui.spiritworld.network.core_node", "核心");
+        this.add("gui.spiritworld.network.collector_node", "聚集器");
     }
 }

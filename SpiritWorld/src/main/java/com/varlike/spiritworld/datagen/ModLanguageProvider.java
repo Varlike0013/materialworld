@@ -350,5 +350,32 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("enchantment.spiritworld.double_shot", "Double Shot");
         this.add("enchantment.spiritworld.double_shot.desc",
                 "Fires an additional small arrow 0.1s later. Level increases damage: 25% / 50% / 75%.");
+        this.add("block.spiritworld.mana_relay_1", "Mana Relay I");
+        this.add("block.spiritworld.mana_relay_2", "Mana Relay II");
+        this.add("block.spiritworld.mana_relay_3", "Mana Relay III");
+        this.add("gui.spiritworld.relay.efficiency", "Current efficiency: %s%%");
+        this.add("gui.spiritworld.relay.children", "Children node: %d / %d");
+        this.add("gui.spiritworld.relay.disconnected", "Status: disconnected");
+        this.add("gui.spiritworld.collector.efficiency", "Current efficiency: %s%%");
+        this.add("gui.spiritworld.collector.disconnected", "Status: disconnected");
+        this.add("gui.spiritworld.core.network_btn", "Network Link");
+        this.add("gui.spiritworld.core.back_to_craft", "Back to Craft");
+        this.add("gui.spiritworld.forge.start", "Start");
+        this.add("gui.spiritworld.forge.cancel", "Cancel");
+        this.add("gui.spiritworld.forge.target", "Target: %d / Completed: %d");
+        this.add("gui.spiritworld.forge.target.infinite", "Infinite / Completed: %d");
+        this.add("gui.spiritworld.forge.crafting_other", "Crafting: %s");
+        this.add("gui.spiritworld.forge.rebuild", "Rebuild Network");
+        this.add("gui.spiritworld.core.network_title", "Mana Network");
+        this.add("gui.spiritworld.network.node_detail", "--- Node Details ---");
+        this.add("gui.spiritworld.network.pos", "Pos: %s");
+        this.add("gui.spiritworld.network.total_mana", "Total Mana: %d / %d");
+        this.add("gui.spiritworld.network.pull_details", "[Pull Details]");
+        this.add("gui.spiritworld.network.pull_line", "Pulls %d %s from %s/s");
+        this.add("gui.spiritworld.network.efficiency", "Efficiency: %s%%");
+        this.add("gui.spiritworld.network.stock", "Stock: %d / %d");
+        this.add("gui.spiritworld.network.type", "Type: %s");
+        this.add("gui.spiritworld.network.core_node", "Core");
+        this.add("gui.spiritworld.network.collector_node", "Collector");
     }
 }

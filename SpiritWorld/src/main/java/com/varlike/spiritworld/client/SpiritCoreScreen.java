@@ -2,6 +2,7 @@ package com.varlike.spiritworld.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.varlike.spiritworld.block.SpiritCoreBlockEntity;
+import com.varlike.spiritworld.network.ServerboundCoreActionPacket;
 import com.varlike.spiritworld.skill.ManaCraftingRecipe;
 import com.varlike.spiritworld.skill.ManaCraftingRecipes;
 import com.varlike.spiritworld.skill.ManaType;
@@ -14,6 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,6 +86,27 @@ public class SpiritCoreScreen extends AbstractContainerScreen<SpiritCoreMenu> {
                             else sendButton(SpiritCoreBlockEntity.BTN_START);
                         })
                 .bounds(x + (BG_WIDTH - 80) / 2, y + 178, 80, 18)
+                .build());
+        addRenderableWidget(net.minecraft.client.gui.components.Button.builder(
+                        Component.translatable("gui.spiritworld.core.network_btn"),
+                        b -> {
+                            // 1. 向服务端请求最新的网络数据
+                            net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                                    new com.varlike.spiritworld.network.ServerboundRequestNetworkDataPacket(this.menu.getBlockPos())
+                            );
+                            // 2. 客户端直接切换到网络页面，把自己（当前Screen）传过去作为父级
+                            net.minecraft.client.Minecraft.getInstance().setScreen(
+                                    new com.varlike.spiritworld.client.SpiritCoreNetworkScreen(this, this.menu.getBlockPos())
+                            );
+                        })
+                .bounds(this.leftPos + this.imageWidth - 80, this.topPos + 5, 70, 18)
+                .build());
+        addRenderableWidget(Button.builder(
+                        Component.translatable("gui.spiritworld.forge.rebuild"),
+                        b -> {
+                            PacketDistributor.sendToServer(new ServerboundCoreActionPacket(this.menu.getBlockPos(), SpiritCoreBlockEntity.BTN_REBUILD_NETWORK));
+                        })
+                .bounds(this.leftPos + 10, this.topPos + 5, 60, 18)
                 .build());
     }
 

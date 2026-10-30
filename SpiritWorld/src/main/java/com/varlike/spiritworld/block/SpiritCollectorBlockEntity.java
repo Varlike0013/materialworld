@@ -4,6 +4,8 @@ import com.varlike.spiritworld.api.SpiritInfoHolder;
 import com.varlike.spiritworld.api.SpiritInfoLine;
 import com.varlike.spiritworld.component.CrystalMana;
 import com.varlike.spiritworld.item.ManaCrystalItem;
+import com.varlike.spiritworld.network.AbstractNetworkNodeBlockEntity;
+import com.varlike.spiritworld.network.NodeType;
 import com.varlike.spiritworld.registry.ModBlockEntities;
 import com.varlike.spiritworld.skill.ManaType;
 import net.minecraft.ChatFormatting;
@@ -25,7 +27,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-public class SpiritCollectorBlockEntity extends BlockEntity implements SpiritInfoHolder {
+public class SpiritCollectorBlockEntity extends AbstractNetworkNodeBlockEntity implements SpiritInfoHolder{
 
     /** 每 10 tick（0.5 秒）同步一次到客户端 */
     private static final int SYNC_INTERVAL = 10;
@@ -223,6 +225,34 @@ public class SpiritCollectorBlockEntity extends BlockEntity implements SpiritInf
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
+
+    private String nameKey() {
+        return switch (getTier()) {
+            case 1 -> "block.spiritworld.spirit_collector_basic";
+            case 2 -> "block.spiritworld.spirit_collector_advanced";
+            case 3 -> "block.spiritworld.spirit_collector_ultimate";
+            default -> "block.spiritworld.spirit_collector_basic";
+        };
+    }
+    // 实现网络节点类型
+    @Override
+    public NodeType getNodeType() {
+        return NodeType.COLLECTOR;
+    }
+
+    // 聚集器是叶子节点，不能有子节点
+    @Override
+    public int getMaxChildren() {
+        return 0;
+    }
+
+    @Override
+    public void onChildDisconnected(BlockPos childPos) {
+        this.removeChild(childPos);
+        this.setChanged();
+    }
+
+    // 增加网络连接状态和效率
     @Override
     public List<SpiritInfoLine> getSpiritInfo() {
         List<SpiritInfoLine> list = new ArrayList<>();
@@ -239,12 +269,23 @@ public class SpiritCollectorBlockEntity extends BlockEntity implements SpiritInf
                 currentType.applyStyle(
                         Component.translatable("gui.spiritworld.collector.type", currentType.displayName())), 2));
 
+        // 网络连接状态与效率
+        if (getParentPos() == null) {
+            list.add(new SpiritInfoLine(
+                    Component.translatable("gui.spiritworld.collector.disconnected")
+                            .withStyle(ChatFormatting.RED), 2));
+        } else {
+            list.add(new SpiritInfoLine(
+                    Component.translatable("gui.spiritworld.collector.efficiency", String.format("%.1f", getTotalEfficiency() * 100))
+                            .withStyle(ChatFormatting.GREEN), 2));
+        }
+
         // Lv3：每种属性的存量（非零 + 当前属性）
         for (ManaType type : ManaType.values()) {
             long amt = getMana(type);
             if (amt <= 0 && type != currentType) continue;
             list.add(new SpiritInfoLine(
-                        type.applyStyle(
+                    type.applyStyle(
                             Component.translatable("gui.spiritworld.collector.mana_entry",
                                     type.displayName(), amt, getCapacity())), 3));
         }
@@ -278,14 +319,5 @@ public class SpiritCollectorBlockEntity extends BlockEntity implements SpiritInf
                 5));
 
         return list;
-    }
-
-    private String nameKey() {
-        return switch (getTier()) {
-            case 1 -> "block.spiritworld.spirit_collector_basic";
-            case 2 -> "block.spiritworld.spirit_collector_advanced";
-            case 3 -> "block.spiritworld.spirit_collector_ultimate";
-            default -> "block.spiritworld.spirit_collector_basic";
-        };
     }
 }

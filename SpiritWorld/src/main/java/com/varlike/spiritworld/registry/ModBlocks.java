@@ -71,6 +71,29 @@ public class ModBlocks {
                             .mapColor(MapColor.COLOR_PURPLE)
                             .strength(5.0f)
                             .requiresCorrectToolForDrops()));
+    public static final DeferredBlock<ManaRelayBlock> MANA_RELAY_1 =
+            BLOCKS.register("mana_relay_1", () -> new ManaRelayBlock(
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.METAL)
+                            .strength(3.0f)
+                            .requiresCorrectToolForDrops(),
+                    1));
+
+    public static final DeferredBlock<ManaRelayBlock> MANA_RELAY_2 =
+            BLOCKS.register("mana_relay_2", () -> new ManaRelayBlock(
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.GOLD)
+                            .strength(4.0f)
+                            .requiresCorrectToolForDrops(),
+                    2));
+
+    public static final DeferredBlock<ManaRelayBlock> MANA_RELAY_3 =
+            BLOCKS.register("mana_relay_3", () -> new ManaRelayBlock(
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.DIAMOND)
+                            .strength(5.0f)
+                            .requiresCorrectToolForDrops(),
+                    3));
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);
     }

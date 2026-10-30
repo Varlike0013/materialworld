@@ -40,6 +40,15 @@ public class NetworkHandler {
         registrar.playToClient(ClientboundScanResultPacket.TYPE,
                 ClientboundScanResultPacket.STREAM_CODEC, ClientboundScanResultPacket::handle
         );
+        registrar.playToClient(ClientboundNetworkTreePacket.TYPE,
+                ClientboundNetworkTreePacket.STREAM_CODEC, ClientboundNetworkTreePacket::handle
+        );
+        registrar.playToServer(ServerboundRequestNetworkDataPacket.TYPE,
+                ServerboundRequestNetworkDataPacket.STREAM_CODEC, ServerboundRequestNetworkDataPacket::handle
+        );
+        registrar.playToServer(ServerboundCoreActionPacket.TYPE,
+                ServerboundCoreActionPacket.STREAM_CODEC, ServerboundCoreActionPacket::handle
+        );
     }
 
     public static void syncTo(ServerPlayer player) {

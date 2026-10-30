@@ -8,7 +8,6 @@ import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
@@ -54,7 +53,6 @@ public final class DoubleShotEnchantmentEvents {
 
         int clampedLevel = Math.min(level, MAX_LEVEL);
         double damageRatio = DAMAGE_RATIO_BY_LEVEL[clampedLevel];
-        if (damageRatio <= 0.0) return;
 
         ItemStack ammo = player.getProjectile(event.getBow()).copy();
         int charge = event.getCharge();
@@ -69,11 +67,13 @@ public final class DoubleShotEnchantmentEvents {
     }
 
     private static int getDoubleShotLevel(ServerPlayer player, ItemStack bow) {
-        var registry = player.level().registryAccess().registryOrThrow(Registries.ENCHANTMENT);
-        var holder = registry.getHolder(ModEnchantments.DOUBLE_SHOT).orElse(null);
+
+        var lookup = player.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        // 2. 使用 lookup.get() 获取 Holder（返回 Optional）
+        var holder = lookup.get(ModEnchantments.DOUBLE_SHOT).orElse(null);
         if (holder == null) return 0;
 
-        return EnchantmentHelper.getItemEnchantmentLevel(holder, bow);
+        return bow.getEnchantmentLevel(holder);
     }
 
     /** 射出 1 根小箭，伤害 = 主箭伤害 × damageRatio */
@@ -83,7 +83,6 @@ public final class DoubleShotEnchantmentEvents {
         ItemStack weapon = player.getMainHandItem();
 
         AbstractArrow arrow = createArrowFromAmmo(level, ammo, player, weapon);
-        if (arrow == null) return;
 
         // 伤害 = 基础伤害 × 比例
         arrow.setBaseDamage(arrow.getBaseDamage() * damageRatio);
@@ -120,10 +119,11 @@ public final class DoubleShotEnchantmentEvents {
      */
     private static AbstractArrow createArrowFromAmmo(Level level, ItemStack ammo,
                                                      ServerPlayer player, ItemStack weapon) {
+        // 优先使用弹药自身的 createArrow 逻辑（正常路径）
         if (ammo.getItem() instanceof ArrowItem arrowItem) {
             return arrowItem.createArrow(level, ammo, player, weapon);
         }
-        LivingEntity shooter = player;
-        return new Arrow(level, shooter);
+        // 兜底：弹药不是 ArrowItem 时，手动创建普通箭
+        return new Arrow(level, player, ammo.copyWithCount(1), weapon);
     }
 }

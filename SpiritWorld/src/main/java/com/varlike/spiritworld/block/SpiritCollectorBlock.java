@@ -2,6 +2,8 @@ package com.varlike.spiritworld.block;
 
 import com.mojang.serialization.MapCodec;
 import com.varlike.spiritworld.item.ManaCrystalItem;
+import com.varlike.spiritworld.network.AbstractNetworkNodeBlockEntity;
+import com.varlike.spiritworld.network.NetworkManager;
 import com.varlike.spiritworld.registry.ModItems;
 import com.varlike.spiritworld.skill.ManaType;
 import net.minecraft.ChatFormatting;
@@ -149,5 +151,31 @@ public class SpiritCollectorBlock extends BaseEntityBlock {
         if (!stack.is(Items.POTION)) return false;
         PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
         return contents != null && contents.is(Potions.WATER);
+    }
+
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        if (!level.isClientSide) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof AbstractNetworkNodeBlockEntity node) {
+                // 注册到全局节点表
+                NetworkManager.registerNode(level, pos, node.getNodeType());
+                // 放置后立刻找父节点
+                node.findParent();
+            }
+        }
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock())) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof AbstractNetworkNodeBlockEntity node) {
+                node.disconnectChildren(); // 通知子节点找新爸爸
+                NetworkManager.unregisterNode(level, pos); // 从全局移除
+            }
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
     }
 }

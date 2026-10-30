@@ -82,6 +82,9 @@ public class SpiritWorld {
         addToSpiritTab(ModBlocks.MANA_SLAB);
         addToSpiritTab(ModBlocks.MANA_STAIRS);
         addToSpiritTab(ModBlocks.SPIRIT_CORE);
+        addToSpiritTab(ModBlocks.MANA_RELAY_1);
+        addToSpiritTab(ModBlocks.MANA_RELAY_2);
+        addToSpiritTab(ModBlocks.MANA_RELAY_3);
     }
 
     // ==================== 辅助：注册到物质世界附属标签 ====================

@@ -1,6 +1,7 @@
 package com.varlike.spiritworld.registry;
 
 import com.varlike.spiritworld.SpiritWorld;
+import com.varlike.spiritworld.block.ManaRelayBlockEntity;
 import com.varlike.spiritworld.block.SpiritCollectorBlockEntity;
 import com.varlike.spiritworld.block.SpiritCoreBlockEntity;
 import net.minecraft.core.registries.Registries;
@@ -25,6 +26,13 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("spirit_core", () -> BlockEntityType.Builder.of(
                     SpiritCoreBlockEntity::new,
                     ModBlocks.SPIRIT_CORE.get()
+            ).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ManaRelayBlockEntity>> MANA_RELAY =
+            BLOCK_ENTITIES.register("mana_relay", () -> BlockEntityType.Builder.of(
+                    ManaRelayBlockEntity::new,
+                    ModBlocks.MANA_RELAY_1.get(),
+                    ModBlocks.MANA_RELAY_2.get(),
+                    ModBlocks.MANA_RELAY_3.get()
             ).build(null));
 
     public static void register(IEventBus modEventBus) {

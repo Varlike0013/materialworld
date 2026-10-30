@@ -3,6 +3,7 @@ package com.varlike.spiritworld.client;
 import com.varlike.spiritworld.block.SpiritCoreBlockEntity;
 import com.varlike.spiritworld.registry.ModMenus;
 import com.varlike.spiritworld.skill.ManaCraftingRecipes;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -28,10 +29,13 @@ public class SpiritCoreMenu extends AbstractContainerMenu {
 
     private final Container container;
     private final ContainerData data;
+    private final BlockPos blockPos;
+
+    public BlockPos getBlockPos() {return blockPos;}
     public int getActiveRecipeIndex() { return data.get(IDX_ACTIVE_RECIPE); }
     public boolean isInfiniteMode()   { return data.get(IDX_INFINITE) != 0; }
 
-    /** 服务端 */
+    /** 服务端构造 */
     public SpiritCoreMenu(int id, Inventory inv, SpiritCoreBlockEntity be) {
         this(id, inv, be, new ContainerData() {
             @Override public int get(int i) {
@@ -44,26 +48,27 @@ public class SpiritCoreMenu extends AbstractContainerMenu {
                     case IDX_TARGET    -> be.getTargetCount();
                     case IDX_COMPLETED -> be.getCompletedCount();
                     case IDX_BATCH     -> be.isBatchActive() ? 1 : 0;
-                    case IDX_SELECTED -> be.getSelectedIndex();
+                    case IDX_SELECTED  -> be.getSelectedIndex();
                     case IDX_ACTIVE_RECIPE -> be.getActiveRecipeIndex();
-                    case IDX_INFINITE      -> be.isInfiniteMode() ? 1 : 0;
+                    case IDX_INFINITE  -> be.isInfiniteMode() ? 1 : 0;
                     default -> 0;
                 };
             }
             @Override public void set(int i, int v) {}
             @Override public int getCount() { return DATA_SIZE; }
-        });
+        }, be.getBlockPos());
     }
 
-    /** 客户端 */
+    /** 客户端构造 */
     public SpiritCoreMenu(int id, Inventory inv, FriendlyByteBuf buf) {
-        this(id, inv, new SimpleContainer(SpiritCoreBlockEntity.SLOT_COUNT), new SimpleContainerData(DATA_SIZE));
+        this(id, inv, new SimpleContainer(SpiritCoreBlockEntity.SLOT_COUNT), new SimpleContainerData(DATA_SIZE), buf.readBlockPos());
     }
 
-    private SpiritCoreMenu(int id, Inventory inv, Container container, ContainerData data) {
+    private SpiritCoreMenu(int id, Inventory inv, Container container, ContainerData data,BlockPos pos) {
         super(ModMenus.SPIRIT_CORE.get(), id);
         this.container = container;
         this.data = data;
+        this.blockPos = pos;
 
         // 3×3 输出容器（右侧）
         for (int row = 0; row < 3; row++)

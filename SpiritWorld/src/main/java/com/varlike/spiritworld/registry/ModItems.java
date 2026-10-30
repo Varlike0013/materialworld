@@ -119,5 +119,5 @@ public class ModItems {
     // 魔力合金弓：耐久 1200（原版弓 384），拉弓速度不变
     public static final DeferredItem<BowItem> MANA_ALLOY_BOW =
             ITEMS.register("mana_alloy_bow", () -> new BowItem(
-                    new Item.Properties().durability(1200).enchantable(18)));
+                    new Item.Properties().durability(1200)));
 }

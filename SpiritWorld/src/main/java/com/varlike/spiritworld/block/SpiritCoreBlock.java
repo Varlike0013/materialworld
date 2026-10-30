@@ -3,6 +3,8 @@ package com.varlike.spiritworld.block;
 import com.mojang.serialization.MapCodec;
 import com.varlike.spiritworld.client.SpiritCoreMenu;
 import com.varlike.spiritworld.item.ManaCrystalItem;
+import com.varlike.spiritworld.network.ClientboundNetworkTreePacket;
+import com.varlike.spiritworld.skill.ManaType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -17,7 +19,11 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SpiritCoreBlock extends BaseEntityBlock {
 
@@ -93,5 +99,37 @@ public class SpiritCoreBlock extends BaseEntityBlock {
             }
         }
         super.onRemove(state, level, pos, newState, moved);
+    }
+    /** 从核心收集所有节点数据并发送给客户端 */
+    public static void sendNetworkData(ServerPlayer player, SpiritCoreBlockEntity core) {
+        List<ClientboundNetworkTreePacket.NodeData> nodes = new ArrayList<>();
+        List<ClientboundNetworkTreePacket.PullDetail> details = new ArrayList<>();
+
+        // 1. 核心节点
+        nodes.add(new ClientboundNetworkTreePacket.NodeData(
+                core.getBlockPos(), null, "CORE", 1.0, core.getTotalMana(), core.getTotalCapacity(), ManaType.NONE
+        ));
+
+        // 2. 聚集器节点（遍历核心维护的扁平名单）
+        for (var entry : core.getConnectedCollectors().entrySet()) {
+            BlockPos cPos = entry.getKey();
+            double eff = entry.getValue();
+
+            if (player.level().getBlockEntity(cPos) instanceof SpiritCollectorBlockEntity col) {
+                nodes.add(new ClientboundNetworkTreePacket.NodeData(
+                        cPos, core.getBlockPos(), "COLLECTOR", eff, col.getTotalMana(), col.getCapacity(), col.getCurrentType()
+                ));
+            }
+        }
+
+        // 3. 抽水明细
+        for (var entry : core.getLastPullDetails().entrySet()) {
+            details.add(new ClientboundNetworkTreePacket.PullDetail(
+                    entry.getKey(), entry.getValue(), core.getLastPullTypes().get(entry.getKey())
+            ));
+        }
+
+        // 发给客户端
+        PacketDistributor.sendToPlayer(player, new ClientboundNetworkTreePacket(nodes, details));
     }
 }
