@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "A": {
+      "item": "spiritworld:mana_alloy"
+    },
+    "F": {
+      "item": "minecraft:feather"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
+  },
+  "pattern": [
+    "A",
+    "S",
+    "F"
+  ],
+  "result": {
+    "count": 4,
+    "id": "spiritworld:mana_alloy_arrow"
+  }
+}

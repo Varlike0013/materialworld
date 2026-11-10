@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "item": "spiritworld:spirit_collector_advanced"
+    },
+    "D": {
+      "item": "minecraft:diamond"
+    },
+    "E": {
+      "item": "minecraft:emerald"
+    }
+  },
+  "pattern": [
+    "DED",
+    "EAE",
+    "DED"
+  ],
+  "result": {
+    "count": 1,
+    "id": "spiritworld:spirit_collector_ultimate"
+  }
+}

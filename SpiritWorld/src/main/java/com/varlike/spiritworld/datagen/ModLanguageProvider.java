@@ -360,11 +360,6 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("gui.spiritworld.collector.disconnected", "Status: disconnected");
         this.add("gui.spiritworld.core.network_btn", "Network Link");
         this.add("gui.spiritworld.core.back_to_craft", "Back to Craft");
-        this.add("gui.spiritworld.forge.start", "Start");
-        this.add("gui.spiritworld.forge.cancel", "Cancel");
-        this.add("gui.spiritworld.forge.target", "Target: %d / Completed: %d");
-        this.add("gui.spiritworld.forge.target.infinite", "Infinite / Completed: %d");
-        this.add("gui.spiritworld.forge.crafting_other", "Crafting: %s");
         this.add("gui.spiritworld.forge.rebuild", "Rebuild Network");
         this.add("gui.spiritworld.core.network_title", "Mana Network");
         this.add("gui.spiritworld.network.node_detail", "--- Node Details ---");

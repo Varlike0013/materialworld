@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/orientable_with_bottom",
+  "textures": {
+    "bottom": "spiritworld:block/spirit_collector_bottom",
+    "front": "spiritworld:block/spirit_collector_front",
+    "side": "spiritworld:block/spirit_collector_side",
+    "top": "spiritworld:block/spirit_collector_basic"
+  }
+}

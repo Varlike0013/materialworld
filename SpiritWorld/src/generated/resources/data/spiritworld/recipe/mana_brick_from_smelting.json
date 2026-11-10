@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "cookingtime": 100,
+  "experience": 0.3,
+  "ingredient": {
+    "item": "spiritworld:mana_clay"
+  },
+  "result": {
+    "count": 1,
+    "id": "spiritworld:mana_brick"
+  }
+}

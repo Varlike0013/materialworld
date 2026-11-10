@@ -355,11 +355,6 @@ public class ModLanguageProviderZH extends LanguageProvider {
         this.add("gui.spiritworld.collector.disconnected", "状态: 游离 (无连接)");
         this.add("gui.spiritworld.core.network_btn", "魔力链接");
         this.add("gui.spiritworld.core.back_to_craft", "返回合成");
-        this.add("gui.spiritworld.forge.start", "开始");
-        this.add("gui.spiritworld.forge.cancel", "取消");
-        this.add("gui.spiritworld.forge.target", "目标：%d / 已完成：%d");
-        this.add("gui.spiritworld.forge.target.infinite", "无限循环 / 已完成：%d");
-        this.add("gui.spiritworld.forge.crafting_other", "正在炼成：%s");
         this.add("gui.spiritworld.forge.rebuild", "重构全网");
         this.add("gui.spiritworld.core.network_title", "魔力网络拓扑");
         this.add("gui.spiritworld.network.node_detail", "--- 节点详情 ---");

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "A": {
+      "item": "spiritworld:mana_alloy"
+    },
+    "S": {
+      "item": "minecraft:string"
+    }
+  },
+  "pattern": [
+    " AS",
+    "A S",
+    " AS"
+  ],
+  "result": {
+    "count": 1,
+    "id": "spiritworld:mana_alloy_bow"
+  }
+}

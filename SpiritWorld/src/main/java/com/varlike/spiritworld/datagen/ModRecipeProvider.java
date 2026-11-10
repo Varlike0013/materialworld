@@ -71,7 +71,7 @@ public class ModRecipeProvider extends RecipeProvider {
     }
     private void spiritCollector(RecipeOutput output) {
         // Tier 1: 4 铁 + 4 玻璃 + 1 红石
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.SPIRIT_COLLECTOR_BASIC.get())
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SPIRIT_COLLECTOR_BASIC_ITEM.get())
                 .pattern("IGI")
                 .pattern("GRG")
                 .pattern("IGI")
@@ -82,7 +82,7 @@ public class ModRecipeProvider extends RecipeProvider {
                 .save(output);
 
         // Tier 2: Tier1 + 4 金 + 4 青金石
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.SPIRIT_COLLECTOR_ADVANCED.get())
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SPIRIT_COLLECTOR_ADVANCED_ITEM.get())
                 .pattern("GLG")
                 .pattern("LBL")
                 .pattern("GLG")
@@ -93,7 +93,7 @@ public class ModRecipeProvider extends RecipeProvider {
                 .save(output);
 
         // Tier 3: Tier2 + 4 钻石 + 4 绿宝石
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.SPIRIT_COLLECTOR_ULTIMATE.get())
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SPIRIT_COLLECTOR_ULTIMATE_ITEM.get())
                 .pattern("DED")
                 .pattern("EAE")
                 .pattern("DED")
@@ -105,7 +105,7 @@ public class ModRecipeProvider extends RecipeProvider {
     }
     private void manaCrafting(RecipeOutput output) {
         // 4 魔力砖 → 1 魔力方块
-        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.MANA_BLOCK.get())
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModItems.MANA_BLOCK_ITEM.get())
                 .pattern("BB")
                 .pattern("BB")
                 .define('B', ModItems.MANA_BRICK.get())
@@ -113,23 +113,23 @@ public class ModRecipeProvider extends RecipeProvider {
                 .save(output);
 
         // 3 魔力方块 → 6 魔力台阶
-        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.MANA_SLAB.get(), 6)
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModItems.MANA_SLAB_ITEM.get(), 6)
                 .pattern("BBB")
-                .define('B', ModBlocks.MANA_BLOCK.get())
-                .unlockedBy("has_block", has(ModBlocks.MANA_BLOCK.get()))
+                .define('B', ModItems.MANA_BLOCK_ITEM.get())
+                .unlockedBy("has_block", has(ModItems.MANA_BLOCK_ITEM.get()))
                 .save(output);
 
         // 6 魔力方块 → 4 魔力楼梯
-        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.MANA_STAIRS.get(), 4)
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModItems.MANA_STAIRS_ITEM.get(), 4)
                 .pattern("B  ")
                 .pattern("BB ")
                 .pattern("BBB")
-                .define('B', ModBlocks.MANA_BLOCK.get())
-                .unlockedBy("has_block", has(ModBlocks.MANA_BLOCK.get()))
+                .define('B', ModItems.MANA_BLOCK_ITEM.get())
+                .unlockedBy("has_block", has(ModItems.MANA_BLOCK_ITEM.get()))
                 .save(output);
 
         // 魔力核心：4 魔力砖 + 1 末影之眼 + 4 紫水晶碎片
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.SPIRIT_CORE.get())
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SPIRIT_CORE_ITEM.get())
                 .pattern("BAB")
                 .pattern("AEA")
                 .pattern("BAB")

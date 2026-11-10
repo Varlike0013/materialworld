@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/inner_stairs",
+  "textures": {
+    "bottom": "spiritworld:block/mana_bricks",
+    "side": "spiritworld:block/mana_bricks",
+    "top": "spiritworld:block/mana_bricks"
+  }
+}

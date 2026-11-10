@@ -19,34 +19,38 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
-        spiritCollector(ModBlocks.SPIRIT_COLLECTOR_BASIC, "spirit_collector_basic");
+        spiritCollector(ModBlocks.SPIRIT_COLLECTOR_BASIC,    "spirit_collector_basic");
         spiritCollector(ModBlocks.SPIRIT_COLLECTOR_ADVANCED, "spirit_collector_advanced");
         spiritCollector(ModBlocks.SPIRIT_COLLECTOR_ULTIMATE, "spirit_collector_ultimate");
+
         simpleBlockWithItem(ModBlocks.MANA_BLOCK.get(),
-                models().cubeAll("mana_block", ResourceLocation.withDefaultNamespace("block/mana_bricks")));
+                models().cubeAll("mana_block", modLoc("block/mana_bricks")));
+
         slabBlock(ModBlocks.MANA_SLAB.get(),
-                ResourceLocation.withDefaultNamespace("block/mana_bricks"),   // 双台阶模型
-                ResourceLocation.withDefaultNamespace("block/mana_bricks"),   // side
-                ResourceLocation.withDefaultNamespace("block/mana_bricks"),   // bottom
-                ResourceLocation.withDefaultNamespace("block/mana_bricks"));  // top
+                modLoc("block/mana_block"),    // 双台阶模型
+                modLoc("block/mana_bricks"),
+                modLoc("block/mana_bricks"),
+                modLoc("block/mana_bricks"));
+
         stairsBlock(ModBlocks.MANA_STAIRS.get(),
-                ResourceLocation.withDefaultNamespace("block/mana_bricks"));
+                modLoc("block/mana_bricks"));
+
         simpleBlockWithItem(ModBlocks.SPIRIT_CORE.get(),
                 models().orientableWithBottom(
                         "spirit_core",
-                        modLoc("block/spirit_core_side"),    // 东、西、南
-                        modLoc("block/spirit_core_front"),   // 北（正面）
-                        modLoc("block/spirit_core_top"),     // 上
-                        modLoc("block/spirit_core_bottom")   // 下
+                        modLoc("block/spirit_core_side"),
+                        modLoc("block/spirit_core_front"),
+                        modLoc("block/spirit_core_bottom"),  // bottom
+                        modLoc("block/spirit_core_top")      // top
                 ));
     }
     private void spiritCollector(DeferredBlock<SpiritCollectorBlock> block, String topTexture) {
         simpleBlockWithItem(block.get(), models().orientableWithBottom(
                 block.getId().getPath(),
-                modLoc("block/spirit_collector_side"),                                  // 侧面（东/西/南共用）
-                modLoc("block/spirit_collector_front"),                                 // 正面（北）
-                ResourceLocation.withDefaultNamespace("block/" + topTexture),           // 顶面：iron_block / gold_block / diamond_block
-                modLoc("block/spirit_collector_bottom")                                 // 底面
+                modLoc("block/spirit_collector_side"),                          // side
+                modLoc("block/spirit_collector_front"),                         // front
+                modLoc("block/spirit_collector_bottom"),                        // bottom ← 第三个
+                modLoc("block/" + topTexture)    // top    ← 第四个
         ));
     }
 }

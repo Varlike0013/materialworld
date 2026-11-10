@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "spiritworld:block/mana_slab"
+    },
+    "type=double": {
+      "model": "spiritworld:block/mana_block"
+    },
+    "type=top": {
+      "model": "spiritworld:block/mana_slab_top"
+    }
+  }
+}

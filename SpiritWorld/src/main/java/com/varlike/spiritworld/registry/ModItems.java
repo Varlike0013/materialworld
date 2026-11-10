@@ -120,4 +120,18 @@ public class ModItems {
     public static final DeferredItem<BowItem> MANA_ALLOY_BOW =
             ITEMS.register("mana_alloy_bow", () -> new BowItem(
                     new Item.Properties().durability(1200)));
+    public static final DeferredItem<BlockItem> SPIRIT_COLLECTOR_BASIC_ITEM =
+            ITEMS.registerSimpleBlockItem(ModBlocks.SPIRIT_COLLECTOR_BASIC);
+    public static final DeferredItem<BlockItem> SPIRIT_COLLECTOR_ADVANCED_ITEM =
+            ITEMS.registerSimpleBlockItem(ModBlocks.SPIRIT_COLLECTOR_ADVANCED);
+    public static final DeferredItem<BlockItem> SPIRIT_COLLECTOR_ULTIMATE_ITEM =
+            ITEMS.registerSimpleBlockItem(ModBlocks.SPIRIT_COLLECTOR_ULTIMATE);
+    public static final DeferredItem<BlockItem> MANA_BLOCK_ITEM =
+            ITEMS.registerSimpleBlockItem(ModBlocks.MANA_BLOCK);
+    public static final DeferredItem<BlockItem> MANA_SLAB_ITEM =
+            ITEMS.registerSimpleBlockItem(ModBlocks.MANA_SLAB);
+    public static final DeferredItem<BlockItem> MANA_STAIRS_ITEM =
+            ITEMS.registerSimpleBlockItem(ModBlocks.MANA_STAIRS);
+    public static final DeferredItem<BlockItem> SPIRIT_CORE_ITEM =
+            ITEMS.registerSimpleBlockItem(ModBlocks.SPIRIT_CORE);
 }

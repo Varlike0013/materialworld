@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "spiritworld:block/spirit_core"
+    }
+  }
+}

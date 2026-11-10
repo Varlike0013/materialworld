@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "spiritworld:spirit_collector_basic"
+    },
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "L": {
+      "item": "minecraft:lapis_lazuli"
+    }
+  },
+  "pattern": [
+    "GLG",
+    "LBL",
+    "GLG"
+  ],
+  "result": {
+    "count": 1,
+    "id": "spiritworld:spirit_collector_advanced"
+  }
+}
