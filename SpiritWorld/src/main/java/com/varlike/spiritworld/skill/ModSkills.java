@@ -49,6 +49,7 @@ public class ModSkills {
     public static final ResourceLocation SPIRIT_MAINTENANCE_ID  = id("spirit_maintenance");
     public static final ResourceLocation SPIRIT_FLIGHT_ID       = id("spirit_flight");
     public static final ResourceLocation SPIRIT_SCAN_ID         = id("spirit_scan");
+    public static final ResourceLocation POCKET_DIMENSION_ID = id("pocket_dimension");
 
     private static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(SpiritWorld.MOD_ID, path);
@@ -495,6 +496,38 @@ public class ModSkills {
                         list.add(Component.translatable("skill.tooltip.spirit_flight.next",
                                         String.format("%.1f", next))
                                 .withStyle(ChatFormatting.DARK_GRAY));
+                    }
+                    return list;
+                })
+                .build());
+        // ==================== 口袋维度 ====================
+        SkillTree.register(SkillNode.builder(POCKET_DIMENSION_ID)
+                .active()                         // 主动技能，需装备后按 V 使用
+                .grid(5, 5)                       // 位于右侧空闲区域
+                .maxLevel(7)                      // 满级 7 级
+                .cost(30).costIncrement(20)       // 1级30点，后续每级+20
+                .requiredVisionLevel(1)
+                .icon("域")                       // 技能图标
+                .tooltipExtra(node -> {
+                    int lv = ClientSpiritData.getSkillLevel(node.getId());
+                    if (lv <= 0) return List.of();
+
+                    int xzSize = SkillValues.POCKET_SIZE_XZ[lv];
+                    int ySize = SkillValues.POCKET_SIZE_Y[lv];
+
+                    List<Component> list = new ArrayList<>();
+                    // 显示当前等级面积
+                    list.add(Component.translatable("skill.tooltip.pocket_dimension.size",
+                                    xzSize, xzSize, ySize)
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+
+                    // 显示下一级面积预告
+                    if (lv < node.getMaxLevel()) {
+                        int nextXZ = SkillValues.POCKET_SIZE_XZ[lv + 1];
+                        int nextY = SkillValues.POCKET_SIZE_Y[lv + 1];
+                        list.add(Component.translatable("skill.tooltip.pocket_dimension.next",
+                                        nextXZ, nextXZ, nextY)
+                                .withStyle(ChatFormatting.GRAY));
                     }
                     return list;
                 })

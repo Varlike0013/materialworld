@@ -297,4 +297,11 @@ public final class SkillValues {
             SCAN_ANCIENT_DEBRIS,
             SCAN_OTHER
     );
+    // ==================== 口袋维度 ====================
+    /** 1-7 级对应的 X/Z 轴宽度（16, 32, 64...） */
+    public static final int[] POCKET_SIZE_XZ = {0, 16, 32, 64, 96, 128, 192, 256};
+    /** 1-7 级对应的 Y 轴高度（16, 16, 32...） */
+    public static final int[] POCKET_SIZE_Y = {0, 16, 16, 32, 32, 64, 96, 128};
+    /** 每次进出维度的精神力消耗 */
+    public static final long POCKET_SPIRIT_COST = 20L;
 }

@@ -377,5 +377,27 @@ public class ModLanguageProvider extends LanguageProvider {
         this.add("gui.spiritworld.network.type", "Type: %s");
         this.add("gui.spiritworld.network.core_node", "Core");
         this.add("gui.spiritworld.network.collector_node", "Collector");
+        // ===== Pocket Dimension =====
+        this.add("skill.spiritworld.pocket_dimension", "Spirit Pocket Dimension");
+        this.add("skill.spiritworld.pocket_dimension.desc", "Creates your own personal dimension. Right-click to enter. Press V again to leave. Upgrading increases the area size.");
+        this.add("skill.tooltip.pocket_dimension.size", "Current Space: %d x %d x %d");
+        this.add("skill.tooltip.pocket_dimension.next", "Next Level: %d x %d x %d");
+        this.add("message.spiritworld.pocket_dimension.no_spirit", "Not enough spirit, need %d to teleport.");
+        this.add("message.spiritworld.pocket_dimension.full", "The pocket dimension is currently full. Cannot assign new land.");
+        this.add("message.spiritworld.pocket_dimension.returned", "Returned to the Overworld.");
+        this.add("message.spiritworld.pocket_dimension.entered", "Welcome to your pocket dimension.");
+        // ===== Pocket Dimension Visit =====
+        this.add("message.spiritworld.pocket.visit.already_sent", "You have already sent a request. Please wait for a response!");
+        this.add("message.spiritworld.pocket.visit.sent", "Sent a domain visit request to %s.");
+        this.add("message.spiritworld.pocket.visit.request", "Player %s wants to visit your domain!");
+        this.add("message.spiritworld.pocket.visit.accept_btn", "[ Accept ]");
+        this.add("message.spiritworld.pocket.visit.accept_hover", "Click to accept and teleport");
+        this.add("message.spiritworld.pocket.visit.deny_btn", "[ Deny ]");
+        this.add("message.spiritworld.pocket.visit.denied", "%s denied your visit request.");
+        this.add("message.spiritworld.pocket.visit.self", "You cannot visit your own domain.");
+        this.add("message.spiritworld.pocket.visit.expired", "The request does not exist or has expired.");
+        this.add("message.spiritworld.pocket.visit.no_domain", "You haven't assigned a domain yet!");
+        this.add("message.spiritworld.pocket.visit.entered", "You entered %s's domain.");
+        this.add("message.spiritworld.pocket.visit.guest_entered", "%s entered your domain.");
     }
 }

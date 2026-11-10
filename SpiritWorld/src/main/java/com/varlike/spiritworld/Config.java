@@ -46,9 +46,10 @@ public class Config {
             .defineInRange("emcConversionBaseInterval", 20, 2, 200);
     public static final ModConfigSpec.DoubleValue SPIRIT_FLIGHT_COST_MULTIPLIER = BUILDER
             .defineInRange("spiritFlightCostMultiplier", 1.0, 0.1, 10.0);
-
     public static final ModConfigSpec.IntValue SCAN_MAX_ICONS = BUILDER
             .defineInRange("scanMaxIcons", 32, 1, 256);
+    public static final ModConfigSpec.IntValue POCKET_MAX_ACTIVE_PLAYERS  = BUILDER
+            .defineInRange("pocketDimensionMaxPlayers", 8, 1, 32);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
@@ -62,6 +63,7 @@ public class Config {
     public static long emcConversionEmcCost = 100L;
     public static int emcConversionBaseInterval = 20;
     public static double spiritFlightCostMultiplier = 1.0;
+    public static int pocketDimensionMaxActivePlayers = 8;
     /** 扫描单次最多显示的图标数（超过按距离最近截断） */
     public static int scanMaxIcons = 32;
 
@@ -78,6 +80,7 @@ public class Config {
         emcConversionBaseInterval = EMC_CONVERSION_BASE_INTERVAL.get();
         spiritFlightCostMultiplier = SPIRIT_FLIGHT_COST_MULTIPLIER.get();
         scanMaxIcons = SCAN_MAX_ICONS.get();
+        pocketDimensionMaxActivePlayers  = POCKET_MAX_ACTIVE_PLAYERS.get();
     }
     @SubscribeEvent
     static void onReload(ModConfigEvent.Reloading event) {

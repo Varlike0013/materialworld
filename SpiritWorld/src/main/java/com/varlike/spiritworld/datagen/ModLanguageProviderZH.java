@@ -372,5 +372,27 @@ public class ModLanguageProviderZH extends LanguageProvider {
         this.add("gui.spiritworld.network.type", "魔力属性：%s");
         this.add("gui.spiritworld.network.core_node", "核心");
         this.add("gui.spiritworld.network.collector_node", "聚集器");
+        // ===== 口袋维度 =====
+        this.add("skill.spiritworld.pocket_dimension", "精神口袋维度");
+        this.add("skill.spiritworld.pocket_dimension.desc", "创造一个属于你的私人空间。装备后按 V 键进入，再次按下返回主世界。升级可扩大空间面积。");
+        this.add("skill.tooltip.pocket_dimension.size", "当前空间：%d x %d x %d");
+        this.add("skill.tooltip.pocket_dimension.next", "下一级空间：%d x %d x %d");
+        this.add("message.spiritworld.pocket_dimension.no_spirit", "精神力不足，传送需要 %d 点。");
+        this.add("message.spiritworld.pocket_dimension.full", "当前口袋维度领地已满，无法分配新的空间。");
+        this.add("message.spiritworld.pocket_dimension.returned", "已返回主世界。");
+        this.add("message.spiritworld.pocket_dimension.entered", "欢迎回到你的口袋维度。");
+        // ===== 口袋维度访问 =====
+        this.add("message.spiritworld.pocket.visit.already_sent", "你已经发送过请求了，请等待对方回应！");
+        this.add("message.spiritworld.pocket.visit.sent", "已向 %s 发送了领地访问请求。");
+        this.add("message.spiritworld.pocket.visit.request", "玩家 %s 想访问你的领地！");
+        this.add("message.spiritworld.pocket.visit.accept_btn", "[ 同意 ]");
+        this.add("message.spiritworld.pocket.visit.accept_hover", "点击同意传送");
+        this.add("message.spiritworld.pocket.visit.deny_btn", "[ 拒绝 ]");
+        this.add("message.spiritworld.pocket.visit.denied", "%s 拒绝了你的访问请求。");
+        this.add("message.spiritworld.pocket.visit.self", "你不能访问自己的领地。");
+        this.add("message.spiritworld.pocket.visit.expired", "请求不存在或已过期。");
+        this.add("message.spiritworld.pocket.visit.no_domain", "你还没有分配领地！");
+        this.add("message.spiritworld.pocket.visit.entered", "你已进入 %s 的领地。");
+        this.add("message.spiritworld.pocket.visit.guest_entered", "%s 进入了你的领地。");
     }
 }

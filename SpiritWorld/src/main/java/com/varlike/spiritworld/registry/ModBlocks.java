@@ -94,6 +94,14 @@ public class ModBlocks {
                             .strength(5.0f)
                             .requiresCorrectToolForDrops(),
                     3));
+    public static final DeferredBlock<MagicBarrierBlock> MAGIC_BARRIER =
+            BLOCKS.register("magic_barrier", () -> new MagicBarrierBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(-1.0F, 3600000.0F) // 无法破坏
+                            .noOcclusion()               // 不遮挡光线
+                            .noLootTable()               // 无掉落物
+                            .isValidSpawn((state, level, pos, entity) -> false) // 禁止生物生成
+            ));
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);
     }

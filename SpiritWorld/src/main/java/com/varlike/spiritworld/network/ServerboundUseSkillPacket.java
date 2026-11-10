@@ -70,6 +70,17 @@ public record ServerboundUseSkillPacket() implements CustomPacketPayload {
                 executed = handleSpiritRepair(player, data);
             } else if (id.equals(ModSkills.SPIRIT_SCAN_ID)) {
                 executed = SpiritScanHandler.handleSpiritScan(player, data);
+            } else if (id.equals(ModSkills.POCKET_DIMENSION_ID)) {
+                long cost = SkillValues.POCKET_SPIRIT_COST;
+                if (data.getSpirit() < cost) {
+                    player.displayClientMessage(Component.translatable("message.spiritworld.pocket_dimension.no_spirit", cost).withStyle(ChatFormatting.RED), true);
+                    executed = false;
+                } else {
+                    data.consumeSpirit(cost);
+                    NetworkHandler.syncTo(player);
+                    com.varlike.spiritworld.event.PocketDimensionHandler.toggleDimension(player, data);
+                    executed = true;
+                }
             }
 
             // ===== 成功才进入冷却 =====

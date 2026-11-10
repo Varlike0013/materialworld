@@ -67,7 +67,18 @@ public class PlayerSpirit {
     private transient boolean dirty = false;
     /** 是否已经和存档对接过（登录握手阶段禁止把默认值写回 NBT） */
     private transient boolean persistenceReady = false;
-
+    // ===== 口袋维度位置 =====
+    private double pocketX = 0.5;
+    private double pocketY = 5.0;
+    private double pocketZ = 0.5;
+    private float pocketYaw = 0.0f;
+    private float pocketPitch = 0.0f;
+    // ===== 主世界返回点 =====
+    private double returnX = 0.0;
+    private double returnY = 0.0;
+    private double returnZ = 0.0;
+    private String returnDim = "minecraft:overworld";
+    private boolean hasReturnPoint = false;
     // ==================== 1. 精神力核心 ====================
 
     public long getSpirit() {
@@ -476,6 +487,37 @@ public class PlayerSpirit {
         if (!scanOres.remove(oreId)) scanOres.add(oreId);
     }
 
+    // 领地维度
+    public double getPocketX() { return pocketX; }
+    public double getPocketY() { return pocketY; }
+    public double getPocketZ() { return pocketZ; }
+    public float getPocketYaw() { return pocketYaw; }
+    public float getPocketPitch() { return pocketPitch; }
+
+    public void setPocketPosition(double x, double y, double z, float yaw, float pitch) {
+        this.pocketX = x;
+        this.pocketY = y;
+        this.pocketZ = z;
+        this.pocketYaw = yaw;
+        this.pocketPitch = pitch;
+        markDirty();
+    }
+    public double getReturnX() { return returnX; }
+    public double getReturnY() { return returnY; }
+    public double getReturnZ() { return returnZ; }
+    public String getReturnDim() { return returnDim; }
+    public boolean hasReturnPoint() { return hasReturnPoint; }
+
+    public void setReturnPoint(double x, double y, double z, String dim) {
+        this.returnX = x; this.returnY = y; this.returnZ = z; this.returnDim = dim;
+        this.hasReturnPoint = true;
+        markDirty();
+    }
+
+    public void clearReturnPoint() {
+        this.hasReturnPoint = false;
+        markDirty();
+    }
     // ==================== 10. 初始化 / 持久化 ====================
 
     public boolean isInitialized() {
@@ -515,6 +557,16 @@ public class PlayerSpirit {
 
         // flags（flightCostAccum / flightGliding / skillCooldownEnds 是 transient，不复制）
         this.initialized = other.initialized;
+        this.pocketX = other.pocketX;
+        this.pocketY = other.pocketY;
+        this.pocketZ = other.pocketZ;
+        this.pocketYaw = other.pocketYaw;
+        this.pocketPitch = other.pocketPitch;
+        this.returnX = other.returnX;
+        this.returnY = other.returnY;
+        this.returnZ = other.returnZ;
+        this.returnDim = other.returnDim;
+        this.hasReturnPoint = other.hasReturnPoint;
 
         markDirty();
     }
@@ -557,6 +609,16 @@ public class PlayerSpirit {
             scanList.add(StringTag.valueOf(id.toString()));
         }
         tag.put("scanOres", scanList);
+        tag.putDouble("PocketX", pocketX);
+        tag.putDouble("PocketY", pocketY);
+        tag.putDouble("PocketZ", pocketZ);
+        tag.putFloat("PocketYaw", pocketYaw);
+        tag.putFloat("PocketPitch", pocketPitch);
+        tag.putDouble("ReturnX", returnX);
+        tag.putDouble("ReturnY", returnY);
+        tag.putDouble("ReturnZ", returnZ);
+        tag.putString("ReturnDim", returnDim);
+        tag.putBoolean("HasReturnPoint", hasReturnPoint);
 
         return tag;
     }
@@ -617,6 +679,16 @@ public class PlayerSpirit {
 
         // 上限缩小时 clamp
         if (spirit > getEffectiveMaxSpirit()) spirit = getEffectiveMaxSpirit();
+        this.pocketX = tag.getDouble("PocketX");
+        this.pocketY = tag.getDouble("PocketY");
+        this.pocketZ = tag.getDouble("PocketZ");
+        this.pocketYaw = tag.getFloat("PocketYaw");
+        this.pocketPitch = tag.getFloat("PocketPitch");
+        returnX = tag.getDouble("ReturnX");
+        returnY = tag.getDouble("ReturnY");
+        returnZ = tag.getDouble("ReturnZ");
+        returnDim = tag.getString("ReturnDim");
+        hasReturnPoint = tag.getBoolean("HasReturnPoint");
 
         initialized = true;
         persistenceReady = true;
