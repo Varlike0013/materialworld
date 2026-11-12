@@ -25,15 +25,15 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         simpleBlockWithItem(ModBlocks.MANA_BLOCK.get(),
                 models().cubeAll("mana_block", modLoc("block/mana_bricks")));
-
         slabBlock(ModBlocks.MANA_SLAB.get(),
                 modLoc("block/mana_block"),    // 双台阶模型
                 modLoc("block/mana_bricks"),
                 modLoc("block/mana_bricks"),
                 modLoc("block/mana_bricks"));
-
+        itemModels().withExistingParent(ModBlocks.MANA_SLAB.getId().getPath(), modLoc("block/mana_slab"));
         stairsBlock(ModBlocks.MANA_STAIRS.get(),
                 modLoc("block/mana_bricks"));
+        itemModels().withExistingParent(ModBlocks.MANA_STAIRS.getId().getPath(), modLoc("block/mana_stairs"));
 
         simpleBlockWithItem(ModBlocks.SPIRIT_CORE.get(),
                 models().orientableWithBottom(

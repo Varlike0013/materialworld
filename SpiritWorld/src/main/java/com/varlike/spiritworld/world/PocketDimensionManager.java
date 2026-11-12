@@ -74,14 +74,18 @@ public class PocketDimensionManager {
         return center;
     }
 
-    /** 螺旋矩阵寻找空位（需接收已占用的 Set） */
+    /** 螺旋矩阵寻找空位 */
     private static BlockPos findNextSpiralCenter(Set<BlockPos> occupiedCenters) {
-        if (occupiedCenters.isEmpty()) return BlockPos.ZERO;
+        int yOffset = com.varlike.spiritworld.Config.pocketDimensionYOffset;
+
+        if (occupiedCenters.isEmpty()) {
+            return new BlockPos(0, yOffset, 0);
+        }
 
         int x = 0, z = 0;
         int dx = 0, dz = -1;
         for (int i = 0; i < 1024; i++) {
-            BlockPos center = new BlockPos(x * SPACING, 0, z * SPACING);
+            BlockPos center = new BlockPos(x * SPACING, yOffset, z * SPACING);
             if (!occupiedCenters.contains(center)) {
                 return center;
             }
@@ -93,7 +97,7 @@ public class PocketDimensionManager {
             x += dx;
             z += dz;
         }
-        return BlockPos.ZERO;
+        return new BlockPos(0, yOffset, 0);
     }
 
     // ==================== 边界生成队列 ====================

@@ -62,7 +62,6 @@ public class PocketGenerationTask {
                     if (dirtIterator != null && dirtIterator.hasNext()) {
                         BlockPos pos = dirtIterator.next();
                         if (level.getBlockState(pos).isAir()) {
-                            // 判断是不是最顶层的草方块
                             int dy = pos.getY() - center.getY();
                             BlockState state = (dy == 4) ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.DIRT.defaultBlockState();
                             level.setBlockAndUpdate(pos, state);
@@ -166,40 +165,52 @@ public class PocketGenerationTask {
 
     /** 只遍历新旧区域差集的环带，跳过老区域 */
     private static class RingIterator implements Iterator<BlockPos> {
-        private final BoundingBox box;
         private final BlockPos center;
         private final int oldR;
-        private final BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        private final int minX, maxX, minY, maxY, minZ, maxZ;
         private int x, y, z;
-        private boolean hasNext = true;
+        private final BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
 
         public RingIterator(BoundingBox box, BlockPos center, int oldR) {
-            this.box = box; this.center = center; this.oldR = oldR;
-            this.x = box.minX(); this.y = box.minY(); this.z = box.minZ();
+            this.center = center;
+            this.oldR = oldR;
+            this.minX = box.minX(); this.maxX = box.maxX();
+            this.minY = box.minY(); this.maxY = box.maxY();
+            this.minZ = box.minZ(); this.maxZ = box.maxZ();
+            this.x = minX; this.y = minY; this.z = minZ;
         }
-
-        @Override public boolean hasNext() { return hasNext; }
-
-        @Override public BlockPos next() {
-            mutable.set(x, y, z);
-            advance();
-            return mutable.immutable();
+        @Override
+        public boolean hasNext() {
+            return x <= maxX;
         }
-
-        private void advance() {
-            z++;
-            if (z > box.maxZ()) { z = box.minZ(); x++; }
-            if (x > box.maxX()) { hasNext = false; return; }
-
-            // 跳过老区域
-            if (oldR > 0) {
-                int dx = x - center.getX();
-                int dz = z - center.getZ();
-                if (dx >= -oldR && dx < oldR && dz >= -oldR && dz < oldR) {
-                    z = center.getZ() + oldR - 1; // 跳过中间的 Z
-                    advance();
+        @Override
+        public BlockPos next() {
+            while (hasNext()) {
+                mutable.set(x, y, z);
+                // 推进坐标
+                z++;
+                if (z > maxZ) {
+                    z = minZ;
+                    x++;
+                    if (x > maxX) {
+                        x = minX;
+                        y++;
+                        if (y > maxY) {
+                            x = maxX + 1; // 结束标志
+                        }
+                    }
                 }
+                // 跳过老区域
+                if (oldR > 0) {
+                    int dx = mutable.getX() - center.getX();
+                    int dz = mutable.getZ() - center.getZ();
+                    if (dx >= -oldR && dx < oldR && dz >= -oldR && dz < oldR) {
+                        continue;
+                    }
+                }
+                return mutable.immutable();
             }
+            return BlockPos.ZERO; // 不会执行到这里
         }
     }
 }

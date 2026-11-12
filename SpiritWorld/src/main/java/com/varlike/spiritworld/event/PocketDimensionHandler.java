@@ -55,23 +55,24 @@ public class PocketDimensionHandler {
         if (pocketLevel == null) return;
 
         // 快速生成脚下 9x9 安全站台（瞬间完成，防止掉虚空）
-        int radius = SkillValues.POCKET_SIZE_XZ[skillLevel] / 2;
-        int safeRadius = Math.min(radius, 4);
-        for (int dx = -safeRadius; dx <= safeRadius; dx++) {
-            for (int dz = -safeRadius; dz <= safeRadius; dz++) {
-                BlockPos pos = center.offset(dx, 4, dz);
-                if (pocketLevel.getBlockState(pos).isAir()) {
-                    pocketLevel.setBlockAndUpdate(pos, Blocks.GRASS_BLOCK.defaultBlockState());
-                }
-                for (int dy = 0; dy <= 3; dy++) {
-                    BlockPos dp = center.offset(dx, dy, dz);
-                    if (pocketLevel.getBlockState(dp).isAir()) {
-                        pocketLevel.setBlockAndUpdate(dp, Blocks.DIRT.defaultBlockState());
+        if (generatedLevel == 0) {
+            int safeRadius = 4;
+            for (int dx = -safeRadius; dx <= safeRadius; dx++) {
+                for (int dz = -safeRadius; dz <= safeRadius; dz++) {
+                    for (int dy = 0; dy <= 3; dy++) {
+                        BlockPos dp = center.offset(dx, dy, dz);
+                        if (pocketLevel.getBlockState(dp).isAir()) {
+                            pocketLevel.setBlockAndUpdate(dp, Blocks.DIRT.defaultBlockState());
+                        }
                     }
-                }
-                BlockPos barrier = center.offset(dx, -1, dz);
-                if (pocketLevel.getBlockState(barrier).isAir()) {
-                    pocketLevel.setBlockAndUpdate(barrier, Blocks.BARRIER.defaultBlockState());
+                    BlockPos grassPos = center.offset(dx, 4, dz);
+                    if (pocketLevel.getBlockState(grassPos).isAir()) {
+                        pocketLevel.setBlockAndUpdate(grassPos, Blocks.GRASS_BLOCK.defaultBlockState());
+                    }
+                    BlockPos barrier = center.offset(dx, -1, dz);
+                    if (pocketLevel.getBlockState(barrier).isAir()) {
+                        pocketLevel.setBlockAndUpdate(barrier, Blocks.BARRIER.defaultBlockState());
+                    }
                 }
             }
         }
@@ -83,9 +84,19 @@ public class PocketDimensionHandler {
         }
 
         // 传送：如果是第一次进入用中心点，否则用记忆位置
-        double x = data.getPocketX() == 0.5 ? center.getX() + 0.5 : data.getPocketX();
-        double y = data.getPocketY() == 5.0 ? 5.0 : data.getPocketY();
-        double z = data.getPocketZ() == 0.5 ? center.getZ() + 0.5 : data.getPocketZ();
+        double x = data.getPocketX();
+        double y = data.getPocketY();
+        double z = data.getPocketZ();
+
+        // 如果是首次进入，默认坐标是 CENTE + 0.5, 5.0, 0.5
+        if (generatedLevel == 0 || data.getPocketY() < center.getY()) {
+            x = center.getX() + 0.5;
+            y = center.getY() + 5.0;
+            z = center.getZ() + 0.5;
+        }
+
+        // 确保玩家绝不会卡在 Y=4 及以下的方块里
+        if (y <= center.getY() + 4.5) {  y = center.getY() + 5.0;}
 
         if (y < -10) { x = center.getX() + 0.5; y = 5.0; z = center.getZ() + 0.5; }
 
@@ -122,9 +133,13 @@ public class PocketDimensionHandler {
                 event.setCanceled(true);
                 PlayerSpirit data = player.getCapability(ModCapabilities.PLAYER_SPIRIT, null);
                 if (data != null) {
-                    // 防止在虚空摔死记录到坑人坐标
-                    if (player.getY() < -10) data.setPocketPosition(0.5, 5.0, 0.5, 0, 0);
-                    else data.setPocketPosition(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
+                    BlockPos center = PocketDimensionManager.getOrAssignCenter(player.getUUID(), player.server);
+                    // 如果掉得比领地基底还要低 10 格，判定为掉入虚空
+                    if (center != null && player.getY() < center.getY() - 10) {
+                        data.setPocketPosition(0.5, 5.0, 0.5, 0, 0); // 重置，下次会传送到中心
+                    } else {
+                        data.setPocketPosition(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
+                    }
                 }
                 teleportOut(player, data);
                 player.hurt(player.damageSources().genericKill(), Float.MAX_VALUE);

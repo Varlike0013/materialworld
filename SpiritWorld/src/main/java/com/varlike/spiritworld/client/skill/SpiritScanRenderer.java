@@ -6,11 +6,11 @@ import com.varlike.spiritworld.SpiritWorld;
 import com.varlike.spiritworld.client.ClientScanData;
 import com.varlike.spiritworld.network.ClientboundScanResultPacket.OreIcon;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -20,10 +20,6 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 import java.util.List;
 
-/**
- * 扫描图标的世界空间渲染。
- * 穿墙可见，5~13 秒后由 ClientScanData 自动过期。
- */
 @EventBusSubscriber(modid = SpiritWorld.MOD_ID, value = Dist.CLIENT)
 public final class SpiritScanRenderer {
 
@@ -31,7 +27,8 @@ public final class SpiritScanRenderer {
 
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
+        // 1. 使用 AFTER_LEVEL 保证在所有方块和实体之后渲染，避免被地平线或水切掉
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
@@ -39,12 +36,15 @@ public final class SpiritScanRenderer {
         List<OreIcon> icons = ClientScanData.getActiveIcons();
         if (icons.isEmpty()) return;
 
-        PoseStack pose = event.getPoseStack();
+        PoseStack poseStack = event.getPoseStack();
         Vec3 camPos = event.getCamera().getPosition();
-        MultiBufferSource.BufferSource buffer = mc.renderBuffers().bufferSource();
+        MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
         ItemRenderer itemRenderer = mc.getItemRenderer();
 
-        // 穿墙：关闭深度测试
+        // 初始化 2D 绘图工具
+        GuiGraphics guiGraphics = new GuiGraphics(mc, bufferSource);
+
+        //  核心穿透逻辑：彻底关闭深度测试，确保 UI 无视任何方块遮挡
         RenderSystem.disableDepthTest();
         RenderSystem.depthMask(false);
         RenderSystem.enableBlend();
@@ -54,47 +54,64 @@ public final class SpiritScanRenderer {
                 double dx = icon.x() - camPos.x;
                 double dy = icon.y() - camPos.y;
                 double dz = icon.z() - camPos.z;
+
+                // 计算真实距离
                 double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-                pose.pushPose();
-                pose.translate(dx, dy, dz);
-                pose.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
+                // 超过 XXX 米的图标不渲染，防止太乱
+                if (dist > 256) continue;
 
-                // 距离越远越小，0.012~0.028 之间
-                float scale = (float) Math.max(0.012, Math.min(0.028, 2.5 / Math.max(1.0, dist)));
-                pose.scale(-scale, -scale, scale);
+                poseStack.pushPose();
+                // 平移到世界坐标
+                poseStack.translate(dx, dy, dz);
+                // 面向相机 (Billboard 广告牌效果)
+                poseStack.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
 
-                // ===== 图标（物品）=====
-                pose.pushPose();
-                pose.translate(-8f, -24f, 0f);
-                pose.scale(16f, 16f, 16f);
+                // 动态缩放：距离越远，图标和文字越小
+                float scale = (float) Math.clamp(2.5 / Math.max(1.0, dist), 0.02, 0.05);
+                poseStack.scale(-scale, -scale, scale);
+
+                // ===== 1. 渲染物品图标 =====
+                poseStack.pushPose();
+                poseStack.translate(-8f, -22f, 0f); // 向上偏移，给下方文字留空间
+                poseStack.scale(16f, 16f, 16f);     // 放大到正常 16x16 大小
                 itemRenderer.renderStatic(
                         icon.iconItem().getDefaultInstance(),
                         ItemDisplayContext.GUI,
-                        0xF000F0,
+                        LightTexture.FULL_BRIGHT, // 确保图标在最暗的地方也能亮
                         OverlayTexture.NO_OVERLAY,
-                        pose,
-                        buffer,
+                        poseStack,
+                        bufferSource,
                         mc.level,
-                        0);
-                pose.popPose();
+                        0
+                );
+                poseStack.popPose();
 
-                // ===== 文字：名称 + 距离 + 数量 =====
-                String label = icon.iconItem().getDescription().getString()
-                        + " -" + (int) dist + "m";
-                if (icon.count() > 1) label += " ×" + icon.count();
-                Component text = Component.literal(label);
+                // ===== 2. 渲染黑灰色半透明背景和距离文字 =====
+                String label = String.format("%.1f米", dist);
+                int textWidth = mc.font.width(label);
+                int bgWidth = Math.max(24, textWidth + 8);
+                int bgHeight = 13;
+                int bgX = -bgWidth / 2;
+                int bgY = 2;
 
-                float textX = -mc.font.width(text) / 2f;
-                float textY = 0f;
-                mc.font.drawInBatch(text, textX, textY, 0xFFFFFFFF, false,
-                        pose.last().pose(), buffer, Font.DisplayMode.SEE_THROUGH,
-                        0x80000000, 0xF000F0);
+                // 魔法操作：将当前的 3D 矩阵覆盖给 guiGraphics 的 2D 矩阵
+                guiGraphics.pose().pushPose();
+                guiGraphics.pose().last().pose().set(poseStack.last().pose());
 
-                pose.popPose();
+                // 绘制黑灰色半透明背景 (0xAA1E1E1E：A是透明度，后面是RGB)
+                guiGraphics.fill(bgX, bgY, bgX + bgWidth, bgY + bgHeight, 0xAA1E1E1E);
+
+                // 绘制白色距离文字
+                guiGraphics.drawString(mc.font, label, -textWidth / 2, bgY + 2, 0xFFFFFFFF, true);
+
+                guiGraphics.pose().popPose();
+
+                poseStack.popPose();
             }
         } finally {
-            buffer.endBatch();
+            // 3. 恢复渲染状态，防止污染游戏后续的渲染
+            bufferSource.endBatch();
             RenderSystem.disableBlend();
             RenderSystem.depthMask(true);
             RenderSystem.enableDepthTest();
