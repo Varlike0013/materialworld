@@ -96,10 +96,10 @@ public class SpiritCoreBlock extends BaseEntityBlock {
         return ItemInteractionResult.CONSUME;
     }
 
-    /** 空手 shift+右键取出水晶 */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
+        // 处理 Shift+右键取出水晶
         if (player.isShiftKeyDown()) {
             if (level.isClientSide) return InteractionResult.SUCCESS;
             if (!(level.getBlockEntity(pos) instanceof SpiritCoreBlockEntity be)) return InteractionResult.PASS;
@@ -110,8 +110,21 @@ public class SpiritCoreBlock extends BaseEntityBlock {
             return InteractionResult.CONSUME;
         }
 
-        // 普通空手右键：打开 UI（现有逻辑）
-        return super.useWithoutItem(state, level, pos, player, hit);
+        // 普通右键：打开 UI
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS; // 客户端返回成功，防止挥手动画卡住
+        }
+
+        // 服务端打开 Menu
+        if (level.getBlockEntity(pos) instanceof SpiritCoreBlockEntity core) {
+            player.openMenu(new SimpleMenuProvider(
+                    (id, inv, p) -> new SpiritCoreMenu(id, inv, core),
+                    Component.translatable("block.spiritworld.spirit_core")
+            ), buf -> buf.writeBlockPos(pos)); // ⚠️ 必须传入坐标，否则客户端会崩溃
+            return InteractionResult.CONSUME;
+        }
+
+        return InteractionResult.PASS;
     }
 
     @Override
