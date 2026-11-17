@@ -1,0 +1,18 @@
+{
+  "attribute.oathbreaker.ability_haste": "Ability Haste",
+  "attribute.oathbreaker.ability_power": "Ability Power",
+  "attribute.oathbreaker.armor_penetration": "Armor Penetration",
+  "attribute.oathbreaker.armor_penetration_percent": "Armor Penetration %",
+  "attribute.oathbreaker.crit_chance": "Critical Chance",
+  "attribute.oathbreaker.crit_damage": "Critical Damage",
+  "attribute.oathbreaker.health_regeneration": "Health Regeneration",
+  "attribute.oathbreaker.lifesteal": "Lifesteal",
+  "attribute.oathbreaker.magic_penetration": "Magic Penetration",
+  "attribute.oathbreaker.magic_penetration_percent": "Magic Penetration %",
+  "attribute.oathbreaker.magic_resist": "Magic Resist",
+  "attribute.oathbreaker.mana_regeneration": "Mana Regeneration",
+  "attribute.oathbreaker.max_mana": "Max Mana",
+  "attribute.oathbreaker.omnivamp": "Omnivamp",
+  "attribute.oathbreaker.ranged_damage": "Ranged Damage",
+  "death.attack.oathbreaker_weapon": "%1$s was slain by %2$s"
+}

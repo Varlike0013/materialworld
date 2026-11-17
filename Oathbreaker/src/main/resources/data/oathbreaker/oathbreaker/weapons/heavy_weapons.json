@@ -1,0 +1,7 @@
+{
+  "tag": "oathbreaker:weapon_heavy",
+  "weight": 8,
+  "pool_tags": [
+    "heavy_melee"
+  ]
+}

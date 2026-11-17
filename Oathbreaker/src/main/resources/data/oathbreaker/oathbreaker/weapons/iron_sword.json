@@ -1,0 +1,8 @@
+{
+  "item": "minecraft:iron_sword",
+  "weight": 10,
+  "pool_tags": [
+    "melee",
+    "starter"
+  ]
+}

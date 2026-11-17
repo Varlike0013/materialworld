@@ -1,0 +1,21 @@
+{
+  "replace": false,
+  "values": {
+    "#oathbreaker:common": {
+      "tier": "common",
+      "stage_scaling": "common_curve",
+      "scale_armor": false
+    },
+    "#oathbreaker:elite": {
+      "tier": "elite",
+      "stage_scaling": "elite_curve",
+      "scale_armor": true
+    },
+    "#oathbreaker:boss": {
+      "tier": "boss",
+      "stage_scaling": "boss_curve",
+      "skill_resistance": 0.5,
+      "scale_armor": true
+    }
+  }
+}

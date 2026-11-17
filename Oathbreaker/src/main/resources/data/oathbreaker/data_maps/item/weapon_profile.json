@@ -1,0 +1,68 @@
+{
+  "replace": false,
+  "values": {
+    "minecraft:bow": {
+      "category": "ranged",
+      "damage": [
+        {
+          "type": "physical",
+          "ratio": 1.0
+        }
+      ],
+      "required_classes": [
+        "oathbreaker:ranger"
+      ],
+      "ranged_scale": 1.0
+    },
+    "minecraft:crossbow": {
+      "category": "ranged",
+      "damage": [
+        {
+          "type": "physical",
+          "ratio": 1.0
+        }
+      ],
+      "required_classes": [
+        "oathbreaker:ranger"
+      ],
+      "ranged_scale": 1.0
+    },
+    "minecraft:iron_sword": {
+      "category": "melee",
+      "damage": [
+        {
+          "type": "physical",
+          "ratio": 1.0
+        }
+      ],
+      "required_classes": [
+        "oathbreaker:warrior"
+      ]
+    },
+    "minecraft:trident": {
+      "category": "melee",
+      "damage": [
+        {
+          "type": "physical",
+          "ratio": 0.7
+        },
+        {
+          "type": "magic",
+          "ratio": 0.3
+        }
+      ]
+    },
+    "#oathbreaker:weapon_heavy": {
+      "category": "heavy_melee",
+      "damage": [
+        {
+          "type": "physical",
+          "ratio": 1.0
+        }
+      ],
+      "required_classes": [
+        "oathbreaker:warrior"
+      ]
+    }
+  }
+}

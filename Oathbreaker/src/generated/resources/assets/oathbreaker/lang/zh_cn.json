@@ -1,0 +1,18 @@
+{
+  "attribute.oathbreaker.ability_haste": "技能急速",
+  "attribute.oathbreaker.ability_power": "法术强度",
+  "attribute.oathbreaker.armor_penetration": "护甲穿透",
+  "attribute.oathbreaker.armor_penetration_percent": "护甲穿透率",
+  "attribute.oathbreaker.crit_chance": "暴击率",
+  "attribute.oathbreaker.crit_damage": "暴击伤害",
+  "attribute.oathbreaker.health_regeneration": "生命回复",
+  "attribute.oathbreaker.lifesteal": "生命偷取",
+  "attribute.oathbreaker.magic_penetration": "法术穿透",
+  "attribute.oathbreaker.magic_penetration_percent": "法术穿透率",
+  "attribute.oathbreaker.magic_resist": "魔法抗性",
+  "attribute.oathbreaker.mana_regeneration": "法力回复",
+  "attribute.oathbreaker.max_mana": "最大法力值",
+  "attribute.oathbreaker.omnivamp": "全能吸血",
+  "attribute.oathbreaker.ranged_damage": "远程伤害",
+  "death.attack.oathbreaker_weapon": "%1$s 被 %2$s 击杀"
+}
