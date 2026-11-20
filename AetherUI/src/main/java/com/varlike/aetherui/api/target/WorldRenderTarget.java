@@ -1,5 +1,7 @@
 package com.varlike.aetherui.api.target;
 
+import com.varlike.aetherui.api.layout.Alignment;
+
 public final class WorldRenderTarget implements RenderTarget {
 
     private final Anchor anchor;

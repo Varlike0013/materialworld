@@ -1,5 +1,7 @@
 package com.varlike.aetherui.api.target;
 
+import com.varlike.aetherui.api.layout.Alignment;
+
 public sealed interface ScreenAnchor {
 
     record Corner(Alignment corner, float offsetX, float offsetY) implements ScreenAnchor {}

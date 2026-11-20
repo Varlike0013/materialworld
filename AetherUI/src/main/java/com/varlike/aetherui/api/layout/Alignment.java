@@ -1,4 +1,4 @@
-package com.varlike.aetherui.api.target;
+package com.varlike.aetherui.api.layout;
 
 /**
  * 3×3 对齐枚举，供 RenderTarget 决定"Panel 的哪个点对齐到锚点解析出的位置"。
