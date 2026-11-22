@@ -1,6 +1,5 @@
 package com.varlike.aetherui.core.layout;
 
-import com.varlike.aetherui.api.layout.MeasureContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 

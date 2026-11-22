@@ -82,8 +82,8 @@ public final class UIBuilder {
     private boolean frozen = false;
     Alignment canvasAnchor = Alignment.CENTER;
     CanvasPainter painter = null;
-    MainAxisAlignment mainAxisAlignment;
-    CrossAxisAlignment crossAxisAlignment;
+    MainAxisAlignment mainAxisAlignment = MainAxisAlignment.START;
+    CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.START;
 
     private UIBuilder(ElementKind kind) { this.kind = kind; }
 
@@ -124,6 +124,20 @@ public final class UIBuilder {
     public UIBuilder padding(EdgeInsets e)              { checkMutable(); this.padding = e; return this; }
     public UIBuilder padding(float all)                 { return padding(EdgeInsets.all(all)); }
     public UIBuilder padding(float h, float v)          { return padding(EdgeInsets.symmetric(h, v)); }
+
+    public UIBuilder mainAxisAlignment(MainAxisAlignment a) {
+        checkMutable();
+        if (a == null) throw new IllegalArgumentException("mainAxisAlignment must not be null");
+        this.mainAxisAlignment = a;
+        return this;
+    }
+
+    public UIBuilder crossAxisAlignment(CrossAxisAlignment a) {
+        checkMutable();
+        if (a == null) throw new IllegalArgumentException("crossAxisAlignment must not be null");
+        this.crossAxisAlignment = a;
+        return this;
+    }
 
     // ---------------- 子节点 ----------------
 

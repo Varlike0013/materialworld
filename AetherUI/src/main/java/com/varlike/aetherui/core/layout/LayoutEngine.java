@@ -12,13 +12,20 @@ public final class LayoutEngine {
 
     private LayoutEngine() {}
 
+    /** 布局结果：根节点最终尺寸 + 按绘制顺序排列的快照列表。 */
+    public record LayoutResult(float rootWidth, float rootHeight, List<ElementSnapshot> snapshots) {}
+
     public static List<ElementSnapshot> layout(UIComponent root, MeasureContext ctx) {
+        return layoutDetailed(root, ctx).snapshots();
+    }
+
+    public static LayoutResult layoutDetailed(UIComponent root, MeasureContext ctx) {
         LayoutNode rootNode = new LayoutNode(root);
         measure(rootNode, ctx, Float.MAX_VALUE, Float.MAX_VALUE);
         place(rootNode, 0f, 0f);
         List<ElementSnapshot> out = new ArrayList<>();
         emit(rootNode, 0f, 0f, null, out);
-        return out;
+        return new LayoutResult(rootNode.w, rootNode.h, List.copyOf(out));
     }
 
     // ==================== Measure ====================
