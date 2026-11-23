@@ -2,10 +2,13 @@ package com.varlike.aetherui;
 
 import com.varlike.aetherui.core.render.ScreenRenderHandler;
 import com.varlike.aetherui.core.tick.ClientTickHandler;
+import com.varlike.aetherui.demo.BossBarDemo;
 import com.varlike.aetherui.demo.BuffHud;
 import com.varlike.aetherui.demo.CustomHud;
 import com.varlike.aetherui.demo.DemoUI;
+import com.varlike.aetherui.demo.SmeltingIconDemo;
 import com.varlike.aetherui.demo.TargetInfoHud;
+import net.minecraft.core.BlockPos;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -35,5 +38,11 @@ public class AetherUIClient {
         BuffHud.init();
         TargetInfoHud.init();
         if (Config.showDemo()) DemoUI.show();
+        if (Config.showBossBarDemo()) BossBarDemo.show();
+        if (Config.showSmeltingIconDemo()) {
+            BlockPos p = Minecraft.getInstance().player != null
+                    ? Minecraft.getInstance().player.blockPosition() : BlockPos.ZERO;
+            SmeltingIconDemo.show(new net.minecraft.world.phys.Vec3(p.getX(), p.getY(), p.getZ()));
+        }
     }
 }

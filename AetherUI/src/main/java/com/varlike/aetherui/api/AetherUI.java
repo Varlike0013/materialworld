@@ -4,14 +4,17 @@ import com.varlike.aetherui.api.element.Panel;
 import com.varlike.aetherui.api.hud.BlockInfoProvider;
 import com.varlike.aetherui.api.hud.BuffIcon;
 import com.varlike.aetherui.api.hud.HudBar;
+import com.varlike.aetherui.api.hud.RecipeInfoProvider;
 import com.varlike.aetherui.api.hud.WorldMarkerProvider;
 import com.varlike.aetherui.api.target.RenderTarget;
 import com.varlike.aetherui.api.target.ScreenRenderTarget;
 import com.varlike.aetherui.api.target.WorldRenderTarget;
 import com.varlike.aetherui.core.registry.BlockInfoRegistry;
+import com.varlike.aetherui.core.registry.RecipeInfoRegistry;
 import com.varlike.aetherui.core.registry.BuffIconRegistry;
 import com.varlike.aetherui.core.registry.HudBarRegistry;
 import com.varlike.aetherui.core.registry.ScreenUIRegistry;
+import com.varlike.aetherui.core.registry.WorldUIRegistry;
 import com.varlike.aetherui.core.registry.WorldMarkerRegistry;
 import net.minecraft.resources.ResourceLocation;
 
@@ -40,11 +43,33 @@ public final class AetherUI {
         return new UITree(root, target);
     }
 
+    /**
+     * 一次声明，两处绘制：用同一个 {@code root} 同时构建并注册一棵屏幕树和一棵世界树。
+     * 样式只写一次，即可同步出现在屏幕 HUD 与世界空间（如 Boss 头顶）。
+     */
+    public static DualTree buildAndRegisterBoth(UIComponent root,
+                                                ScreenRenderTarget screenTarget,
+                                                WorldRenderTarget worldTarget) {
+        return buildAndRegisterBoth(root, screenTarget, worldTarget, () -> true);
+    }
+
+    /** 同上，带可见性谓词；谓词同时作用于屏幕树与世界树。 */
+    public static DualTree buildAndRegisterBoth(UIComponent root,
+                                                ScreenRenderTarget screenTarget,
+                                                WorldRenderTarget worldTarget,
+                                                BooleanSupplier visible) {
+        if (root == null || screenTarget == null || worldTarget == null)
+            throw new IllegalArgumentException("root, screenTarget and worldTarget required");
+        UITree screen = register(new UITree(root, screenTarget, visible));
+        UITree world = register(new UITree(root, worldTarget, visible));
+        return new DualTree(screen, world);
+    }
+
     /** 注册一棵 UI 树，使其参与每帧渲染。重复注册同一实例是安全的。 */
     public static UITree register(UITree tree) {
         if (tree == null) throw new IllegalArgumentException("tree required");
         if (tree.target() instanceof WorldRenderTarget) {
-            // Phase 4：WorldUIRegistry.add(tree)
+            WorldUIRegistry.add(tree);
         } else if (tree.target() instanceof ScreenRenderTarget) {
             ScreenUIRegistry.add(tree);
         }
@@ -54,8 +79,9 @@ public final class AetherUI {
     /** 注销一棵 UI 树，使其不再参与渲染。 */
     public static void destroy(UITree tree) {
         if (tree == null) return;
+        com.varlike.aetherui.core.tick.ClientTickHandler.cancelDestroy(tree);
         if (tree.target() instanceof WorldRenderTarget) {
-            // Phase 4：WorldUIRegistry.remove(tree)
+            WorldUIRegistry.remove(tree);
         } else if (tree.target() instanceof ScreenRenderTarget) {
             ScreenUIRegistry.remove(tree);
         }
@@ -64,6 +90,16 @@ public final class AetherUI {
     /** 清空当前所有已注册的屏幕 UI（主要用于测试与热重载）。 */
     public static void destroyAllScreenUIs() {
         ScreenUIRegistry.clear();
+    }
+
+    /**
+     * 在 durationMs 后自动注销并释放这棵树（由客户端 tick 驱动）。
+     * 到期后树会从注册表移除，其持有的组件与 lambda 捕获链不再被强引用，可被 GC。
+     * 传负数表示不自动销毁（需手动 {@link #destroy(UITree)}）。
+     */
+    public static void destroyLater(UITree tree, long durationMs) {
+        if (tree == null || durationMs < 0L) return;
+        com.varlike.aetherui.core.tick.ClientTickHandler.scheduleDestroy(tree, durationMs);
     }
 
     // ---------------- 自定义 HUD 条扩展 ----------------
@@ -130,6 +166,28 @@ public final class AetherUI {
     /** 清空所有已注册的方块信息提供者。 */
     public static void clearBlockInfoProviders() {
         BlockInfoRegistry.clear();
+    }
+
+    // ---------------- 配方信息扩展 ----------------
+
+    /** 注册一个配方信息提供者，在右下角 HUD 显示 [材料] → [时间] → [产物]。重复 id 会抛异常。 */
+    public static void registerRecipeInfoProvider(RecipeInfoProvider provider) {
+        RecipeInfoRegistry.register(provider);
+    }
+
+    /** 注销一个配方信息提供者。 */
+    public static void unregisterRecipeInfoProvider(RecipeInfoProvider provider) {
+        RecipeInfoRegistry.unregister(provider);
+    }
+
+    /** 按 id 注销一个配方信息提供者。 */
+    public static void unregisterRecipeInfoProvider(ResourceLocation id) {
+        RecipeInfoRegistry.unregister(id);
+    }
+
+    /** 清空所有已注册的配方信息提供者。 */
+    public static void clearRecipeInfoProviders() {
+        RecipeInfoRegistry.clear();
     }
 
     // ---------------- 3D 世界标记扩展 ----------------

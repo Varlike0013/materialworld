@@ -10,6 +10,7 @@ import com.varlike.aetherui.api.lang.AetherUILang;
 import com.varlike.aetherui.api.layout.Alignment;
 import com.varlike.aetherui.api.layout.Size;
 import com.varlike.aetherui.api.paint.CanvasContext;
+import com.varlike.aetherui.api.paint.CanvasStyles;
 import com.varlike.aetherui.api.target.ScreenAnchor;
 import com.varlike.aetherui.api.target.ScreenRenderTarget;
 import com.varlike.aetherui.core.registry.HudBarRegistry;
@@ -120,11 +121,12 @@ public final class CustomHud {
                 Component.translatable(AetherUILang.FOOD).getString() + " " + p.getFoodData().getFoodLevel() + "/20", 0xFFD49A3C);
         y += BAR_H + GAP;
 
-        // 血条 + 右侧护甲数值方块
+        // 血条 + 右侧护甲数值方块（变体二：barWithValue 一次完成）
         float hp = p.getMaxHealth() > 0 ? p.getHealth() / p.getMaxHealth() : 0f;
-        drawBar(ctx, y, W - ARMOR_W - GAP, clamp(hp),
-                Component.translatable(AetherUILang.HP).getString() + " " + Math.round(p.getHealth()) + "/" + Math.round(p.getMaxHealth()), 0xFFE03333);
-        drawArmorBox(ctx, y, p.getArmorValue());
+        CanvasStyles.barWithValue(ctx, 0f, y, W, BAR_H, clamp(hp), 0xFFE03333,
+                Component.literal(Component.translatable(AetherUILang.HP).getString()
+                        + " " + Math.round(p.getHealth()) + "/" + Math.round(p.getMaxHealth())),
+                p.getArmorValue(), ARMOR_W);
         y += BAR_H + GAP;
 
         // 其它 mod 的自定义条（饥饿条下方区域）
@@ -157,24 +159,11 @@ public final class CustomHud {
     }
 
     private static void drawBar(CanvasContext ctx, float y, float width, float ratio, String label, int color) {
-        frame(ctx, 0f, y, width, BAR_H);
-        if (ratio > 0f) ctx.fill(2f, y + 2f, Math.max(0f, (width - 4f) * ratio), BAR_H - 4f, color);
-        ctx.drawString(Component.literal(label), 4f, y + 1f, 0xFFFFFFFF, true);
-    }
-
-    private static void drawArmorBox(CanvasContext ctx, float y, int armorValue) {
-        float x = W - ARMOR_W;
-        frame(ctx, x, y, ARMOR_W, BAR_H);
-        ctx.drawString(Component.literal(String.valueOf(armorValue)),
-                x + (ARMOR_W - 6f) / 2f, y + 2f, 0xFFC0C0C0, false);
+        CanvasStyles.bar(ctx, 0f, y, width, BAR_H, ratio, color, Component.literal(label));
     }
 
     private static void frame(CanvasContext ctx, float x, float y, float w, float h) {
-        ctx.fill(x, y, w, h, 0xB0080808);
-        ctx.fill(x, y, w, 1f, 0xFF5A5A5A);
-        ctx.fill(x, y + h - 1f, w, 1f, 0xFF5A5A5A);
-        ctx.fill(x, y, 1f, h, 0xFF5A5A5A);
-        ctx.fill(x + w - 1f, y, 1f, h, 0xFF5A5A5A);
+        CanvasStyles.darkSlot(ctx, x, y, w, h);
     }
 
     private static float clamp(float v) {

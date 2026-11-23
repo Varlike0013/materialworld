@@ -64,7 +64,7 @@ public final class BuffHud {
     }
 
     private static boolean shouldRender() {
-        if (!Config.customHudEnabled()) return false;
+        if (!Config.buffHudEnabled()) return false;
         LocalPlayer p = Minecraft.getInstance().player;
         return p != null && !p.isSpectator();
     }

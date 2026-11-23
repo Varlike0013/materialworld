@@ -58,6 +58,10 @@ public final class WorldMarkerRenderer {
     static void onRenderLevel(RenderLevelStageEvent event) {
         MARKERS.clear();
         ALIVE.clear();
+        if (!com.varlike.aetherui.Config.worldMarkersEnabled()) {
+            MARKER_BIRTH.clear();
+            return;
+        }
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
 
         long now = System.currentTimeMillis();

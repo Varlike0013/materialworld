@@ -186,7 +186,8 @@ public final class WorldHealthBarRenderer {
         boolean hostile = living instanceof Enemy;
         boolean animal = living instanceof Animal;
         boolean neutral = !hostile && !animal;
-        if (neutral && !Config.showNeutralHealthBar()) return false;
-        return hostile || animal || neutral;
+        if (hostile) return Config.showHostileHealthBar();
+        if (animal)  return Config.showAnimalHealthBar();
+        return Config.showNeutralHealthBar();
     }
 }

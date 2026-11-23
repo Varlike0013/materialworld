@@ -28,6 +28,7 @@ public final class ScreenRenderHandler {
     public static void renderAll(GuiGraphics graphics) {
         com.varlike.aetherui.core.hud.WorldHealthBarRenderer.renderBars(graphics);
         com.varlike.aetherui.core.hud.WorldMarkerRenderer.renderMarkers(graphics);
+        WorldRenderHandler.renderAll(graphics);
 
         if (ScreenUIRegistry.isEmpty()) return;
 

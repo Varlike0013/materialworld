@@ -53,6 +53,25 @@ public final class UIBuilder {
                 .size(Size.fixed(w), Size.fixed(h));
     }
 
+    /** 带半透明白灰边框的 PNG 图标，外框尺寸为 size×size，边框宽 1px。 */
+    public static UIBuilder framedIcon(ResourceLocation tex, float size) {
+        return framedIcon(tex, size, 1f);
+    }
+
+    /**
+     * 带半透明白灰边框的 PNG 图标，可指定边框宽度。
+     * 内部使用 {@link com.varlike.aetherui.api.paint.CanvasStyles#framedImage} 绘制，
+     * 因此图片会缩放填满边框内侧。位置由所在 UI 树的锚点与对齐自动决定。
+     */
+    public static UIBuilder framedIcon(ResourceLocation tex, float size, float borderWidth) {
+        if (tex == null) throw new IllegalArgumentException("framedIcon texture required");
+        if (size <= 0f) throw new IllegalArgumentException("framedIcon size must be > 0");
+        return canvas(Size.fixed(size), Size.fixed(size))
+                .canvasAnchor(Alignment.TOP_LEFT)
+                .painter(ctx -> com.varlike.aetherui.api.paint.CanvasStyles
+                        .framedImage(ctx, tex, 0f, 0f, size, borderWidth));
+    }
+
     // ---------------- 内部状态 ----------------
 
     final ElementKind kind;
