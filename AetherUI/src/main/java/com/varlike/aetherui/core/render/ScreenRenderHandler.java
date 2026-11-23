@@ -37,7 +37,7 @@ public final class ScreenRenderHandler {
         for (UITree tree : ScreenUIRegistry.all()) {
             if (!tree.isVisible()) continue;
             if (!(tree.target() instanceof ScreenRenderTarget target)) continue;
-            if (tree.component() == null) continue; // 旧 Panel API 创建的树暂不渲染
+    
 
             LayoutEngine.LayoutResult result =
                     LayoutEngine.layoutDetailed(tree.component(), DefaultMeasureContext.INSTANCE);

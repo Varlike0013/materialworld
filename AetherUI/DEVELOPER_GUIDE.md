@@ -47,7 +47,7 @@ side = "CLIENT"
 ## 2. 核心概念
 
 - `UIComponent`：不可变的组件树节点，由 `UIBuilder` 构建
-- `UIBuilder`：一次性构建器，提供 `panel()` / `row()` / `column()` / `table()` / `canvas()` / `label()` / `icon()` 工厂
+- `UIBuilder`：一次性构建器，提供 `panel()` / `row()` / `column()` / `table()` / `canvas()` / `label()` / `icon()` 工厂；这里的 `panel()` 返回 `UIComponent`，旧的 `Panel` 类型已移除
 - `UITree`：`UIComponent` 根节点 + `RenderTarget` + 可见性谓词
 - `Bindable<T>`：惰性取值包装，`Bindable.supplier(...)` 可实现每帧动态数据
 - `RenderTarget`：sealed 接口，两种实现：`ScreenRenderTarget`（屏幕空间）与 `WorldRenderTarget`（世界空间，billboard 投影渲染）。用 `AetherUI.buildAndRegisterBoth(...)` 可让同一棵组件树同时注册到两种目标，一次声明、两处绘制
@@ -114,10 +114,13 @@ UIBuilder.label(Bindable.supplier(
 ### 3.4 生命周期
 
 ```java
-AetherUI.register(tree);      // 注册，参与每帧渲染
-AetherUI.destroy(tree);       // 注销
-AetherUI.destroyAllScreenUIs();// 清空所有屏幕 UI（测试/热重载用）
+AetherUI.register(tree);            // 注册，参与每帧渲染
+AetherUI.destroy(tree);             // 注销并释放注册表的强引用
+AetherUI.destroyLater(tree, 5000L); // 5 秒后自动注销，到期后组件与 lambda 可被 GC
+AetherUI.destroyAllScreenUIs();     // 清空所有屏幕 UI（测试/热重载用）
 ```
+
+`buildAndRegisterBoth(...)` 返回 `DualTree`，调用 `dualTree.destroy()` 会同时注销屏幕树和世界树。
 
 带条件可见性（谓词返回 false 时不渲染，配置开关即时生效）：
 
@@ -434,7 +437,9 @@ AetherUI.registerBuffIcon(
 
 ### 5.3 方块信息（`BlockInfoProvider`）
 
-当玩家瞄准方块时，在右下角 HUD 的挖掘信息下方追加你的信息。返回 `List<Component>`，**每行一个 Component，Component 的 Style 决定颜色/粗体等**：
+当玩家瞄准方块时，在右下角 HUD 的挖掘信息下方追加你的信息。可以注册全局 `BlockInfoProvider`，
+也可以让方块/方块实体直接实现 `BlockInfoSource`（见 5.3.1，无需注册）。返回 `List<Component>`，
+**每行一个 Component，Component 的 Style 决定颜色/粗体等**：
 
 ```java
 import com.varlike.aetherui.api.hud.BlockInfoProvider;
@@ -518,7 +523,45 @@ AetherUI.registerBlockInfoProvider(new BlockInfoProvider() {
 > 场景二的关键：`collector` 的魔力值必须**从服务端同步到客户端 BlockEntity**
 > （`getUpdateTag` / `onDataPacket` 或 Data Attachment + 网络包），否则客户端读到的是默认值。
 
-### 5.3.1 配方显示（`RecipeInfoProvider` / `RecipeInfo`）
+### 5.3.1 方块自提供信息（`BlockInfoSource`）
+
+如果你的信息属于某个具体方块，可以直接让 `Block`（或 `BlockEntity`）实现 `BlockInfoSource`，
+**无需注册、无需 id**。TargetInfoHud 瞄准该方块时会自动调用并追加返回的行：
+
+```java
+import com.varlike.aetherui.api.hud.BlockInfoSource;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+
+import java.util.List;
+
+public final class MyBlock extends Block implements BlockInfoSource {
+    @Override
+    public List<Component> getTargetInfoLines(Level level, BlockPos pos, BlockState state,
+                                              BlockEntity be, BlockHitResult hit, Player player) {
+        if (!(be instanceof MyBlockEntity myBE)) return List.of();
+        return List.of(
+            Component.literal("能量: " + myBE.energy + " FE").withStyle(ChatFormatting.AQUA),
+            Component.literal("拥有者: " + myBE.owner).withStyle(ChatFormatting.GRAY)
+        );
+    }
+}
+```
+
+说明：
+
+- 回调只在客户端、且 `showTargetBlockInfo` 开启时触发。
+- 方块与方块实体都实现时，两者都会显示；顺序为 **方块 → 方块实体 → 已注册的 `BlockInfoProvider`**。
+- 与注册式 provider 一样，服务端数据必须先同步到客户端，否则客户端读到的是默认值。
+
+### 5.3.2 配方显示（`RecipeInfoProvider` / `RecipeInfo`）
 
 当希望瞄准机器时显示一条可视化配方 **`[材料] → [时间] → [产物]`**（物品用图标绘制），
 实现 `RecipeInfoProvider` 并注册。它与 `BlockInfoProvider` 并行工作，配方行追加在文本信息之后。
@@ -609,10 +652,10 @@ WorldMarker timed = WorldMarker.timed("chest-hint", pos, icon, false, 5000L,
 | HUD | 位置 | 内容 | 受配置控制 |
 |-----|------|------|-----------|
 | 状态 HUD | 左下角 | 装备/手持耐久行、经验条、饥饿条、血条+护甲方块 | `enableCustomHud`、`showArmorDurability`、`showHeldDurability` |
-| 瞄准信息 HUD | 右下角 | 实体名/HP/护甲/距离；方块名/工具/等级/可否挖掘；扩展方块信息；容器格子数；配方 `[材料]→[时间]→[产物]` | `enableTargetInfo` |
+| 瞄准信息 HUD | 右下角 | 实体名/HP/护甲/距离；方块名/工具/等级/可否挖掘；`BlockInfoSource` / `BlockInfoProvider` 扩展信息；容器格子数；配方 `[材料]→[时间]→[产物]` | `enableTargetInfo`、`showTargetBlockInfo` |
 | Buff HUD | 物品栏上方 | 原版状态效果 + 注册的 `BuffIcon` | `enableBuffHud`（旁观者不显示） |
-| 3D 血条 | 生物头顶 | 名字 + 血条 + 护甲方块（仅有护甲时） | `enableWorldHealthBar`、`showNeutralHealthBar` |
-| 世界空间 UI | 世界坐标 / 实体 / 玩家相对 | 任意 `UIComponent`（与屏幕树共享样式，一次声明两处绘制） | 由 `buildAndRegisterBoth` 的可见性谓词控制 |
+| 3D 血条 | 生物头顶 | 名字 + 血条 + 护甲方块（仅有护甲时） | `enableWorldHealthBar`、`showHostileHealthBar`、`showAnimalHealthBar`、`showNeutralHealthBar` |
+| 世界空间 UI | 世界坐标 / 实体 / 玩家相对 | 任意 `UIComponent`（与屏幕树共享样式，一次声明两处绘制） | `enableWorldUI` 与构建时的可见性谓词 |
 
 原版状态条（血量、护甲、饥饿、空气、经验、坐骑血量、跳跃条）与状态效果图标会被隐藏，物品栏保留。
 
@@ -638,8 +681,8 @@ WorldMarker timed = WorldMarker.timed("chest-hint", pos, icon, false, 5000L,
 | `enableWorldMarkers` | true | 启用其它 Mod 注册的 3D 世界标记 |
 | `enableWorldUI` | true | 启用世界空间 UI（WorldRenderTarget / WorldIcon） |
 | `hideVanillaBars` | true | 隐藏原版状态条 |
-| `showDemo` | false | 显示左上角 demo 面板（总开关） |
-| `showBossBarDemo` | true | 显示 Boss 血条双端绘制演示（需 `showDemo` 同时开启） |
+| `showDemo` | false | 显示左上角 demo 面板（演示总开关） |
+| `showBossBarDemo` | false | 显示 Boss 血条双端绘制演示（需 `showDemo` 同时开启） |
 | `showSmeltingIconDemo` | false | 显示熔炼产物浮动旋转图标演示 |
 
 **完全关闭本 Mod 的辅助**：把 `enableAllAssists` 设为 false 即可——所有内置 HUD、瞄准信息、血条、世界标记、世界 UI、隐藏原版条全部停用。其它 Mod 通过 AetherUI API 注册的内容不受此总开关影响（它们各自的可见性由调用方控制）。
@@ -673,8 +716,7 @@ com.varlike.aetherui
 │   ├── AetherUI                   主入口（build/register/扩展注册）
 │   ├── UIBuilder / UIComponent / UITree / DualTree（双端树）
 │   ├── binding                    Bindable（惰性取值）
-│   ├── element                    Panel / UIElement（旧 API 兼容）
-│   ├── hud                        HudBar / BuffIcon / BlockInfoProvider / RecipeInfo / RecipeInfoProvider / WorldMarker / WorldMarkerProvider / WorldIcon / Spin（扩展接口/便捷API）
+│   ├── hud                        HudBar / BuffIcon / BlockInfoProvider / BlockInfoSource / RecipeInfo / RecipeInfoProvider / WorldMarker / WorldMarkerProvider / WorldIcon / Spin（扩展接口/便捷API）
 │   ├── lang                       AetherUILang（翻译键）
 │   ├── layout                     Size / Alignment / FitMode / MeasureContext 等布局类型
 │   ├── paint                      CanvasContext / CanvasPainter
@@ -685,7 +727,7 @@ com.varlike.aetherui
 │   ├── layout                     LayoutEngine / MeasureContext / DefaultMeasureContext
 │   ├── registry                   ScreenUIRegistry / WorldUIRegistry / HudBarRegistry / BuffIconRegistry / BlockInfoRegistry / RecipeInfoRegistry / WorldMarkerRegistry
 │   ├── render                     ScreenRenderHandler / WorldRenderHandler / SnapshotRenderer / GuiCanvasContext / OffsetCanvasContext
-│   └── tick                       ClientTickHandler（预留钩子）
+│   └── tick                       ClientTickHandler（定时销毁 UITree）
 ├── datagen                        ModDataGen / ModLanguageProvider
 └── demo                           CustomHud / TargetInfoHud / BuffHud / DemoUI / DemoFurnaceRecipe / BossBarDemo / SmeltingIconDemo
 ```

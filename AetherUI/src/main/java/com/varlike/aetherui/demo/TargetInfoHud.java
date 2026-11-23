@@ -6,6 +6,7 @@ import com.varlike.aetherui.api.UIBuilder;
 import com.varlike.aetherui.api.UIComponent;
 import com.varlike.aetherui.api.UITree;
 import com.varlike.aetherui.api.hud.BlockInfoProvider;
+import com.varlike.aetherui.api.hud.BlockInfoSource;
 import com.varlike.aetherui.api.hud.RecipeInfo;
 import com.varlike.aetherui.api.hud.RecipeInfoProvider;
 import com.varlike.aetherui.api.lang.AetherUILang;
@@ -40,8 +41,8 @@ import java.util.List;
 
 /**
  * 右下角瞄准信息：实体显示护甲值；方块显示挖掘工具、所需等级、手中工具是否可挖。
- * 挖掘信息下方追加其它 mod 注册的方块信息（多行、支持颜色）。
- * 所有游戏模式均可显示，由 config 开关控制。
+ * 挖掘信息下方追加方块自身实现 {@link BlockInfoSource} 的信息，以及其它 mod 注册的方块信息
+ * （多行、支持颜色）。所有游戏模式均可显示，由 config 开关控制。
  */
 public final class TargetInfoHud {
 
@@ -148,6 +149,14 @@ public final class TargetInfoHud {
             if (Config.showTargetBlockInfo()) {
                 BlockEntity be = mc.level.getBlockEntity(pos);
 
+                // 方块 / 方块实体自己实现的信息源，无需注册
+                if (state.getBlock() instanceof BlockInfoSource source) {
+                    appendSourceLines(source, mc.level, pos, state, be, blockHit, player, rows);
+                }
+                if (be instanceof BlockInfoSource source) {
+                    appendSourceLines(source, mc.level, pos, state, be, blockHit, player, rows);
+                }
+
                 // 其它 mod 的方块信息（多行、带颜色）
                 for (BlockInfoProvider provider : BlockInfoRegistry.all()) {
                     List<Component> extra = provider.getLines(mc.level, pos, state, be, blockHit, player);
@@ -199,6 +208,16 @@ public final class TargetInfoHud {
                 drawRecipeRow(ctx, ((RecipeRow) row).info(), startX + PAD, y, font);
                 y += RECIPE_ROW_H;
             }
+        }
+    }
+
+    private static void appendSourceLines(BlockInfoSource source, Level level, BlockPos pos,
+                                          BlockState state, BlockEntity be, BlockHitResult hit,
+                                          LocalPlayer player, List<Row> rows) {
+        List<Component> lines = source.getTargetInfoLines(level, pos, state, be, hit, player);
+        if (lines == null || lines.isEmpty()) return;
+        for (Component line : lines) {
+            if (line != null) rows.add(new TextRow(line, 0xFFFFFFFF));
         }
     }
 

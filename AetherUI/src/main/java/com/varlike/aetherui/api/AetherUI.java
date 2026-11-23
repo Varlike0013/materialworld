@@ -1,6 +1,5 @@
 package com.varlike.aetherui.api;
 
-import com.varlike.aetherui.api.element.Panel;
 import com.varlike.aetherui.api.hud.BlockInfoProvider;
 import com.varlike.aetherui.api.hud.BuffIcon;
 import com.varlike.aetherui.api.hud.HudBar;
@@ -24,9 +23,7 @@ public final class AetherUI {
 
     private AetherUI() {}
 
-    public static Panel panel() { return new Panel(); }
-
-    /** 新 API：从不可变组件树构建 UI。 */
+    /** 从不可变组件树构建 UI。 */
     public static UITree build(UIComponent root, RenderTarget target) {
         if (root == null || target == null) throw new IllegalArgumentException("root and target required");
         return new UITree(root, target);
@@ -35,12 +32,6 @@ public final class AetherUI {
     /** 带可见性谓词的构建：谓词返回 false 时该树不参与渲染。 */
     public static UITree build(UIComponent root, RenderTarget target, BooleanSupplier visible) {
         return new UITree(root, target, visible);
-    }
-
-    /** 旧 API 兼容入口。 */
-    public static UITree build(Panel root, RenderTarget target) {
-        if (root == null || target == null) throw new IllegalArgumentException("root and target required");
-        return new UITree(root, target);
     }
 
     /**

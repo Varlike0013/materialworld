@@ -5,13 +5,15 @@ AetherUI 是一个基于 **NeoForge 1.21.1 / Java 21** 的声明式 UI 框架库
 它本身不提供游戏内容，而是为其它 Mod 提供一套可复用的 UI 与 HUD 能力：
 
 - 声明式组件树构建 + 自动布局 + 屏幕空间渲染
+- 一次声明组件树，同步绘制到 HUD 与世界空间（Boss 血条等）
+- 方块上方的边框 + 背景 + 图片便捷 API（支持浮动、三轴旋转、朝向与定时销毁）
 - 左下角状态 HUD（耐久 / 经验 / 饥饿 / 血量 / 护甲）
 - 右下角瞄准信息 HUD（实体 / 方块 / 扩展信息）
 - 物品栏上方的 Buff 图标 HUD
 - 3D 世界空间生物血条（面向玩家、遮挡检测）
 - 3D 世界标记（图标 + 多行文字，支持穿墙与持续时间）
 - 中英双语言（en_us / zh_cn）
-- 多个扩展接口，允许其它 Mod 注入自定义内容
+- 方块可直接实现 `BlockInfoSource`，瞄准时自动显示自己的保存信息；另提供多个注册式扩展接口
 
 完整的 API 说明与集成指南见 **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)**。
 
@@ -24,8 +26,9 @@ AetherUI 是一个基于 **NeoForge 1.21.1 / Java 21** 的声明式 UI 框架库
 | 组件与布局 | `UIBuilder` 提供 `panel` / `row` / `column` / `table` / `canvas` / `label` / `icon` 工厂；`LayoutEngine` 执行 measure → place → emit |
 | 动态数据 | `Bindable<T>` 惰性取值，支持 `Bindable.supplier(...)` 每帧刷新 |
 | 屏幕 UI | `ScreenRenderTarget` + 多种 `ScreenAnchor` 锚点，支持对齐、缩放 |
+| 双端世界 UI | `buildAndRegisterBoth(...)` 用一棵组件树同时注册屏幕与 `WorldRenderTarget`；`DualTree.destroy()` 一次清理 |
 | 自定义绘制 | `canvas()` + `CanvasContext`，提供矩形填充、纹理、图集 sprite、文字、物品图标等原语 |
-| 扩展 HUD | `HudBar`、`BuffIcon`、`BlockInfoProvider`、`WorldMarkerProvider` 四类注入接口 |
+| 扩展 HUD | `HudBar`、`BuffIcon`、`BlockInfoProvider`、`BlockInfoSource`（方块自提供，免注册）、`WorldMarkerProvider` |
 | 内置 HUD | 状态 HUD、瞄准信息 HUD、Buff HUD、3D 血条，均可独立配置开关 |
 | 双语言 | 翻译键集中在 `AetherUILang`，由数据生成器产出 `en_us.json` / `zh_cn.json` |
 
@@ -88,14 +91,25 @@ AetherUI.register(tree);
 
 | 键 | 默认 | 说明 |
 |----|------|------|
+| `enableAllAssists` | true | **总开关**：关闭后本 Mod 提供的所有辅助全部停用 |
 | `enableCustomHud` | true | 启用左下角状态 HUD（创造 / 旁观者自动隐藏） |
-| `enableTargetInfo` | true | 启用右下角瞄准信息 |
 | `showArmorDurability` | true | 显示盔甲耐久 |
 | `showHeldDurability` | true | 显示手持物品耐久 |
+| `enableBuffHud` | true | 启用物品栏上方的 Buff 图标 HUD |
+| `enableTargetInfo` | true | 启用右下角瞄准信息 |
+| `showTargetBlockInfo` | true | 瞄准信息中显示方块扩展信息（容器格子、配方等） |
 | `enableWorldHealthBar` | true | 启用 3D 血条 |
+| `showHostileHealthBar` | true | 显示敌对怪物血条 |
+| `showAnimalHealthBar` | true | 显示被动动物血条 |
 | `showNeutralHealthBar` | true | 显示中立生物血条 |
+| `enableWorldMarkers` | true | 启用其它 Mod 注册的 3D 世界标记 |
+| `enableWorldUI` | true | 启用世界空间 UI（`WorldRenderTarget` / `WorldIcon`） |
 | `hideVanillaBars` | true | 隐藏原版状态条 |
-| `showDemo` | false | 显示左上角 demo 面板 |
+| `showDemo` | false | 显示左上角 demo 面板（演示总开关） |
+| `showBossBarDemo` | false | 显示 Boss 血条双端绘制演示（需 `showDemo` 同时开启） |
+| `showSmeltingIconDemo` | false | 显示熔炼产物浮动旋转图标演示 |
+
+把 `enableAllAssists` 设为 `false` 即可完全关闭本 Mod 的内置辅助；其它 Mod 通过 AetherUI API 注册的内容不受该总开关影响。所有子开关均受总开关约束，修改后即时生效。
 
 ---
 
