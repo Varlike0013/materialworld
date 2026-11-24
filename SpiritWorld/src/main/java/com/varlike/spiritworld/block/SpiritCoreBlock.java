@@ -1,11 +1,13 @@
 package com.varlike.spiritworld.block;
 
 import com.mojang.serialization.MapCodec;
+import com.varlike.spiritworld.client.SpiritCoreMenu;
 import com.varlike.spiritworld.item.ManaCrystalItem;
 import com.varlike.spiritworld.network.ClientboundNetworkTreePacket;
 import com.varlike.spiritworld.skill.ManaType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.*;
 import net.minecraft.world.entity.player.Player;
@@ -93,7 +95,8 @@ public class SpiritCoreBlock extends BaseEntityBlock {
 
         if (level.isClientSide) return ItemInteractionResult.SUCCESS;
         be.insertCrystal(stack, player);
-        return ItemInteractionResult.CONSUME;
+        // 返回 SUCCESS 而非 CONSUME：insertCrystal 已手动 shrink，CONSUME 会二次扣除
+        return ItemInteractionResult.SUCCESS;
     }
 
     @Override

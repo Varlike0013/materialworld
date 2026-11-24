@@ -100,3 +100,12 @@ Spirit World: An addon mod for MaterialWorld.
     versionRange = "[1.0.0,)"
     ordering = "AFTER"
     side = "BOTH"
+
+# 前置：AetherUI（客户端 HUD / 瞄准信息 / Buff 图标）
+[[dependencies.spiritworld]]
+    modId = "aetherui"
+    type = "required"
+    reason = "精神世界的 HUD 与瞄准信息基于 AetherUI / Spirit World HUD is built on AetherUI"
+    versionRange = "[1.1.0,)"
+    ordering = "AFTER"
+    side = "CLIENT"

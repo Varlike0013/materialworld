@@ -18,6 +18,9 @@ import com.varlike.aetherui.api.target.ScreenAnchor;
 import com.varlike.aetherui.api.target.ScreenRenderTarget;
 import com.varlike.aetherui.core.registry.BlockInfoRegistry;
 import com.varlike.aetherui.core.registry.RecipeInfoRegistry;
+import com.varlike.aetherui.network.ClientNetwork;
+import com.varlike.aetherui.network.InspectCache;
+import com.varlike.aetherui.network.InspectPayloads;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
@@ -61,17 +64,24 @@ public final class TargetInfoHud {
 
     private TargetInfoHud() {}
 
-    /** Demo 内置的容器格子 provider：瞄准任意 Container 显示已用格子数。 */
+    /**
+     * Demo 内置的容器格子 provider：读取服务端查询结果。
+     * 服务器会合并大箱子两半，因此这里不会把 54 格大箱子显示成 27 格。
+     */
     private static final BlockInfoProvider CONTAINER_SLOTS = new BlockInfoProvider() {
         @Override public ResourceLocation id() { return CONTAINER_SLOTS_ID; }
         @Override public List<Component> getLines(Level level, BlockPos pos, BlockState state,
                                                   BlockEntity be, BlockHitResult hit, LocalPlayer player) {
-            if (!(be instanceof Container container)) return List.of();
-            int total = container.getContainerSize();
-            int used = 0;
-            for (int i = 0; i < total; i++) {
-                if (!container.getItem(i).isEmpty()) used++;
+            if (!(be instanceof Container)) return List.of();
+
+            InspectPayloads.ContainerInfo info = InspectCache.container(pos);
+            if (info == null) {
+                ClientNetwork.request(pos, player.blockPosition());
+                return List.of();
             }
+
+            int used = info.used();
+            int total = info.total();
             return List.of(
                     Component.literal("格子: " + used + "/" + total + " 已用")
                             .withStyle(used == total ? net.minecraft.ChatFormatting.RED

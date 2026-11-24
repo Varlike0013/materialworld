@@ -32,9 +32,15 @@ public record ServerboundCoreActionPacket(BlockPos pos, int action) implements C
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
 
-            // 检查该坐标的方块实体是否是魔力核心
-            if (player.level().getBlockEntity(pkt.pos()) instanceof SpiritCoreBlockEntity core) {
-                // 调用核心的处理逻辑
+            // 距离与加载校验：防止伪造包远程操作任意坐标的核心
+            var pos = pkt.pos();
+            if (player.level() == null || !player.level().isLoaded(pos)) return;
+            double dx = pos.getX() + 0.5 - player.getX();
+            double dy = pos.getY() + 0.5 - player.getY();
+            double dz = pos.getZ() + 0.5 - player.getZ();
+            if (dx * dx + dy * dy + dz * dz > 64.0) return;
+
+            if (player.level().getBlockEntity(pos) instanceof SpiritCoreBlockEntity core) {
                 core.adjustTarget(pkt.action());
             }
         });

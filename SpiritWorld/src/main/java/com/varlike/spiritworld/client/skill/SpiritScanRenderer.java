@@ -1,120 +1,137 @@
 package com.varlike.spiritworld.client.skill;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
+import com.varlike.aetherui.api.AetherUI;
+import com.varlike.aetherui.api.UIBuilder;
+import com.varlike.aetherui.api.UIComponent;
+import com.varlike.aetherui.api.UITree;
+import com.varlike.aetherui.api.layout.Alignment;
+import com.varlike.aetherui.api.layout.Size;
+import com.varlike.aetherui.api.paint.CanvasStyles;
+import com.varlike.aetherui.api.target.Anchor;
+import com.varlike.aetherui.api.target.Orientation;
+import com.varlike.aetherui.api.target.WorldRenderTarget;
 import com.varlike.spiritworld.SpiritWorld;
 import com.varlike.spiritworld.client.ClientScanData;
 import com.varlike.spiritworld.network.ClientboundScanResultPacket.OreIcon;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+/**
+ * 精神扫描的世界标记渲染：基于 AetherUI 的 WorldRenderTarget。
+ *
+ * <p>相比原来的手写 3D 渲染，这里把世界坐标直接投影到屏幕，
+ * 不再混用相机空间平移与朝向四元数，避免部分视角下图标飞出视野的问题。
+ * 服务端最大扫描半径为 48 格；渲染距离留出方块质心与抬升的余量，避免边缘矿物被裁掉。
+ */
 @EventBusSubscriber(modid = SpiritWorld.MOD_ID, value = Dist.CLIENT)
 public final class SpiritScanRenderer {
+
+    /** 略大于服务端最大扫描半径 48，覆盖方块质心与图标抬升的偏移。 */
+    private static final float MAX_DISTANCE = 56f;
+    private static final float ICON_SIZE = 40f;
+    private static final float RISE = 1.6f;
+
+    private static final Map<String, UITree> ICONS = new HashMap<>();
+    private static ResourceKey<Level> lastDimension;
 
     private SpiritScanRenderer() {}
 
     @SubscribeEvent
-    public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        // 1. 使用 AFTER_LEVEL 保证在所有方块和实体之后渲染，避免被地平线或水切掉
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
-
+    public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) return;
+        if (mc.level == null || mc.player == null) {
+            clearIcons();
+            return;
+        }
+        if (!com.varlike.aetherui.Config.worldUIEnabled()) {
+            clearIcons();
+            return;
+        }
+        if (!mc.level.dimension().equals(lastDimension)) {
+            lastDimension = mc.level.dimension();
+            clearIcons();
+        }
 
         List<OreIcon> icons = ClientScanData.getActiveIcons();
-        if (icons.isEmpty()) return;
+        Set<String> alive = new HashSet<>();
+        Vec3 playerPos = mc.player.position();
 
-        PoseStack poseStack = event.getPoseStack();
-        Vec3 camPos = event.getCamera().getPosition();
-        MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
-        ItemRenderer itemRenderer = mc.getItemRenderer();
+        for (OreIcon icon : icons) {
+            Item item = icon.iconItem();
+            if (item == null || item == Items.AIR) continue;
 
-        // 初始化 2D 绘图工具
-        GuiGraphics guiGraphics = new GuiGraphics(mc, bufferSource);
+            Vec3 base = new Vec3(icon.x(), icon.y(), icon.z()).add(0, RISE, 0);
+            if (base.distanceTo(playerPos) > MAX_DISTANCE) continue;
 
-        //  核心穿透逻辑：彻底关闭深度测试，确保 UI 无视任何方块遮挡
-        RenderSystem.disableDepthTest();
-        RenderSystem.depthMask(false);
-        RenderSystem.enableBlend();
-
-        try {
-            for (OreIcon icon : icons) {
-                double dx = icon.x() - camPos.x;
-                double dy = icon.y() - camPos.y;
-                double dz = icon.z() - camPos.z;
-
-                // 计算真实距离
-                double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-                // 超过 XXX 米的图标不渲染，防止太乱
-                if (dist > 256) continue;
-
-                poseStack.pushPose();
-                // 平移到世界坐标
-                poseStack.translate(dx, dy, dz);
-                // 面向相机 (Billboard 广告牌效果)
-                poseStack.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-
-                // 动态缩放：距离越远，图标和文字越小
-                float scale = (float) Math.clamp(2.5 / Math.max(1.0, dist), 0.02, 0.05);
-                poseStack.scale(-scale, -scale, scale);
-
-                // ===== 1. 渲染物品图标 =====
-                poseStack.pushPose();
-                poseStack.translate(-8f, -22f, 0f); // 向上偏移，给下方文字留空间
-                poseStack.scale(16f, 16f, 16f);     // 放大到正常 16x16 大小
-                itemRenderer.renderStatic(
-                        icon.iconItem().getDefaultInstance(),
-                        ItemDisplayContext.GUI,
-                        LightTexture.FULL_BRIGHT, // 确保图标在最暗的地方也能亮
-                        OverlayTexture.NO_OVERLAY,
-                        poseStack,
-                        bufferSource,
-                        mc.level,
-                        0
-                );
-                poseStack.popPose();
-
-                // ===== 2. 渲染黑灰色半透明背景和距离文字 =====
-                String label = String.format("%.1f米", dist);
-                int textWidth = mc.font.width(label);
-                int bgWidth = Math.max(24, textWidth + 8);
-                int bgHeight = 13;
-                int bgX = -bgWidth / 2;
-                int bgY = 2;
-
-                // 魔法操作：将当前的 3D 矩阵覆盖给 guiGraphics 的 2D 矩阵
-                guiGraphics.pose().pushPose();
-                guiGraphics.pose().last().pose().set(poseStack.last().pose());
-
-                // 绘制黑灰色半透明背景 (0xAA1E1E1E：A是透明度，后面是RGB)
-                guiGraphics.fill(bgX, bgY, bgX + bgWidth, bgY + bgHeight, 0xAA1E1E1E);
-
-                // 绘制白色距离文字
-                guiGraphics.drawString(mc.font, label, -textWidth / 2, bgY + 2, 0xFFFFFFFF, true);
-
-                guiGraphics.pose().popPose();
-
-                poseStack.popPose();
-            }
-        } finally {
-            // 3. 恢复渲染状态，防止污染游戏后续的渲染
-            bufferSource.endBatch();
-            RenderSystem.disableBlend();
-            RenderSystem.depthMask(true);
-            RenderSystem.enableDepthTest();
+            String key = keyOf(icon);
+            alive.add(key);
+            ICONS.computeIfAbsent(key, k -> createIcon(base, new ItemStack(item), icon.count()));
         }
+
+        ICONS.entrySet().removeIf(entry -> {
+            if (alive.contains(entry.getKey())) return false;
+            AetherUI.destroy(entry.getValue());
+            return true;
+        });
+    }
+
+    private static String keyOf(OreIcon icon) {
+        return String.format("%.2f/%.2f/%.2f", icon.x(), icon.y(), icon.z());
+    }
+
+    private static UITree createIcon(Vec3 base, ItemStack stack, int count) {
+        final long birth = System.currentTimeMillis();
+
+        UIComponent component = UIBuilder.canvas(Size.fixed(ICON_SIZE), Size.fixed(ICON_SIZE))
+                .canvasAnchor(Alignment.CENTER)
+                .painter(ctx -> {
+                    Minecraft mc = Minecraft.getInstance();
+                    if (mc.player == null) return;
+
+                    CanvasStyles.panel(ctx, 0f, 0f, ICON_SIZE, ICON_SIZE);
+                    ctx.renderItem(stack, (ICON_SIZE - 16f) * 0.5f, (ICON_SIZE - 16f) * 0.5f);
+
+                    String label = count + "块  "
+                            + String.format("%.1f米", base.distanceTo(mc.player.position()));
+                    int tw = mc.font.width(label);
+                    ctx.drawString(Component.literal(label), (ICON_SIZE - tw) * 0.5f,
+                            ICON_SIZE - 10f, 0xFFFFFFFF, true);
+                })
+                .build();
+
+        WorldRenderTarget target = new WorldRenderTarget(Anchor.dynamic(() -> {
+            float t = (System.currentTimeMillis() - birth) / 1000f;
+            return base.add(0, 0.12f * (float) Math.sin(t * 3f), 0);
+        }))
+                .orientation(Orientation.CENTER)
+                .alignment(Alignment.CENTER)
+                .pixelsPerBlock(48f)
+                .seeThrough(true)
+                .maxRenderDistance(MAX_DISTANCE);
+
+        return AetherUI.register(AetherUI.build(component, target));
+    }
+
+    private static void clearIcons() {
+        for (UITree tree : ICONS.values()) {
+            AetherUI.destroy(tree);
+        }
+        ICONS.clear();
     }
 }

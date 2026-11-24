@@ -86,6 +86,14 @@ Example mod description.
     ordering="NONE"
     side="BOTH"
 
+# AetherUI: 客户端 HUD / 声明式 UI 框架
+[[dependencies.${mod_id}]]
+    modId="aetherui"
+    type="required"
+    versionRange="[1.1.0,)"
+    ordering="NONE"
+    side="CLIENT"
+
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares
 # that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't
 # stop your mod loading on the server for example.

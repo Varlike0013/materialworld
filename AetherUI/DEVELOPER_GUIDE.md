@@ -356,7 +356,9 @@ UITree icon = WorldIcon.show(
 
 > 图片请用**独立的 PNG 纹理**（如 `textures/item/xxx.png`）。原版 `textures/item/iron_ingot.png` 是独立小 PNG，可正常显示（放大可能偏糊）；但**图集纹理**（`textures/atlas/*`）用整张 UV 会错位，需改用 `CanvasContext.blitSprite`。
 
-> Demo `SmeltingIconDemo.show(blockPos)` 展示了朝向 CENTER + 位置浮动 + yaw/roll 双轴自旋（用原版 dirt 纹理演示）。
+> Demo `SmeltingIconDemo.show()` 会自动查找玩家附近**正在燃烧且产物槽非空**的熔炉，
+> 在每个熔炉上方用 `CanvasContext.renderItem` 画真实产物，并叠加 CENTER 朝向 + 位置浮动 + yaw/roll 双轴自旋；
+> 熔炉数据由服务端查询同步，客户端不再依赖未同步的 BlockEntity 容器内容。
 
 ---
 
@@ -414,7 +416,8 @@ AetherUI.registerHudBar(new HudBar() {
 
 ### 5.2 Buff 图标（`BuffIcon`）
 
-在物品栏上方显示自定义图标，从左到右、超出换行向上。提供三种工厂：
+在物品栏上方显示自定义图标，从左到右、超出换行向上。除纹理、图集、自定义绘制外，
+还提供 17×17 徽章工厂：文字徽章与 16×16 PNG 徽章，均可附带层数。
 
 ```java
 // 整张纹理图片
@@ -433,7 +436,45 @@ AetherUI.registerBuffIcon(
     }));
 ```
 
+**17×17 徽章快捷 API**（16×16 内容 + 1px 边框，背景为深色、边框为浅灰白）：
+
+```java
+// 一行注册：文字内容“好”，无层数
+AetherUI.addTextBuffIcon(id, "My Text Buff", "好");
+
+// 一行注册：文字内容 + 层数 III
+AetherUI.addTextBuffIcon(id2, "My Text Buff III", "好", 3);
+
+// 一行注册：16×16 PNG 内容，无层数
+AetherUI.addPngBuffIcon(id3, "My PNG Buff",
+    ResourceLocation.fromNamespaceAndPath("mymod", "textures/buff/my_icon.png"));
+
+// 一行注册：16×16 PNG 内容 + 层数 II
+AetherUI.addPngBuffIcon(id4, "My PNG Buff II",
+    ResourceLocation.fromNamespaceAndPath("mymod", "textures/buff/my_icon.png"), 2);
+```
+
+这四个方法返回注册后的 `BuffIcon`，可用 `AetherUI.unregisterBuffIcon(icon)` 注销。
+对应的无注册工厂是 `BuffIcon.textBadge(...)` / `BuffIcon.pngBadge(...)`。
+
 `BuffIcon` 也可直接实现接口，覆写 `visible(LocalPlayer)` 控制显示时机。注销：`AetherUI.unregisterBuffIcon(id)` / `clearBuffIcons()`。
+
+**层数显示**：BuffHud 会把 `BuffIcon.level(player)` 转成罗马数字，画在图标右下角
+（1 → I，3 → III）。原版状态效果会自动按 `amplifier + 1` 显示；自定义图标默认不传层数，
+因此不会绘制，只有显式提供时才显示：
+
+```java
+// 固定层数 3
+AetherUI.registerBuffIcon(BuffIcon.withLevel(
+    BuffIcon.texture(id, texture, "My Buff"), 3));
+
+// 每帧求值；返回 null 或小于 1 则不绘制
+AetherUI.registerBuffIcon(BuffIcon.withLevel(
+    BuffIcon.sprite(id, sprite, "Dynamic Buff"),
+    player -> currentLevel(player)));
+```
+
+也可直接实现 `Integer level(LocalPlayer player)`。层数超过 3999 时用连续 `M` 表示。
 
 ### 5.3 方块信息（`BlockInfoProvider`）
 
@@ -495,8 +536,10 @@ AetherUI.registerBlockInfoProvider(new BlockInfoProvider() {
 // 若只想匹配箱子，可加：if (!state.is(Blocks.CHEST)) return List.of();
 ```
 
-> Demo 已在 `TargetInfoHud` 中内置了这条 provider（namespace `aetherui`），
-> 瞄准任意容器即可看到效果。
+> Demo 已在 `TargetInfoHud` 中内置了这条 provider（namespace `aetherui`），瞄准任意容器即可看到效果。
+> 它实际读取的是**服务端查询结果**，而不是客户端 BlockEntity：原版箱子在未打开时通常不会把物品同步到客户端，
+> 直接读客户端 `be` 会显示 `0/27`。服务器还会通过 `ChestBlock.getContainer(...)` 合并大箱子两半，
+> 因此大箱子显示 `54` 格而不是单半边的 `27` 格。自己写 provider 访问容器内容时也需要类似的同步机制。
 
 **常见场景二：其它 Mod 的容器（如"魔力聚集器 MK1"）**：
 
@@ -653,7 +696,7 @@ WorldMarker timed = WorldMarker.timed("chest-hint", pos, icon, false, 5000L,
 |-----|------|------|-----------|
 | 状态 HUD | 左下角 | 装备/手持耐久行、经验条、饥饿条、血条+护甲方块 | `enableCustomHud`、`showArmorDurability`、`showHeldDurability` |
 | 瞄准信息 HUD | 右下角 | 实体名/HP/护甲/距离；方块名/工具/等级/可否挖掘；`BlockInfoSource` / `BlockInfoProvider` 扩展信息；容器格子数；配方 `[材料]→[时间]→[产物]` | `enableTargetInfo`、`showTargetBlockInfo` |
-| Buff HUD | 物品栏上方 | 原版状态效果 + 注册的 `BuffIcon` | `enableBuffHud`（旁观者不显示） |
+| Buff HUD | 物品栏上方 | 原版状态效果 + 注册的 `BuffIcon`；层数以罗马数字显示在图标右下角 | `enableBuffHud`（旁观者不显示） |
 | 3D 血条 | 生物头顶 | 名字 + 血条 + 护甲方块（仅有护甲时） | `enableWorldHealthBar`、`showHostileHealthBar`、`showAnimalHealthBar`、`showNeutralHealthBar` |
 | 世界空间 UI | 世界坐标 / 实体 / 玩家相对 | 任意 `UIComponent`（与屏幕树共享样式，一次声明两处绘制） | `enableWorldUI` 与构建时的可见性谓词 |
 
@@ -688,6 +731,7 @@ WorldMarker timed = WorldMarker.timed("chest-hint", pos, icon, false, 5000L,
 **完全关闭本 Mod 的辅助**：把 `enableAllAssists` 设为 false 即可——所有内置 HUD、瞄准信息、血条、世界标记、世界 UI、隐藏原版条全部停用。其它 Mod 通过 AetherUI API 注册的内容不受此总开关影响（它们各自的可见性由调用方控制）。
 
 所有子开关都受总开关约束（如 `showArmorDurability` = `enableAllAssists && enableCustomHud && showArmorDurability`），通过 `UITree` 可见性谓词或每帧渲染检查实现，**修改后即时生效，无需重启**。
+三个 Demo 开关也由客户端 tick 每帧轮询并立即创建/销毁对应树，不需要重进游戏。
 
 ---
 
@@ -729,6 +773,7 @@ com.varlike.aetherui
 │   ├── render                     ScreenRenderHandler / WorldRenderHandler / SnapshotRenderer / GuiCanvasContext / OffsetCanvasContext
 │   └── tick                       ClientTickHandler（定时销毁 UITree）
 ├── datagen                        ModDataGen / ModLanguageProvider
+├── network                        AetherUINetwork / InspectPayloads / InspectCache / ClientNetwork（容器与熔炉状态查询）
 └── demo                           CustomHud / TargetInfoHud / BuffHud / DemoUI / DemoFurnaceRecipe / BossBarDemo / SmeltingIconDemo
 ```
 

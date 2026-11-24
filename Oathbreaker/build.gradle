@@ -129,6 +129,9 @@ configurations {
 }
 
 dependencies {
+    // AetherUI: 声明式 UI / HUD 框架（从 mavenLocal 解析 com.varlike.aetherui:AetherUI:1.1.0）
+    implementation "com.varlike.aetherui:AetherUI:1.1.0"
+
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"

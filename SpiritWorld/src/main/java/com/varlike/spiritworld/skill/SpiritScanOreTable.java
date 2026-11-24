@@ -89,6 +89,10 @@ public final class SpiritScanOreTable {
             Block b = h.value();
             if (ALL_VANILLA_BLOCKS.contains(b)) continue;
             Item rep = b.asItem();
+            if (rep == Items.AIR) {
+                // 部分模组的矿物方块没有独立物品形式，尝试用同名注册项兜底
+                rep = BuiltInRegistries.ITEM.get(BuiltInRegistries.BLOCK.getKey(b));
+            }
             if (rep != Items.AIR) result.put(b, rep);
         }
         return result;

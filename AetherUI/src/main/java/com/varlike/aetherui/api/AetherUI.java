@@ -122,6 +122,35 @@ public final class AetherUI {
         BuffIconRegistry.register(icon);
     }
 
+    /** 一行注册 17×17 文字 Buff 图标（深色背景 + 1px 边框 + 居中文字）。 */
+    public static BuffIcon addTextBuffIcon(ResourceLocation id, String label, String text) {
+        BuffIcon icon = BuffIcon.textBadge(id, label, text);
+        registerBuffIcon(icon);
+        return icon;
+    }
+
+    /** 同上，并绘制罗马数字层数；传 0 或不传的版本不绘制层数。 */
+    public static BuffIcon addTextBuffIcon(ResourceLocation id, String label, String text, int level) {
+        BuffIcon icon = BuffIcon.textBadge(id, label, text, level);
+        registerBuffIcon(icon);
+        return icon;
+    }
+
+    /** 一行注册 17×17 PNG Buff 图标（16×16 PNG + 1px 边框）。 */
+    public static BuffIcon addPngBuffIcon(ResourceLocation id, String label, ResourceLocation texture) {
+        BuffIcon icon = BuffIcon.pngBadge(id, label, texture);
+        registerBuffIcon(icon);
+        return icon;
+    }
+
+    /** 同上，并绘制罗马数字层数。 */
+    public static BuffIcon addPngBuffIcon(ResourceLocation id, String label,
+                                          ResourceLocation texture, int level) {
+        BuffIcon icon = BuffIcon.pngBadge(id, label, texture, level);
+        registerBuffIcon(icon);
+        return icon;
+    }
+
     /** 注销一个 buff 图标。 */
     public static void unregisterBuffIcon(BuffIcon icon) {
         BuffIconRegistry.unregister(icon);

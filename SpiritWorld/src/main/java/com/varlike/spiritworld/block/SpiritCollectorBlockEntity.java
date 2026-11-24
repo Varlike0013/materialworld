@@ -126,6 +126,14 @@ public class SpiritCollectorBlockEntity extends AbstractNetworkNodeBlockEntity i
             serverLevel.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS);
         }
     }
+    /** 立即把当前状态推送给客户端，避免等待 10 tick 节流导致交互反馈延迟。 */
+    private void syncNow() {
+        if (level instanceof ServerLevel serverLevel) {
+            BlockState state = getBlockState();
+            serverLevel.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_CLIENTS);
+        }
+    }
+
     /**
      * 玩家 shift+右键装入水晶。旧水晶（含魔力）退回背包。
      */
@@ -142,6 +150,7 @@ public class SpiritCollectorBlockEntity extends AbstractNetworkNodeBlockEntity i
             if (!player.getInventory().add(oldOut)) player.drop(oldOut, false);
         }
         setChanged();
+        syncNow();
     }
 
     /** 取出水晶：BE 的魔力灌入水晶（不超过水晶容量） */
@@ -166,6 +175,7 @@ public class SpiritCollectorBlockEntity extends AbstractNetworkNodeBlockEntity i
         }
         crystal = ItemStack.EMPTY;
         setChanged();
+        syncNow();
         return out;
     }
 
@@ -208,6 +218,8 @@ public class SpiritCollectorBlockEntity extends AbstractNetworkNodeBlockEntity i
         }
         tag.put("Mana", manaTag);
         tag.putString("CurrentType", currentType.id());
+        // 水晶必须同步，否则客户端永远读到空水晶
+        if (!crystal.isEmpty()) tag.put("Crystal", crystal.save(registries));
         return tag;
     }
     /** 从指定属性扣除魔力，返回实际扣除量 */

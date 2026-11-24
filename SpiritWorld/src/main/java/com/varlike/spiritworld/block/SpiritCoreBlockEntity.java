@@ -306,6 +306,14 @@ public class SpiritCoreBlockEntity extends AbstractNetworkNodeBlockEntity implem
 
     // ==================== 容器与水晶 ====================
 
+    /** 立即把当前状态推送给客户端，避免等待同步节流导致交互反馈延迟。 */
+    private void syncNow() {
+        if (level instanceof ServerLevel serverLevel) {
+            BlockState state = getBlockState();
+            serverLevel.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_CLIENTS);
+        }
+    }
+
     public ItemStack getCrystal() { return crystal; }
     public void setCrystal(ItemStack stack) {
         this.crystal = (stack == null || stack.isEmpty()) ? ItemStack.EMPTY : stack;
@@ -324,6 +332,7 @@ public class SpiritCoreBlockEntity extends AbstractNetworkNodeBlockEntity implem
             if (!player.getInventory().add(oldOut)) player.drop(oldOut, false);
         }
         setChanged();
+        syncNow();
     }
 
     public ItemStack extractCrystalWithMana() {
@@ -347,6 +356,7 @@ public class SpiritCoreBlockEntity extends AbstractNetworkNodeBlockEntity implem
         }
         crystal = ItemStack.EMPTY;
         setChanged();
+        syncNow();
         return out;
     }
 
@@ -448,7 +458,7 @@ public class SpiritCoreBlockEntity extends AbstractNetworkNodeBlockEntity implem
             case BTN_MAX -> { infiniteMode = true; targetCount = 0; }
             case BTN_PLUS1 -> { if (!infiniteMode) targetCount = Math.max(1, targetCount + 1); }
             case BTN_PLUS5 -> { if (!infiniteMode) targetCount = Math.max(1, targetCount + 5); }
-            case BTN_MINUS1 -> { if (!infiniteMode) targetCount = Math.max(1, targetCount - 5); }
+            case BTN_MINUS1 -> { if (!infiniteMode) targetCount = Math.max(1, targetCount - 1); }
             case BTN_MINUS5 -> { if (!infiniteMode) targetCount = Math.max(1, targetCount - 5); }
             case BTN_REBUILD_NETWORK -> { rebuildNetwork(); return; }
             default -> { return; }
@@ -595,6 +605,8 @@ public class SpiritCoreBlockEntity extends AbstractNetworkNodeBlockEntity implem
         }
         tag.put("Mana", m);
         tag.putLong("CapacityBonus", capacityBonus);
+        // 水晶必须同步，否则客户端永远读到空水晶
+        if (!crystal.isEmpty()) tag.put("Crystal", crystal.save(reg));
 
         // 同步 UI 需要的明细列表给客户端
         ListTag detailList = new ListTag();

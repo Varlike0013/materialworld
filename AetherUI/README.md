@@ -9,11 +9,12 @@ AetherUI 是一个基于 **NeoForge 1.21.1 / Java 21** 的声明式 UI 框架库
 - 方块上方的边框 + 背景 + 图片便捷 API（支持浮动、三轴旋转、朝向与定时销毁）
 - 左下角状态 HUD（耐久 / 经验 / 饥饿 / 血量 / 护甲）
 - 右下角瞄准信息 HUD（实体 / 方块 / 扩展信息）
-- 物品栏上方的 Buff 图标 HUD
+- 物品栏上方的 Buff 图标 HUD（右下角罗马数字层数；提供 17×17 文字/PNG 徽章一行注册 API）
 - 3D 世界空间生物血条（面向玩家、遮挡检测）
 - 3D 世界标记（图标 + 多行文字，支持穿墙与持续时间）
 - 中英双语言（en_us / zh_cn）
 - 方块可直接实现 `BlockInfoSource`，瞄准时自动显示自己的保存信息；另提供多个注册式扩展接口
+- 内置 Demo 开关即时生效；熔炼演示自动追踪附近活跃熔炉并显示真实产物
 
 完整的 API 说明与集成指南见 **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)**。
 
@@ -30,6 +31,7 @@ AetherUI 是一个基于 **NeoForge 1.21.1 / Java 21** 的声明式 UI 框架库
 | 自定义绘制 | `canvas()` + `CanvasContext`，提供矩形填充、纹理、图集 sprite、文字、物品图标等原语 |
 | 扩展 HUD | `HudBar`、`BuffIcon`、`BlockInfoProvider`、`BlockInfoSource`（方块自提供，免注册）、`WorldMarkerProvider` |
 | 内置 HUD | 状态 HUD、瞄准信息 HUD、Buff HUD、3D 血条，均可独立配置开关 |
+| 权威状态同步 | 内置网络查询让容器格子数（含大箱子合并统计）与熔炉产物显示不依赖客户端未同步的 BlockEntity 数据 |
 | 双语言 | 翻译键集中在 `AetherUILang`，由数据生成器产出 `en_us.json` / `zh_cn.json` |
 
 ---

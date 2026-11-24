@@ -3,7 +3,7 @@
 > 用途：开发时快速定位类、字段、方法、注册入口与数据契约。
 > 代码根：`src/main/java`，包名 `com.varlike.oathbreaker`。
 > 核对时间：2026-11-17；对应 `mod_version=1.0.0`、NeoForge `21.1.256`、Minecraft `1.21.1`。
-> 当前阶段：P0/P1/P2 完成；本轮新增数值放大、多段伤害、命中效果接口、武器池。
+> 当前阶段：P0/P1/P2 完成；本轮新增数值放大、多段伤害、命中效果接口、武器池，并将 HUD 迁移至 AetherUI 1.1.0。
 > 维护规则：新增/重命名/删除类或方法后同步本文件，见文末「维护清单」。
 
 ## 1. 当前代码概况
@@ -16,7 +16,8 @@
 | DataMap | 2 | `weapon_profile`、`mob_profile` |
 | Tag | 11 | 4 物品 + 4 实体 + 3 伤害类型 |
 | 网络 Payload | 1 | `PlayerStatsPayload`（S→C） |
-| HUD | 1 | 左上角 LoL 风格面板 |
+| HUD | 1 | 左上角 LoL 风格面板（AetherUI 声明式 canvas） |
+| 外部依赖 | 1 | AetherUI 1.1.0（mavenLocal，`com.varlike.aetherui:AetherUI`） |
 | 武器池 | 1 套 | JSON + 代码双来源；JSON 3 条示例 |
 | 命中效果 | 1 套 | `HitEffect` / `HitContext` / `WeaponHitProvider` |
 | 调试命令 | 1 组 | `class` / `profile` / `stats` / `pool` |
@@ -63,7 +64,7 @@ LivingDeathEvent → WeaponPool.fireKill → HitEffect.onKill（可选）
 | 1 | `Oathbreaker` | [Oathbreaker.java](../src/main/java/com/varlike/oathbreaker/Oathbreaker.java) | Mod 主类、注册、ID 工厂 | 2 |
 | 2 | `OathbreakerConfig` | [OathbreakerConfig.java](../src/main/java/com/varlike/oathbreaker/OathbreakerConfig.java) | COMMON 配置 | 0（16 字段） |
 | 3 | `OathbreakerClient` | [OathbreakerClient.java](../src/main/java/com/varlike/oathbreaker/client/OathbreakerClient.java) | 客户端入口 | 1 |
-| 4 | `OathbreakerHud` | [OathbreakerHud.java](../src/main/java/com/varlike/oathbreaker/client/OathbreakerHud.java) | HUD Layer | 9 |
+| 4 | `OathbreakerHud` | [OathbreakerHud.java](../src/main/java/com/varlike/oathbreaker/client/OathbreakerHud.java) | AetherUI 屏幕面板 + 原版层替换 | 12 |
 | 5 | `ClientStatsCache` | [ClientStatsCache.java](../src/main/java/com/varlike/oathbreaker/client/ClientStatsCache.java) | 客户端面板缓存 | 4 |
 | 6 | `ModAttributes` | [ModAttributes.java](../src/main/java/com/varlike/oathbreaker/core/attribute/ModAttributes.java) | 自定义属性注册 | 0（15 字段） |
 | 7 | `AttributeModifiers` | [AttributeModifiers.java](../src/main/java/com/varlike/oathbreaker/core/attribute/AttributeModifiers.java) | 固定 ID 修饰符工具 | 5 |
@@ -105,7 +106,7 @@ LivingDeathEvent → WeaponPool.fireKill → HitEffect.onKill（可选）
 - [Oathbreaker.java](../src/main/java/com/varlike/oathbreaker/Oathbreaker.java)：`MOD_ID`（L15）、`LOGGER`（L16）、构造（L18–23）、`id`（L26）。
 - [OathbreakerConfig.java](../src/main/java/com/varlike/oathbreaker/OathbreakerConfig.java)：16 个字段，新增 `MOB_HEALTH_MULTIPLIER`（L23）、`PLAYER_HEALTH_MULTIPLIER`（L31）、`PLAYER_ATTACK_MULTIPLIER`（L32）；静态块 L37–98。
 - [OathbreakerClient.java](../src/main/java/com/varlike/oathbreaker/client/OathbreakerClient.java)：构造 L17–19，注册 HUD。
-- [OathbreakerHud.java](../src/main/java/com/varlike/oathbreaker/client/OathbreakerHud.java)：`register` L27、`render` L36、私有辅助 L74–102。
+- [OathbreakerHud.java](../src/main/java/com/varlike/oathbreaker/client/OathbreakerHud.java)：`registerVanillaLayers` L54、`registerAetherUi` L61、`isVisible` L76、`paint` L84、绘制辅助 L120–153。面板 230×126，锚点左上 (8,8)，只读 `ClientStatsCache`。
 - [ClientStatsCache.java](../src/main/java/com/varlike/oathbreaker/client/ClientStatsCache.java)：`update` L15、`get` L20、`clear` L24。
 
 ### 3.2 属性
@@ -252,23 +253,25 @@ P3 验收路径：
 | 命中效果 | 4.9 | `HitEffect`/`HitContext`/`WeaponHitProvider` | 技能命中触发、命中特效/音效、冷却与触发次数限制 |
 | 武器池 | 4.9、6.12 | JSON + 代码双来源、权重抽取 | 与掉落/商店/大厅 UI 对接；池刷新事件通知 |
 | 数值放大 | 4.1、4.6 | 玩家生命/AD、怪物生命倍率 | 怪物攻击/护甲缩放、Boss 单独曲线 |
-| HUD/网络 | 5.4 | PlayerStatsPayload + HUD | 客户端运行验证受环境 OpenGL 限制 |
+| HUD/网络 | 5.4 | PlayerStatsPayload + AetherUI canvas HUD | 客户端运行验证受环境 OpenGL 限制；AetherUI 内置 HUD 需按需关闭以免重复显示 |
 | 技能/关卡/账户 | 2.x、3.x | 无 | 后续阶段 |
 
 已知边界：
 
-- HUD 未能在此环境运行验证（无 OpenGL），仅通过编译与 API 检查。
+- HUD 未能在此环境运行验证（无 OpenGL），仅通过编译、完整构建与 API 检查。
+- AetherUI 自带左下角状态 HUD/瞄准信息/3D 血条，与本 Mod 左上方面板并存；如需只保留 LoL 面板，在 AetherUI 配置中关闭 `enableCustomHud`（其它辅助按需关闭）。
 - 怪物生命倍率对已存在且已带固定 ID 的怪物不重复应用；改配置后需新生成/重新加载。
 - `WeaponPool` 同一物品同时匹配多个条目时取解析列表中的第一条（代码优先）。
 - `DamageProfile` 比例归一化，不能靠“比例总和 >1”做额外倍率。
 - 原版跳跃暴击仍可能与自定义暴击叠加。
 - 魔法/真实技能按来源 Tag 成段；物理技能目前会沿用主手 profile，技能系统接入时应使用独立伤害源或 damage profile registry。
 
-## 7. 验证记录（2026-11-17）
+## 7. 验证记录（2026-11-17；2026-11-24 补充 HUD 构建）
 
 | 验证 | 命令/方式 | 结果 |
 |---|---|---|
-| 编译 | `gradlew compileJava` | BUILD SUCCESSFUL |
+| 编译 | `gradlew compileJava` | BUILD SUCCESSFUL（2026-11-24 AetherUI 迁移后复验通过） |
+| 完整构建 | `gradlew build` | BUILD SUCCESSFUL；`generateModMetadata` / `processResources` / `jar` 均通过，生成的 `neoforge.mods.toml` 含 `aetherui` required 依赖 |
 | 专用服务器 | `gradlew runServer` | 启动到 `Done`；`Loaded 3 weapon pool entries from JSON` |
 | DataMap | 服务器日志 | `weapon_profile entries=6, mob_profile entries=7` |
 | 武器池 | 服务器日志 | JSON 3 条；代码层为空（无示例注册） |

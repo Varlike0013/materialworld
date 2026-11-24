@@ -8,13 +8,14 @@ import com.varlike.aetherui.demo.CustomHud;
 import com.varlike.aetherui.demo.DemoUI;
 import com.varlike.aetherui.demo.SmeltingIconDemo;
 import com.varlike.aetherui.demo.TargetInfoHud;
-import net.minecraft.core.BlockPos;
+import com.varlike.aetherui.network.InspectCache;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
@@ -34,15 +35,32 @@ public class AetherUIClient {
         AetherUIMod.LOGGER.info("AetherUI client setup; user={}",
                 Minecraft.getInstance().getUser().getName());
         NeoForge.EVENT_BUS.addListener(ClientTickHandler::onClientTick);
+        NeoForge.EVENT_BUS.addListener(AetherUIClient::onClientTick);
         CustomHud.init();
         BuffHud.init();
         TargetInfoHud.init();
-        if (Config.showDemo()) DemoUI.show();
-        if (Config.showBossBarDemo()) BossBarDemo.show();
-        if (Config.showSmeltingIconDemo()) {
-            BlockPos p = Minecraft.getInstance().player != null
-                    ? Minecraft.getInstance().player.blockPosition() : BlockPos.ZERO;
-            SmeltingIconDemo.show(new net.minecraft.world.phys.Vec3(p.getX(), p.getY(), p.getZ()));
+        applyDemoConfig();
+    }
+
+    /** 每帧轮询配置，Demo 开关无需重启。 */
+    private static void onClientTick(ClientTickEvent.Post event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) {
+            InspectCache.clear();
+            return;
         }
+        applyDemoConfig();
+        SmeltingIconDemo.onClientTick(event);
+    }
+
+    private static void applyDemoConfig() {
+        if (Config.showDemo()) DemoUI.show();
+        else DemoUI.hide();
+
+        if (Config.showBossBarDemo()) BossBarDemo.show();
+        else BossBarDemo.destroy();
+
+        if (Config.showSmeltingIconDemo()) SmeltingIconDemo.show();
+        else SmeltingIconDemo.destroy();
     }
 }

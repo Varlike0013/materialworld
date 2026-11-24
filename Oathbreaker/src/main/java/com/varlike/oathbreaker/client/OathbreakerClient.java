@@ -5,6 +5,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 
 /**
  * 客户端入口。
@@ -16,7 +18,9 @@ import net.neoforged.fml.common.Mod;
 public final class OathbreakerClient {
     public OathbreakerClient(IEventBus modEventBus, ModContainer modContainer) {
         Oathbreaker.LOGGER.debug("Oathbreaker client initializing...");
-        modEventBus.addListener((net.neoforged.neoforge.client.event.RegisterGuiLayersEvent event) ->
-                OathbreakerHud.register(event));
+        modEventBus.addListener((RegisterGuiLayersEvent event) ->
+                OathbreakerHud.registerVanillaLayers(event));
+        modEventBus.addListener((FMLClientSetupEvent event) ->
+                OathbreakerHud.registerAetherUi());
     }
 }

@@ -132,6 +132,9 @@ dependencies {
     // 物质世界：编译时依赖 API，运行时也依赖
     compileOnly "com.varlike.materialworld:materialworld:${materialworld_version}"
     runtimeOnly "com.varlike.materialworld:materialworld:${materialworld_version}"
+    // AetherUI：编译时依赖 API，运行时也依赖
+    compileOnly "com.varlike.aetherui:AetherUI:${aetherui_version}"
+    runtimeOnly "com.varlike.aetherui:AetherUI:${aetherui_version}"
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

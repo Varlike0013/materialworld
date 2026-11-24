@@ -4,10 +4,13 @@ import com.varlike.spiritworld.component.CrystalMana;
 import com.varlike.spiritworld.component.ModDataComponents;
 import com.varlike.spiritworld.skill.ManaType;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.LevelReader;
 
 import java.util.List;
 
@@ -25,6 +28,15 @@ public class ManaCrystalItem extends Item {
 
     public long getCapacity() {
         return capacity;
+    }
+
+    /**
+     * 允许 Shift+右键时仍然调用方块的 useItemOn。
+     * MC 1.21.1 默认在 Shift+右键时跳过方块交互，导致水晶无法装入聚集器/核心。
+     */
+    @Override
+    public boolean doesSneakBypassUse(ItemStack stack, LevelReader level, BlockPos pos, Player player) {
+        return true;
     }
 
     // ==================== 组件读写 ====================

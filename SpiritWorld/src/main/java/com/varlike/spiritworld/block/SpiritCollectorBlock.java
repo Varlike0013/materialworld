@@ -129,7 +129,8 @@ public class SpiritCollectorBlock extends BaseEntityBlock {
         if (player.isShiftKeyDown() && stack.getItem() instanceof ManaCrystalItem) {
             if (level.isClientSide) return ItemInteractionResult.SUCCESS;
             collector.insertCrystal(stack, player);
-            return ItemInteractionResult.CONSUME;
+            // 返回 SUCCESS 而非 CONSUME：insertCrystal 已手动 shrink，CONSUME 会二次扣除
+            return ItemInteractionResult.SUCCESS;
         }
 
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;

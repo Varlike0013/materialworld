@@ -1,6 +1,7 @@
 package com.varlike.aetherui;
 
 import com.mojang.logging.LogUtils;
+import com.varlike.aetherui.network.AetherUINetwork;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -14,5 +15,6 @@ public final class AetherUIMod {
 
     public AetherUIMod(IEventBus modBus, ModContainer container) {
         Config.register(container);
+        modBus.addListener(AetherUINetwork::register);
     }
 }

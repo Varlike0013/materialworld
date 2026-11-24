@@ -14,8 +14,10 @@ import com.varlike.aetherui.api.target.ScreenRenderTarget;
 import com.varlike.aetherui.core.registry.BuffIconRegistry;
 import com.varlike.aetherui.core.render.OffsetCanvasContext;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffect;
@@ -69,42 +71,79 @@ public final class BuffHud {
         return p != null && !p.isSpectator();
     }
 
-    private static void paint(CanvasContext ctx, LocalPlayer player) {
-        List<BuffIcon> icons = new ArrayList<>();
+    private record BuffEntry(BuffIcon icon, Integer level) {}
 
-        // 原版状态效果
+    private static void paint(CanvasContext ctx, LocalPlayer player) {
+        List<BuffEntry> icons = new ArrayList<>();
+
+        // 原版状态效果：getAmplifier 从 0 开始，显示为 I / II / III ...
         for (MobEffectInstance inst : player.getActiveEffects()) {
             if (!inst.showIcon()) continue;
             Holder<MobEffect> holder = inst.getEffect();
-            icons.add(new VanillaEffectIcon(holder.value().getColor(), holder));
+            icons.add(new BuffEntry(
+                    new VanillaEffectIcon(holder.value().getColor(), holder, inst.getAmplifier() + 1),
+                    inst.getAmplifier() + 1));
         }
 
-        // 其它 mod 注册的图标
+        // 其它 mod 注册的图标：未提供 level 时不绘制层数
         for (BuffIcon icon : BuffIconRegistry.all()) {
-            if (icon.visible(player)) icons.add(icon);
+            if (icon.visible(player)) icons.add(new BuffEntry(icon, icon.level(player)));
         }
 
         int n = 0;
-        for (BuffIcon icon : icons) {
+        for (BuffEntry entry : icons) {
+            BuffIcon icon = entry.icon();
             int col = n % PER_ROW;
             int row = n / PER_ROW;
             float x = col * (ICON + GAP);
             float y = H - (row + 1) * (ICON + GAP); // 从下到上换行
             if (y < 0f) break;
+
             CanvasContext local = new OffsetCanvasContext(ctx, x, y, icon.width(), icon.height());
             icon.paint(local, player);
+            drawLevel(local, entry.level(), icon.width(), icon.height());
             n++;
         }
+    }
+
+    /** 在图标右下角绘制罗马数字层数；没有层数或层数小于 1 时不绘制。 */
+    private static void drawLevel(CanvasContext ctx, Integer level, float width, float height) {
+        if (level == null || level < 1) return;
+
+        Component text = Component.literal(toRoman(level));
+        Font font = Minecraft.getInstance().font;
+        float x = Math.max(0f, width - font.width(text) - 1f);
+        float y = Math.max(0f, height - font.lineHeight - 1f);
+
+        ctx.drawString(text, x + 1f, y + 1f, 0xFF000000, false);
+        ctx.drawString(text, x, y, 0xFFFFFFFF, false);
+    }
+
+    /** 把正整数转成罗马数字；超过 3999 时用连续 M 表示。 */
+    private static String toRoman(int value) {
+        int[] values = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
+        String[] symbols = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+        StringBuilder sb = new StringBuilder();
+        int remaining = Math.max(1, value);
+        for (int i = 0; i < values.length; i++) {
+            while (remaining >= values[i]) {
+                sb.append(symbols[i]);
+                remaining -= values[i];
+            }
+        }
+        return sb.toString();
     }
 
     /** 把原版状态效果包装成 BuffIcon，使用 MobEffectTextures 的 atlas sprite。 */
     private static final class VanillaEffectIcon implements BuffIcon {
         private final int color;
         private final Holder<MobEffect> holder;
+        private final int level;
 
-        VanillaEffectIcon(int color, Holder<MobEffect> holder) {
+        VanillaEffectIcon(int color, Holder<MobEffect> holder, int level) {
             this.color = color;
             this.holder = holder;
+            this.level = level;
         }
 
         @Override public ResourceLocation id() {
@@ -113,6 +152,7 @@ public final class BuffHud {
         @Override public String label() { return holder.value().getDisplayName().getString(); }
         @Override public float width()  { return ICON; }
         @Override public float height() { return ICON; }
+        @Override public Integer level(LocalPlayer player) { return level; }
 
         @Override
         public void paint(CanvasContext ctx, LocalPlayer player) {

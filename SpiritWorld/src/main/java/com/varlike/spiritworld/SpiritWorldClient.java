@@ -1,6 +1,7 @@
 package com.varlike.spiritworld;
 
 import com.varlike.spiritworld.client.SpiritCoreScreen;
+import com.varlike.spiritworld.client.aether.SpiritAetherIntegration;
 import com.varlike.spiritworld.registry.ModMenus;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
@@ -27,6 +28,7 @@ public class SpiritWorldClient {
     static void onClientSetup(FMLClientSetupEvent event) {
         // 客户端设置阶段加载客户端配置
         ClientConfig.loadValues();
+        SpiritAetherIntegration.init();
 
         SpiritWorld.LOGGER.info("精神世界：客户端初始化");
         SpiritWorld.LOGGER.info("玩家名：{}", Minecraft.getInstance().getUser().getName());
