@@ -45,14 +45,9 @@ public class SpiritCollectorBlock extends BaseEntityBlock {
         this.tier = tier;
     }
 
-    /** Codec fallback（datagen / simpleCodec 使用）；游戏运行时走 4 参构造。 */
-    public SpiritCollectorBlock(Properties props) {
-        this(props, 0L, 0L, 0);
-    }
-
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
-        return simpleCodec(SpiritCollectorBlock::new);
+        return simpleCodec(props -> new SpiritCollectorBlock(props, this.speed, this.capacity, this.tier));
     }
 
     @Override

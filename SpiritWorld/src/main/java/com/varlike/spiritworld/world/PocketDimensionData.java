@@ -17,6 +17,8 @@ public class PocketDimensionData extends SavedData {
     private final Map<UUID, BlockPos> playerCenters = new HashMap<>();
     // 记录已经被占用的中心点
     private final Set<BlockPos> occupiedCenters = new HashSet<>();
+    // 待处理的领地访问请求：目标玩家 UUID -> (访客 UUID -> 发送时间毫秒)
+    private final Map<UUID, Map<UUID, Long>> visitRequests = new HashMap<>();
 
     public PocketDimensionData() {}
 
@@ -28,6 +30,10 @@ public class PocketDimensionData extends SavedData {
 
     public Set<BlockPos> getOccupiedCenters() {
         return occupiedCenters;
+    }
+
+    public Map<UUID, Map<UUID, Long>> getVisitRequests() {
+        return visitRequests;
     }
 
     // ==================== 序列化与反序列化 ====================
@@ -53,6 +59,24 @@ public class PocketDimensionData extends SavedData {
         }
         tag.put("PlayerCenters", playerList);
 
+        // 序列化访问请求
+        ListTag requestList = new ListTag();
+        for (Map.Entry<UUID, Map<UUID, Long>> targetEntry : visitRequests.entrySet()) {
+            CompoundTag targetTag = new CompoundTag();
+            targetTag.putUUID("target", targetEntry.getKey());
+
+            ListTag senderList = new ListTag();
+            for (Map.Entry<UUID, Long> senderEntry : targetEntry.getValue().entrySet()) {
+                CompoundTag senderTag = new CompoundTag();
+                senderTag.putUUID("sender", senderEntry.getKey());
+                senderTag.putLong("time", senderEntry.getValue());
+                senderList.add(senderTag);
+            }
+            targetTag.put("senders", senderList);
+            requestList.add(targetTag);
+        }
+        tag.put("VisitRequests", requestList);
+
         return tag;
     }
 
@@ -68,6 +92,18 @@ public class PocketDimensionData extends SavedData {
         for (int i = 0; i < playerList.size(); i++) {
             CompoundTag pTag = playerList.getCompound(i);
             data.playerCenters.put(pTag.getUUID("uuid"), BlockPos.of(pTag.getLong("pos")));
+        }
+
+        ListTag requestList = tag.getList("VisitRequests", Tag.TAG_COMPOUND);
+        for (int i = 0; i < requestList.size(); i++) {
+            CompoundTag targetTag = requestList.getCompound(i);
+            Map<UUID, Long> senders = new HashMap<>();
+            ListTag senderList = targetTag.getList("senders", Tag.TAG_COMPOUND);
+            for (int j = 0; j < senderList.size(); j++) {
+                CompoundTag senderTag = senderList.getCompound(j);
+                senders.put(senderTag.getUUID("sender"), senderTag.getLong("time"));
+            }
+            data.visitRequests.put(targetTag.getUUID("target"), senders);
         }
 
         return data;

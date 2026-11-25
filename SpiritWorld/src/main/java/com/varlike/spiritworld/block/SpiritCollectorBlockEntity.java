@@ -269,57 +269,57 @@ public class SpiritCollectorBlockEntity extends AbstractNetworkNodeBlockEntity i
     public List<SpiritInfoLine> getSpiritInfo() {
         List<SpiritInfoLine> list = new ArrayList<>();
 
-        // Lv1：名称
+        // Lv0：名称
         list.add(new SpiritInfoLine(
-                Component.translatable(nameKey()).withStyle(ChatFormatting.GOLD), 1));
+                Component.translatable(nameKey()).withStyle(ChatFormatting.GOLD), 0));
 
-        // Lv2：等级 + 当前属性
+        // Lv0：等级 + 当前属性
         list.add(new SpiritInfoLine(
                 Component.translatable("gui.spiritworld.collector.tier", getTier())
-                        .withStyle(ChatFormatting.YELLOW), 2));
+                        .withStyle(ChatFormatting.YELLOW), 0));
         list.add(new SpiritInfoLine(
                 currentType.applyStyle(
-                        Component.translatable("gui.spiritworld.collector.type", currentType.displayName())), 2));
+                        Component.translatable("gui.spiritworld.collector.type", currentType.displayName())), 0));
 
         // 网络连接状态与效率
         if (getParentPos() == null) {
             list.add(new SpiritInfoLine(
                     Component.translatable("gui.spiritworld.collector.disconnected")
-                            .withStyle(ChatFormatting.RED), 2));
+                            .withStyle(ChatFormatting.RED), 0));
         } else {
             list.add(new SpiritInfoLine(
                     Component.translatable("gui.spiritworld.collector.efficiency", String.format("%.1f", getTotalEfficiency() * 100))
-                            .withStyle(ChatFormatting.GREEN), 2));
+                            .withStyle(ChatFormatting.GREEN), 0));
         }
 
-        // Lv3：每种属性的存量（非零 + 当前属性）
+        // Lv1：每种属性的存量（非零 + 当前属性）
         for (ManaType type : ManaType.values()) {
             long amt = getMana(type);
             if (amt <= 0 && type != currentType) continue;
             list.add(new SpiritInfoLine(
                     type.applyStyle(
                             Component.translatable("gui.spiritworld.collector.mana_entry",
-                                    type.displayName(), amt, getCapacity())), 3));
+                                    type.displayName(), amt, getCapacity())), 1));
         }
 
-        // Lv3：总存量
+        // Lv1：总存量
         list.add(new SpiritInfoLine(
                 Component.translatable("gui.spiritworld.collector.total",
                                 getTotalMana(), getCapacity())
-                        .withStyle(ChatFormatting.AQUA), 3));
+                        .withStyle(ChatFormatting.AQUA), 1));
 
-        // Lv4：速度
+        // Lv1：速度
         list.add(new SpiritInfoLine(
                 Component.translatable("gui.spiritworld.collector.speed", getSpeed())
-                        .withStyle(ChatFormatting.LIGHT_PURPLE), 4));
+                        .withStyle(ChatFormatting.LIGHT_PURPLE), 1));
 
-        // Lv5：百分比 + 剩余秒数
+        // Lv2：百分比 + 剩余秒数
         long cap = getCapacity();
         long total = getTotalMana();
         float pct = cap > 0 ? (float) total / cap * 100f : 0f;
         list.add(new SpiritInfoLine(
                 Component.translatable("gui.spiritworld.collector.percent", String.format("%.1f", pct))
-                        .withStyle(ChatFormatting.GREEN), 5));
+                        .withStyle(ChatFormatting.GREEN), 2));
 
         long remain = getRemainingSeconds();
         list.add(new SpiritInfoLine(
@@ -328,7 +328,7 @@ public class SpiritCollectorBlockEntity extends AbstractNetworkNodeBlockEntity i
                         .withStyle(ChatFormatting.GRAY)
                         : Component.translatable("gui.spiritworld.collector.full")
                         .withStyle(ChatFormatting.DARK_GREEN),
-                5));
+                2));
 
         return list;
     }

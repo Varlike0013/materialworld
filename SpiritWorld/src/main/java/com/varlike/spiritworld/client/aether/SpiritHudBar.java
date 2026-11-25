@@ -2,28 +2,44 @@ package com.varlike.spiritworld.client.aether;
 
 import com.varlike.aetherui.api.hud.HudBar;
 import com.varlike.aetherui.api.paint.CanvasContext;
+import com.varlike.aetherui.api.paint.CanvasStyles;
 import com.varlike.spiritworld.ClientConfig;
 import com.varlike.spiritworld.client.ClientSpiritData;
 import com.varlike.spiritworld.skill.ModSkills;
 import com.varlike.spiritworld.skill.SkillNode;
 import com.varlike.spiritworld.skill.SkillTree;
 import com.varlike.spiritworld.skill.SkillValues;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 import static com.varlike.spiritworld.SpiritWorld.MOD_ID;
 
-/** 精神力条：通过 AetherUI 注册到左下角内置 HUD，并保留飞行/装备状态图标。 */
+/**
+ * 精神力条：直接复用 AetherUI 血条的 {@code barWithValue} 样式。
+ * 左侧 142×12 与血条同宽同高，右侧 24 像素数值方块显示灵视等级，
+ * 更右侧额外保留状态/技能图标区域。
+ */
 public final class SpiritHudBar implements HudBar {
 
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(MOD_ID, "spirit_bar");
 
-    private static final float BAR_X = 18f;
-    private static final float BAR_Y = 5f;
-    private static final float BAR_W = 104f;
-    private static final float BAR_H = 6f;
+    private static final float HUD_W = 178f;
+    private static final float HUD_H = 12f;
+
+    private static final float BAR_X = 0f;
+    private static final float BAR_Y = 0f;
+    private static final float BAR_W = 142f;
+    private static final float BAR_H = 12f;
+    private static final float VISION_BOX_W = 24f;
+    private static final int BAR_COLOR = 0xFF3399FF;
+
+    private static final float STATUS_X = 154f;
+    private static final float FLIGHT_Y = 3.5f;
+    private static final float SKILL_Y = 8.5f;
+    private static final float STATUS_R = 3.5f;
+    private static final float SLOT_X = 165f;
+    private static final float SLOT_Y = 2f;
 
     @Override
     public ResourceLocation id() {
@@ -32,12 +48,12 @@ public final class SpiritHudBar implements HudBar {
 
     @Override
     public float width() {
-        return 142f;
+        return HUD_W;
     }
 
     @Override
     public float height() {
-        return 16f;
+        return HUD_H;
     }
 
     @Override
@@ -52,41 +68,35 @@ public final class SpiritHudBar implements HudBar {
     public void paint(CanvasContext ctx, LocalPlayer player) {
         long spirit = ClientSpiritData.getSpirit();
         long max = ClientSpiritData.getMaxSpirit();
-
-        // 背景与空槽
-        ctx.fill(BAR_X - 1f, BAR_Y - 1f, BAR_W + 2f, BAR_H + 2f, 0xFF000000);
-        ctx.fill(BAR_X, BAR_Y, BAR_W, BAR_H, 0xFF303030);
-
-        // 蓝色填充（左深蓝 → 上半亮蓝）
         float ratio = max > 0L ? Math.clamp((float) spirit / (float) max, 0f, 1f) : 0f;
-        float filled = BAR_W * ratio;
-        if (filled > 0f) {
-            ctx.fill(BAR_X, BAR_Y, filled, BAR_H, 0xFF0066CC);
-            ctx.fill(BAR_X, BAR_Y, filled, BAR_H / 2f, 0xFF3399FF);
-        }
 
-        // 被扣掉的上限：红色段
+        // 与 AetherUI 血条完全一致：深色槽 + 单色填充 + 条内标签 + 右侧数值方块
+        CanvasStyles.barWithValue(ctx, BAR_X, BAR_Y, BAR_W, BAR_H, ratio,
+                BAR_COLOR, null, ClientSpiritData.getVisionLevel(), VISION_BOX_W);
+
+        // 被扣掉的上限：红色段，仅覆盖条内部，不触碰数值方块
         long baseMax = ClientSpiritData.getBaseMaxSpirit();
-        if (baseMax > max && baseMax > 0L) {
-            float redStart = BAR_W * ((float) max / (float) baseMax);
-            if (redStart < BAR_W) {
-                ctx.fill(BAR_X + redStart, BAR_Y, BAR_W - redStart, BAR_H, 0xFF8B1A1A);
-                ctx.fill(BAR_X + redStart, BAR_Y, BAR_W - redStart, BAR_H / 2f, 0xFFCC4444);
+        float barW = BAR_W - VISION_BOX_W - 2f;
+        float innerW = Math.max(0f, barW - 4f);
+        if (baseMax > max && baseMax > 0L && innerW > 0f) {
+            float redStart = innerW * ((float) max / (float) baseMax);
+            if (redStart < innerW) {
+                ctx.fill(BAR_X + 2f + redStart, BAR_Y + 2f, innerW - redStart, BAR_H - 4f, 0xFF8B1A1A);
+                ctx.fill(BAR_X + 2f + redStart, BAR_Y + 2f, innerW - redStart, (BAR_H - 4f) / 2f, 0xFFCC4444);
             }
         }
 
-        // 数值文本
+        // 魔力值文字：与血条 HP 文本同位置、同阴影
         if (ClientConfig.showSpiritText) {
-            Component text = Component.literal(spirit + " / " + max);
-            float tw = Minecraft.getInstance().font.width(text);
-            ctx.drawString(text, BAR_X + (BAR_W - tw) / 2f, BAR_Y - 1f, 0xFFFFFFFF, true);
+            Component text = Component.literal("魔力 " + spirit + " / " + max);
+            ctx.drawString(text, BAR_X + 4f, BAR_Y + 1f, 0xFFFFFFFF, true);
         }
 
         drawFlightIndicator(ctx, player);
         drawEquippedSkill(ctx);
     }
 
-    /** 精神力条左侧：飞行状态图标。 */
+    /** 灵视等级右侧上方：飞行状态图标。 */
     private static void drawFlightIndicator(CanvasContext ctx, LocalPlayer player) {
         if (!ClientSpiritData.isPassiveActive(ModSkills.SPIRIT_FLIGHT_ID)) return;
         int level = ClientSpiritData.getSkillLevel(ModSkills.SPIRIT_FLIGHT_ID);
@@ -103,12 +113,12 @@ public final class SpiritHudBar implements HudBar {
             borderColor = 0xFF4CAF50;
         }
 
-        CanvasShapes.fillCircle(ctx, 9f, 8f, 7f, borderColor);
-        CanvasShapes.fillCircle(ctx, 9f, 8f, 5f, 0x80201030);
-        ctx.drawString(Component.literal("飞"), 5f, 2f, 0xFFFFFFFF, false);
+        CanvasShapes.fillCircle(ctx, STATUS_X, FLIGHT_Y, STATUS_R, borderColor);
+        CanvasShapes.fillCircle(ctx, STATUS_X, FLIGHT_Y, STATUS_R - 2f, 0x80201030);
+        ctx.drawString(Component.literal("飞"), STATUS_X - 3f, FLIGHT_Y - 4f, 0xFFFFFFFF, false);
     }
 
-    /** 精神力条右侧：当前装配技能图标 + 槽位编号。 */
+    /** 灵视等级右侧下方：当前装配技能图标 + 槽位编号。 */
     private static void drawEquippedSkill(CanvasContext ctx) {
         ResourceLocation equipped = ClientSpiritData.getEquippedSkill();
         if (equipped == null) return;
@@ -117,9 +127,9 @@ public final class SpiritHudBar implements HudBar {
 
         boolean active = ClientSpiritData.isPassiveActive(equipped) || node.isAlwaysOn();
         int borderColor = active ? 0xFF4CAF50 : 0xFFFFD54F;
-        CanvasShapes.fillShape(ctx, node.getType(), 131f, 8f, 7f, borderColor, 0x80201030);
-        ctx.drawString(Component.literal(node.getIcon()), 127f, 2f, 0xFFFFFFFF, false);
+        CanvasShapes.fillShape(ctx, node.getType(), STATUS_X, SKILL_Y, STATUS_R, borderColor, 0x80201030);
+        ctx.drawString(Component.literal(node.getIcon()), STATUS_X - 3f, SKILL_Y - 4f, 0xFFFFFFFF, false);
         ctx.drawString(Component.literal(String.valueOf(ClientSpiritData.getSelectedSlot() + 1)),
-                136f, 9f, 0xFFAAAAAA, false);
+                SLOT_X, SLOT_Y, 0xFFAAAAAA, false);
     }
 }

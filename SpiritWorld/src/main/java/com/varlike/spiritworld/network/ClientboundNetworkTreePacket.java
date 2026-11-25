@@ -17,7 +17,7 @@ public record ClientboundNetworkTreePacket(
         List<PullDetail> details
 ) implements CustomPacketPayload {
 
-    // 节点数据（核心、聚集器）
+    // 节点数据：核心、中继器、聚集器
     public record NodeData(
             BlockPos pos,
             BlockPos parentPos,
@@ -25,7 +25,11 @@ public record ClientboundNetworkTreePacket(
             double efficiency,
             long mana,
             long capacity,
-            ManaType manaType
+            ManaType manaType,
+            double segmentEfficiency,
+            String linkReason,
+            long offlineGain,
+            int children
     ) {}
 
     // 抽水明细（核心专属）
@@ -54,6 +58,10 @@ public record ClientboundNetworkTreePacket(
             b.writeLong(n.mana());
             b.writeLong(n.capacity());
             b.writeUtf(n.manaType().id());
+            b.writeDouble(n.segmentEfficiency());
+            b.writeUtf(n.linkReason() == null ? "connected" : n.linkReason());
+            b.writeLong(n.offlineGain());
+            b.writeVarInt(n.children());
         });
         buf.writeCollection(details, (b, d) -> {
             b.writeBlockPos(d.collectorPos());
@@ -71,7 +79,11 @@ public record ClientboundNetworkTreePacket(
                         b.readDouble(),
                         b.readLong(),
                         b.readLong(),
-                        ManaType.byId(b.readUtf())
+                        ManaType.byId(b.readUtf()),
+                        b.readDouble(),
+                        b.readUtf(),
+                        b.readLong(),
+                        b.readVarInt()
                 )),
                 buf.readCollection(ArrayList::new, b -> new PullDetail(
                         b.readBlockPos(),

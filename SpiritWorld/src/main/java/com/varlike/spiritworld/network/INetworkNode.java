@@ -33,4 +33,16 @@ public interface INetworkNode {
     void removeChild(BlockPos pos);
     /** 当自身被破坏或断开连接时，通知所有子节点去重新寻找父节点 */
     void disconnectChildren();
+
+    /** 当前连接状态原因（connected / no_parent / parent_full / out_of_range / parent_offline / parent_lost / no_core）。 */
+    String getLinkReason();
+    void setLinkReason(String reason);
+
+    /** 请求延迟重连；由服务端 tick 统一调度，避免断链时递归全图扫描。 */
+    void requestRelink();
+    int getRelinkAttempts();
+    /** 由 NetworkManager 每 20 tick 调用，返回本次是否尝试过重连。 */
+    boolean tickRelink();
+    /** 网络拓扑变化后清除重连次数与冷却，让节点可以再次立即尝试连接。 */
+    void resetRelink();
 }

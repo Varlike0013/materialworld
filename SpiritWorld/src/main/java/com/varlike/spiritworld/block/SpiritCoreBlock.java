@@ -4,6 +4,11 @@ import com.mojang.serialization.MapCodec;
 import com.varlike.spiritworld.client.SpiritCoreMenu;
 import com.varlike.spiritworld.item.ManaCrystalItem;
 import com.varlike.spiritworld.network.ClientboundNetworkTreePacket;
+import com.varlike.spiritworld.network.EfficiencyCalculator;
+import com.varlike.spiritworld.network.INetworkNode;
+import com.varlike.spiritworld.network.NetworkManager;
+import com.varlike.spiritworld.network.NodeType;
+import com.varlike.spiritworld.network.OfflineCollectorData;
 import com.varlike.spiritworld.skill.ManaType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,6 +33,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class SpiritCoreBlock extends BaseEntityBlock {
 
@@ -89,14 +95,21 @@ public class SpiritCoreBlock extends BaseEntityBlock {
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
                                               BlockPos pos, Player player,
                                               InteractionHand hand, BlockHitResult hit) {
-        if (!player.isShiftKeyDown()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        if (!(stack.getItem() instanceof ManaCrystalItem)) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        if (!(level.getBlockEntity(pos) instanceof SpiritCoreBlockEntity be)) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (player.isShiftKeyDown()) {
+            if (!(stack.getItem() instanceof ManaCrystalItem)) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            if (!(level.getBlockEntity(pos) instanceof SpiritCoreBlockEntity be)) {
+                return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            }
+            if (level.isClientSide) return ItemInteractionResult.SUCCESS;
+            be.insertCrystal(stack, player);
+            // 返回 SUCCESS 而非 CONSUME：insertCrystal 已手动 shrink，CONSUME 会二次扣除
+            return ItemInteractionResult.SUCCESS;
+        }
 
-        if (level.isClientSide) return ItemInteractionResult.SUCCESS;
-        be.insertCrystal(stack, player);
-        // 返回 SUCCESS 而非 CONSUME：insertCrystal 已手动 shrink，CONSUME 会二次扣除
-        return ItemInteractionResult.SUCCESS;
+        // 普通右键无论手中是否持物都打开 UI，避免部分情况下 useWithoutItem 不会被调用
+        return openCoreMenu(player, level, pos)
+                ? ItemInteractionResult.SUCCESS
+                : ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
     @Override
@@ -113,21 +126,35 @@ public class SpiritCoreBlock extends BaseEntityBlock {
             return InteractionResult.CONSUME;
         }
 
-        // 普通右键：打开 UI
-        if (level.isClientSide) {
-            return InteractionResult.SUCCESS; // 客户端返回成功，防止挥手动画卡住
-        }
+        return openCoreMenu(player, level, pos) ? InteractionResult.CONSUME : InteractionResult.PASS;
+    }
 
-        // 服务端打开 Menu
-        if (level.getBlockEntity(pos) instanceof SpiritCoreBlockEntity core) {
-            player.openMenu(new SimpleMenuProvider(
-                    (id, inv, p) -> new SpiritCoreMenu(id, inv, core),
-                    Component.translatable("block.spiritworld.spirit_core")
-            ), buf -> buf.writeBlockPos(pos)); // ⚠️ 必须传入坐标，否则客户端会崩溃
-            return InteractionResult.CONSUME;
-        }
+    /** 打开魔力核心 UI；客户端只返回成功以消费交互，服务端负责创建 Menu。 */
+    private static boolean openCoreMenu(Player player, Level level, BlockPos pos) {
+        if (level.isClientSide) return true;
+        if (!(level.getBlockEntity(pos) instanceof SpiritCoreBlockEntity core)) return false;
 
-        return InteractionResult.PASS;
+        player.openMenu(new SimpleMenuProvider(
+                (id, inv, p) -> new SpiritCoreMenu(id, inv, core),
+                Component.translatable("block.spiritworld.spirit_core")
+        ), buf -> buf.writeBlockPos(pos));
+        return true;
+    }
+
+    @Override
+    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean moved) {
+        if (!level.isClientSide && !oldState.is(state.getBlock())) {
+            NetworkManager.registerNode(level, pos, NodeType.CORE);
+            // 新核心落地后让已有节点立即重新寻父，避免等待退避冷却
+            for (BlockPos nodePos : NetworkManager.getNodesInLevel(level).keySet()) {
+                if (nodePos.equals(pos)) continue;
+                BlockEntity be = level.getBlockEntity(nodePos);
+                if (be instanceof INetworkNode node) {
+                    node.findParent();
+                }
+            }
+        }
+        super.onPlace(state, level, pos, oldState, moved);
     }
 
     @Override
@@ -135,31 +162,67 @@ public class SpiritCoreBlock extends BaseEntityBlock {
         if (!state.is(newState.getBlock())) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof SpiritCoreBlockEntity core) {
+                core.disconnectChildren();
+                core.getConnectedCollectors().clear();
+                core.setChanged();
                 core.dropContents(level, pos);
+            }
+            if (!level.isClientSide) {
+                NetworkManager.unregisterNode(level, pos);
             }
         }
         super.onRemove(state, level, pos, newState, moved);
     }
-    /** 从核心收集所有节点数据并发送给客户端 */
+    /** 从核心收集所有节点（含中继器）与诊断数据并发送给客户端 */
     public static void sendNetworkData(ServerPlayer player, SpiritCoreBlockEntity core) {
+        Level level = player.level();
+        Map<BlockPos, NodeType> registry = NetworkManager.getNodesInLevel(level);
         List<ClientboundNetworkTreePacket.NodeData> nodes = new ArrayList<>();
         List<ClientboundNetworkTreePacket.PullDetail> details = new ArrayList<>();
 
         // 1. 核心节点
         nodes.add(new ClientboundNetworkTreePacket.NodeData(
-                core.getBlockPos(), null, "CORE", 1.0, core.getTotalMana(), core.getTotalCapacity(), ManaType.NONE
+                core.getBlockPos(), null, NodeType.CORE.name(), 1.0,
+                core.getTotalMana(), core.getTotalCapacity(), ManaType.NONE,
+                1.0, "connected", 0L, core.getChildren().size()
         ));
 
-        // 2. 聚集器节点（遍历核心维护的扁平名单）
-        for (var entry : core.getConnectedCollectors().entrySet()) {
-            BlockPos cPos = entry.getKey();
-            double eff = entry.getValue();
+        // 2. 所有非核心节点：总效率、段效率、断链原因、离线收益、子节点数
+        for (Map.Entry<BlockPos, NodeType> entry : registry.entrySet()) {
+            BlockPos pos = entry.getKey();
+            NodeType type = entry.getValue();
+            if (type == NodeType.CORE || pos.equals(core.getBlockPos())) continue;
+            if (!(level.getBlockEntity(pos) instanceof INetworkNode node)) continue;
 
-            if (player.level().getBlockEntity(cPos) instanceof SpiritCollectorBlockEntity col) {
-                nodes.add(new ClientboundNetworkTreePacket.NodeData(
-                        cPos, core.getBlockPos(), "COLLECTOR", eff, col.getTotalMana(), col.getCapacity(), col.getCurrentType()
-                ));
+            BlockPos parentPos = node.getParentPos();
+            double segmentEfficiency = -1.0;
+            if (parentPos != null) {
+                NodeType parentType = registry.get(parentPos);
+                if (parentType != null) {
+                    segmentEfficiency = EfficiencyCalculator.calculateSegmentEfficiency(parentType, parentPos, pos);
+                }
             }
+
+            long mana = 0L;
+            long capacity = 0L;
+            long offlineGain = 0L;
+            ManaType manaType = ManaType.NONE;
+            if (node instanceof SpiritCollectorBlockEntity collector) {
+                mana = collector.getTotalMana();
+                capacity = collector.getCapacity();
+                manaType = collector.getCurrentType();
+                OfflineCollectorData shadow = NetworkManager.getShadowData(pos);
+                if (shadow != null) {
+                    offlineGain = shadow.calculateOfflineGain(level.getGameTime());
+                }
+            }
+
+            String reason = parentPos == null ? node.getLinkReason() : "connected";
+            nodes.add(new ClientboundNetworkTreePacket.NodeData(
+                    pos, parentPos, type.name(), node.getTotalEfficiency(),
+                    mana, capacity, manaType, segmentEfficiency, reason,
+                    offlineGain, node.getChildren().size()
+            ));
         }
 
         // 3. 抽水明细
@@ -169,7 +232,6 @@ public class SpiritCoreBlock extends BaseEntityBlock {
             ));
         }
 
-        // 发给客户端
         PacketDistributor.sendToPlayer(player, new ClientboundNetworkTreePacket(nodes, details));
     }
 }

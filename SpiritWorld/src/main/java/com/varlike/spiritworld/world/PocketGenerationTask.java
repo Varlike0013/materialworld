@@ -99,8 +99,7 @@ public class PocketGenerationTask {
                 center.getX() - oldR - 1, center.getY() - 1, center.getZ() - oldR - 1,
                 center.getX() + oldR, center.getY() + oldH, center.getZ() + oldR
         );
-        // 这里简化为遍历整个外壳（原版 BlockPos.betweenClosed 会遍历实心，我们要过滤外壳）
-        return new OuterShellIterator(box);
+        return ShellIterator.of(box);
     }
 
     private Iterator<BlockPos> createDirtIterator() {
@@ -123,45 +122,10 @@ public class PocketGenerationTask {
                 center.getX() - newR - 1, center.getY() - 1, center.getZ() - newR - 1,
                 center.getX() + newR, center.getY() + newH, center.getZ() + newR
         );
-        return new OuterShellIterator(box);
+        return ShellIterator.of(box);
     }
 
     // ==================== 自定义迭代器 ====================
-
-    /** 只遍历 6 个面（外壳），跳过内部空气，极大减少计算量 */
-    private static class OuterShellIterator implements Iterator<BlockPos> {
-        private final BoundingBox box;
-        private final BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
-        private int x, y, z;
-        private boolean hasNext = true;
-
-        public OuterShellIterator(BoundingBox box) {
-            this.box = box;
-            this.x = box.minX(); this.y = box.minY(); this.z = box.minZ();
-        }
-
-        @Override public boolean hasNext() { return hasNext; }
-
-        @Override public BlockPos next() {
-            mutable.set(x, y, z);
-            advance();
-            return mutable.immutable();
-        }
-
-        private void advance() {
-            z++;
-            if (z > box.maxZ()) { z = box.minZ(); y++; }
-            if (y > box.maxY()) { y = box.minY(); x++; }
-            if (x > box.maxX()) { hasNext = false; return; }
-            // 核心：如果当前点在内部（非表面），直接跳过，实现极速跳跃
-            if (x > box.minX() && x < box.maxX() &&
-                    y > box.minY() && y < box.maxY() &&
-                    z > box.minZ() && z < box.maxZ()) {
-                z = box.maxZ(); // 直接跳到本行末尾
-                advance();
-            }
-        }
-    }
 
     /** 只遍历新旧区域差集的环带，跳过老区域 */
     private static class RingIterator implements Iterator<BlockPos> {

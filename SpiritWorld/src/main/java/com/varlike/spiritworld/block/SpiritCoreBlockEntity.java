@@ -631,17 +631,17 @@ public class SpiritCoreBlockEntity extends AbstractNetworkNodeBlockEntity implem
     public List<SpiritInfoLine> getSpiritInfo() {
         List<SpiritInfoLine> list = new ArrayList<>();
         list.add(new SpiritInfoLine(
-                Component.translatable("block.spiritworld.spirit_core").withStyle(ChatFormatting.GOLD), 1));
+                Component.translatable("block.spiritworld.spirit_core").withStyle(ChatFormatting.GOLD), 0));
         list.add(new SpiritInfoLine(
                 Component.translatable("gui.spiritworld.spirit_core.capacity", getTotalMana(), getTotalCapacity())
-                        .withStyle(ChatFormatting.AQUA), 2));
+                        .withStyle(ChatFormatting.AQUA), 0));
         list.add(new SpiritInfoLine(
                 Component.translatable("gui.spiritworld.spirit_core.bonus", getCapacityBonus())
-                        .withStyle(ChatFormatting.YELLOW), 3));
+                        .withStyle(ChatFormatting.YELLOW), 1));
         for (ManaType type : ManaType.values()) {
             long amt = getMana(type);
             if (amt <= 0) continue;
-            list.add(new SpiritInfoLine(type.applyStyle(Component.translatable("gui.spiritworld.spirit_core.mana_entry", type.displayName(), amt)), 3));
+            list.add(new SpiritInfoLine(type.applyStyle(Component.translatable("gui.spiritworld.spirit_core.mana_entry", type.displayName(), amt)), 1));
         }
         return list;
     }

@@ -3,6 +3,8 @@ package com.varlike.spiritworld.network;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,10 +17,22 @@ public class NetworkManager {
     // 离线影子缓存： Map<聚集器坐标, 影子数据>
     private static final Map<BlockPos, OfflineCollectorData> SHADOW_DATA = new ConcurrentHashMap<>();
 
+    private static int relinkTickCounter;
+
     // ==================== 节点注册与注销 ====================
 
     public static void registerNode(Level level, BlockPos pos, NodeType type) {
-        ALL_NODES.computeIfAbsent(level.dimension(), k -> new ConcurrentHashMap<>()).put(pos.immutable(), type);
+        Map<BlockPos, NodeType> nodes = ALL_NODES.computeIfAbsent(level.dimension(), k -> new ConcurrentHashMap<>());
+        nodes.put(pos.immutable(), type);
+        if (level.isClientSide) return;
+
+        // 拓扑变化后清空所有节点的重连次数/冷却，让新增核心或中继能立即被识别
+        for (BlockPos nodePos : nodes.keySet()) {
+            BlockEntity be = level.getBlockEntity(nodePos);
+            if (be instanceof INetworkNode node) {
+                node.resetRelink();
+            }
+        }
     }
 
     public static void unregisterNode(Level level, BlockPos pos) {
@@ -32,6 +46,19 @@ public class NetworkManager {
 
     public static Map<BlockPos, NodeType> getNodesInLevel(Level level) {
         return ALL_NODES.getOrDefault(level.dimension(), new HashMap<>());
+    }
+
+    /** 每 20 tick 调度一次孤儿节点重连，避免每个 tick 全图扫描。 */
+    public static void tickRelinks(Level level) {
+        if (++relinkTickCounter % 20 != 0) return;
+
+        for (Map.Entry<BlockPos, NodeType> entry : getNodesInLevel(level).entrySet()) {
+            if (entry.getValue() == NodeType.CORE) continue;
+            BlockEntity be = level.getBlockEntity(entry.getKey());
+            if (be instanceof AbstractNetworkNodeBlockEntity node) {
+                node.tickRelink();
+            }
+        }
     }
 
     // ==================== 影子数据操作 ====================

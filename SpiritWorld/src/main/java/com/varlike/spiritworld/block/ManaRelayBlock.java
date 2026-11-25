@@ -24,7 +24,7 @@ public class ManaRelayBlock extends BaseEntityBlock {
 
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
-        return simpleCodec(props -> new ManaRelayBlock(props, 1)); // 占位，实际通过 ModBlocks 构造
+        return simpleCodec(props -> new ManaRelayBlock(props, this.tier));
     }
 
     @Override

@@ -76,6 +76,7 @@ public class ClientSpiritData {
     public static void reset() {
         spirit = 0L;
         maxSpirit = 100L;
+        baseMaxSpirit = 0L;
         availableVisionPoints = 0L;
         totalSpentVisionPoints = 0L;
         visionFragments = 0L;
@@ -83,6 +84,8 @@ public class ClientSpiritData {
         Arrays.fill(loadout, null);
         selectedSlot = 0;
         activePassives.clear();
+        scanRange = 8;
+        scanOres = new HashSet<>();
     }
 
     public static void update(long newSpirit, long newMaxSpirit,long newBaseMaxSpirit,

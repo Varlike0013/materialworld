@@ -16,6 +16,18 @@ public class SkillTree {
         return NODES.get(id);
     }
 
+    /** 按技能 ID 归类；不修改既有技能定义即可获得稳定的分支展示。 */
+    public static SkillBranch getBranch(SkillNode node) {
+        if (node == null) return SkillBranch.SPIRIT;
+        String path = node.getId().getPath();
+        if (path.contains("pocket") || path.contains("flight")) return SkillBranch.SPACE;
+        if (path.contains("tool") || path.contains("fortune") || path.contains("efficiency")
+                || path.contains("repair") || path.contains("scan") || path.contains("maintenance")
+                || path.contains("summon")) return SkillBranch.TOOL;
+        if (path.contains("vision") || path.contains("emc")) return SkillBranch.VISION;
+        return SkillBranch.SPIRIT;
+    }
+
     public static boolean exists(ResourceLocation id) {
         return NODES.containsKey(id);
     }

@@ -99,14 +99,14 @@ public class SpiritCoreScreen extends AbstractContainerScreen<SpiritCoreMenu> {
                                     new com.varlike.spiritworld.client.SpiritCoreNetworkScreen(this, this.menu.getBlockPos())
                             );
                         })
-                .bounds(this.leftPos + this.imageWidth - 80, this.topPos + 5, 70, 18)
+                .bounds(this.leftPos + BG_WIDTH - 78, this.topPos + 5, 72, 18)
                 .build());
         addRenderableWidget(Button.builder(
                         Component.translatable("gui.spiritworld.forge.rebuild"),
                         b -> {
                             PacketDistributor.sendToServer(new ServerboundCoreActionPacket(this.menu.getBlockPos(), SpiritCoreBlockEntity.BTN_REBUILD_NETWORK));
                         })
-                .bounds(this.leftPos + 10, this.topPos + 5, 60, 18)
+                .bounds(this.leftPos + BG_WIDTH - 150, this.topPos + 5, 66, 18)
                 .build());
     }
 
@@ -127,56 +127,37 @@ public class SpiritCoreScreen extends AbstractContainerScreen<SpiritCoreMenu> {
         int x = (width - BG_WIDTH) / 2;
         int y = (height - BG_HEIGHT) / 2;
 
-        // 半透明背景
-        g.fill(x, y, x + BG_WIDTH, y + BG_HEIGHT, 0xE0201030);
-        // 边框
-        g.fill(x, y, x + BG_WIDTH, y + 1, 0xFF7E57C2);
-        g.fill(x, y + BG_HEIGHT - 1, x + BG_WIDTH, y + BG_HEIGHT, 0xFF7E57C2);
-        g.fill(x, y, x + 1, y + BG_HEIGHT, 0xFF7E57C2);
-        g.fill(x + BG_WIDTH - 1, y, x + BG_WIDTH, y + BG_HEIGHT, 0xFF7E57C2);
+        // 主面板：阴影 + 双层边框 + 标题分隔线
+        g.fill(x - 4, y - 4, x + BG_WIDTH + 4, y + BG_HEIGHT + 4, 0x90000000);
+        drawPanel(g, x, y, BG_WIDTH, BG_HEIGHT, 0xF0141122, 0xFF9575CD);
+        g.fill(x + 1, y + 18, x + BG_WIDTH - 1, y + 19, 0x77565B8C);
 
-        // 左侧配方网格
-        for (int row = 0; row < GRID_ROWS; row++) {
-            for (int col = 0; col < GRID_COLS; col++) {
-                int sx = x + GRID_X + col * SLOT_SIZE;
-                int sy = y + GRID_Y + row * SLOT_SIZE;
+        // 分区底板：配方 / 详情 / 输出 / 控制 / 背包
+        drawPanel(g, x + 4, y + 16, 80, 96, 0xB0181626, 0x554938);
+        drawPanel(g, x + 86, y + 16, 90, 124, 0xA0120F1E, 0x554938);
+        drawPanel(g, x + 178, y + 16, 60, 64, 0xB0181626, 0x554938);
+        drawPanel(g, x + 4, y + 140, BG_WIDTH - 8, 60, 0xA0120F1E, 0x554938);
+        drawPanel(g, x + 58, y + 210, 166, 86, 0xB0181626, 0x554938);
+
+        drawSlots(g, x + GRID_X, y + GRID_Y, GRID_COLS, GRID_ROWS);
+        drawSlots(g, x + 180, y + 20, 3, 3);
+        drawSlots(g, x + 59, y + 214, 9, 3);
+        drawSlots(g, x + 59, y + 272, 9, 1);
+    }
+
+    private static void drawPanel(GuiGraphics g, int x, int y, int w, int h, int fill, int border) {
+        g.fill(x, y, x + w, y + h, border);
+        g.fill(x + 1, y + 1, x + w - 1, y + h - 1, fill);
+    }
+
+    private static void drawSlots(GuiGraphics g, int x, int y, int cols, int rows) {
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols; col++) {
+                int sx = x + col * SLOT_SIZE;
+                int sy = y + row * SLOT_SIZE;
                 g.fill(sx, sy, sx + SLOT_SIZE, sy + SLOT_SIZE, 0xFF303030);
                 g.fill(sx + 1, sy + 1, sx + SLOT_SIZE - 1, sy + SLOT_SIZE - 1, 0xFF1A1A1A);
             }
-        }
-
-        // 中间详情区域背景
-        int detailX = x + 88;
-        int detailY = y + 20;
-        g.fill(detailX, detailY, detailX + 84, detailY + 130, 0x80000000);
-
-        // 右侧容器槽位
-        int rightX = x + 180;
-        int rightY = y + 20;
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 3; col++) {
-                int sx = rightX + col * SLOT_SIZE;
-                int sy = rightY + row * SLOT_SIZE;
-                g.fill(sx, sy, sx + SLOT_SIZE, sy + SLOT_SIZE, 0xFF303030);
-                g.fill(sx + 1, sy + 1, sx + SLOT_SIZE - 1, sy + SLOT_SIZE - 1, 0xFF1A1A1A);
-            }
-        }
-
-        // 玩家背包
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                int sx = x + 60 + col * SLOT_SIZE - 1;
-                int sy = y + 215 + row * SLOT_SIZE - 1;
-                g.fill(sx, sy, sx + SLOT_SIZE, sy + SLOT_SIZE, 0xFF303030);
-                g.fill(sx + 1, sy + 1, sx + SLOT_SIZE - 1, sy + SLOT_SIZE - 1, 0xFF1A1A1A);
-            }
-        }
-        // 快捷栏
-        for (int col = 0; col < 9; col++) {
-            int sx = x + 60 + col * SLOT_SIZE - 1;
-            int sy = y + 273 - 1;
-            g.fill(sx, sy, sx + SLOT_SIZE, sy + SLOT_SIZE, 0xFF303030);
-            g.fill(sx + 1, sy + 1, sx + SLOT_SIZE - 1, sy + SLOT_SIZE - 1, 0xFF1A1A1A);
         }
     }
 
@@ -202,7 +183,6 @@ public class SpiritCoreScreen extends AbstractContainerScreen<SpiritCoreMenu> {
             }
         }
 
-        renderBackground(g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
 
         renderRecipeGrid(g, leftPos, topPos, mouseX, mouseY);
@@ -392,6 +372,19 @@ public class SpiritCoreScreen extends AbstractContainerScreen<SpiritCoreMenu> {
 
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        // 空实现，避免原版模糊
+        // 不使用原版模糊，但仍绘制全屏遮罩，避免世界内容直接透出
+        g.fillGradient(0, 0, this.width, this.height, 0xC0080A14, 0xE004050B);
+        // AbstractContainerScreen 的基类实现会在 renderBackground 中调用 renderBg，
+        // 这里必须显式调用，否则面板与槽位格子不会被绘制。
+        renderBg(g, partialTick, mouseX, mouseY);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        // 标题固定在顶部左侧区域，按钮统一右对齐，二者互不遮挡
+        g.drawString(this.font, this.title,
+                this.leftPos + 8, this.topPos + 5, 0xFFFFD54F, false);
+        g.drawString(this.font, this.playerInventoryTitle,
+                this.leftPos + 59, this.topPos + 204, 0xFFB0B0B0, false);
     }
 }

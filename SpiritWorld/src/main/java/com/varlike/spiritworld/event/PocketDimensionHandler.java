@@ -8,6 +8,7 @@ import com.varlike.spiritworld.skill.SkillValues;
 import com.varlike.spiritworld.world.PocketChunkLoader;
 import com.varlike.spiritworld.world.PocketDimensionManager;
 import com.varlike.spiritworld.world.PocketGenerationTask;
+import com.varlike.spiritworld.world.VisitRequestManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -149,7 +150,12 @@ public class PocketDimensionHandler {
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
+        VisitRequestManager.tickRequests(event.getServer());
         PocketDimensionManager.tickTasks();
+        ServerLevel pocketLevel = event.getServer().getLevel(PocketDimensionManager.POCKET_DIMENSION);
+        if (pocketLevel != null) {
+            PocketDimensionManager.tickTasks(pocketLevel);
+        }
     }
 
     /**

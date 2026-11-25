@@ -4,6 +4,7 @@ import com.varlike.spiritworld.client.ClientSpiritData;
 import com.varlike.spiritworld.network.ServerboundLearnSkillPacket;
 import com.varlike.spiritworld.network.ServerboundRequestSyncPacket;
 import com.varlike.spiritworld.skill.ModSkills;
+import com.varlike.spiritworld.skill.SkillBranch;
 import com.varlike.spiritworld.skill.SkillNode;
 import com.varlike.spiritworld.skill.SkillTree;
 import net.minecraft.ChatFormatting;
@@ -56,9 +57,10 @@ public class SkillTreeScreen extends Screen {
     private int contentLeft, contentTop, contentRight, contentBottom;
     private Button btnSwitchToLoadout;
 
-    /** 点击失败时的临时提示（底部居中显示约 2.5 秒） */
+    /** 技能操作失败提示：底部居中，带强调色与渐隐，约 2.5 秒后消失。 */
     private Component feedback = null;
     private long feedbackUntil = 0L;
+    private int feedbackAccent = 0xFFFF8A80;
 
     public SkillTreeScreen() {
         super(Component.translatable("screen.spiritworld.skill_tree.title"));
@@ -164,6 +166,7 @@ public class SkillTreeScreen extends Screen {
         g.disableScissor();
 
         renderTopBar(g);
+        renderBranchLegend(g);
 
         // 新增：画 Widget（切换按钮）
         super.render(g, mouseX, mouseY, partialTick);
@@ -332,6 +335,10 @@ public class SkillTreeScreen extends Screen {
         lines.add(Component.translatable(node.getNameKey()).withStyle(ChatFormatting.GOLD));
         lines.add(Component.translatable("skill.type." + node.getType().name().toLowerCase())
                 .withStyle(ChatFormatting.GRAY));
+        SkillBranch branch = SkillTree.getBranch(node);
+        lines.add(Component.translatable("skill.branch.label",
+                        Component.translatable(branch.labelKey()))
+                .withStyle(style -> style.withColor(branch.color())));
         lines.add(Component.empty());
         lines.add(Component.translatable(node.getDescKey()).withStyle(ChatFormatting.WHITE));
         lines.add(Component.empty());
@@ -377,6 +384,17 @@ public class SkillTreeScreen extends Screen {
         g.renderTooltip(this.font, lines, java.util.Optional.empty(), mouseX, mouseY);
     }
 
+    private void renderBranchLegend(GuiGraphics g) {
+        int x = 20;
+        int y = this.height - 20;
+        for (SkillBranch branch : SkillBranch.values()) {
+            Component label = Component.translatable(branch.labelKey());
+            g.fill(x, y + 1, x + 8, y + 9, branch.color());
+            g.drawString(this.font, label, x + 12, y, branch.color(), false);
+            x += 14 + this.font.width(label) + 16;
+        }
+    }
+
     // ==================== 学习反馈 ====================
 
     /** 本地预检，失败时给出可见提示，避免“点了没反应” */
@@ -384,7 +402,7 @@ public class SkillTreeScreen extends Screen {
         int cur = ClientSpiritData.getSkillLevel(node.getId());
 
         if (cur >= node.getMaxLevel()) {
-            showFeedback(Component.translatable("message.spiritworld.skill.max_level"));
+            showFeedback(Component.translatable("message.spiritworld.skill.max_level"), 0xFFFFD54F);
             return;
         }
 
@@ -394,42 +412,48 @@ public class SkillTreeScreen extends Screen {
                 showFeedback(pre != null
                         ? Component.translatable("message.spiritworld.skill.prereq",
                                 Component.translatable(pre.getNameKey()))
-                        : Component.translatable("message.spiritworld.skill.prereq_unknown"));
+                        : Component.translatable("message.spiritworld.skill.prereq_unknown"), 0xFFFFA54F);
                 return;
             }
         }
 
         if (ClientSpiritData.getVisionLevel() < node.getRequiredVisionLevel()) {
             showFeedback(Component.translatable("message.spiritworld.skill.no_vision",
-                    node.getRequiredVisionLevel()));
+                    node.getRequiredVisionLevel()), 0xFFFF8A80);
             return;
         }
 
         long cost = node.getCostForNextLevel(cur);
         if (ClientSpiritData.getAvailableVisionPoints() < cost) {
-            showFeedback(Component.translatable("message.spiritworld.skill.no_points", cost));
+            showFeedback(Component.translatable("message.spiritworld.skill.no_points", cost), 0xFFFF8A80);
             return;
         }
 
         PacketDistributor.sendToServer(new ServerboundLearnSkillPacket(node.getId()));
     }
 
-    private void showFeedback(Component text) {
+    private void showFeedback(Component text, int accent) {
         this.feedback = text;
+        this.feedbackAccent = accent;
         this.feedbackUntil = Util.getMillis() + 2500L;
     }
 
     private void renderFeedback(GuiGraphics g) {
         if (feedback == null) return;
-        if (Util.getMillis() >= feedbackUntil) {
+        long remaining = feedbackUntil - Util.getMillis();
+        if (remaining <= 0L) {
             feedback = null;
             return;
         }
+
+        int alpha = (int) Math.clamp(remaining * 255L / 500L, 0L, 176L);
+        int panelColor = (alpha << 24) | 0x000000;
         int w = this.font.width(feedback);
         int x = (this.width - w) / 2;
         int y = this.height - BOTTOM_BAR_HEIGHT - 16;
-        g.fill(x - 4, y - 3, x + w + 4, y + 10, 0xB0000000);
-        g.drawString(this.font, feedback, x, y, 0xFFFF8A80, false);
+        g.fill(x - 6, y - 4, x + w + 6, y + 11, panelColor);
+        g.fill(x - 6, y - 4, x - 3, y + 11, feedbackAccent);
+        g.drawString(this.font, feedback, x, y, 0xFFFFFFFF, false);
     }
 
     private boolean isInside(int mx, int my, int cx, int cy, int r) {

@@ -2,11 +2,13 @@ package com.varlike.spiritworld.world;
 
 import com.varlike.spiritworld.Config;
 import com.varlike.spiritworld.SpiritWorld;
+import com.varlike.spiritworld.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 
 import java.util.*;
 
@@ -104,18 +106,42 @@ public class PocketDimensionManager {
 
     // 待生成的边界任务
     private static final List<BoundaryTask> TASKS = new ArrayList<>();
+    private static final int BOUNDARY_BLOCKS_PER_TICK = 1000;
 
-    public record BoundaryTask(BlockPos center, int radius, int height, boolean isRemoving) {}
+    public static final class BoundaryTask {
+        private final Iterator<BlockPos> positions;
+        private final boolean removing;
+
+        private BoundaryTask(BlockPos center, int radius, int height, boolean removing) {
+            this.positions = ShellIterator.around(center, radius, height);
+            this.removing = removing;
+        }
+
+        /** 推进一批方块，返回任务是否完成。 */
+        private boolean tick(Level level) {
+            int processed = 0;
+            while (processed < BOUNDARY_BLOCKS_PER_TICK && positions.hasNext()) {
+                BlockPos pos = positions.next();
+                if (removing) {
+                    if (level.getBlockState(pos).is(ModBlocks.MAGIC_BARRIER.get())) {
+                        level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+                    }
+                } else if (level.getBlockState(pos).isAir()) {
+                    level.setBlockAndUpdate(pos, ModBlocks.MAGIC_BARRIER.get().defaultBlockState());
+                }
+                processed++;
+            }
+            return !positions.hasNext();
+        }
+    }
 
     public static void queueBoundaryTask(BlockPos center, int radius, int height, boolean isRemoving) {
         TASKS.add(new BoundaryTask(center, radius, height, isRemoving));
     }
 
-    /** 每个 tick 处理 1000 个方块，防止卡顿 */
+    /** 每个 tick 处理 1000 个方块，防止卡顿。 */
     public static void tickTasks(Level level) {
         if (TASKS.isEmpty()) return;
-
-        BoundaryTask task = TASKS.get(0);
-        // 这里的生成逻辑放到稍后的 Handler 中执行
+        TASKS.removeIf(task -> task.tick(level));
     }
 }

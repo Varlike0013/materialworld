@@ -15,9 +15,16 @@ import java.util.Map;
 
 public abstract class AbstractNetworkNodeBlockEntity extends BlockEntity implements INetworkNode {
 
+    public static final int MAX_RELINK_ATTEMPTS = 3;
+    public static final int RELINK_COOLDOWN_TICKS = 100;
+
     protected BlockPos parentPos;
     protected double totalEfficiency = 0.0;
     protected final List<BlockPos> children = new ArrayList<>();
+
+    private String linkReason = "no_parent";
+    private int relinkCooldown;
+    private int relinkAttempts;
 
     public AbstractNetworkNodeBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -55,6 +62,42 @@ public abstract class AbstractNetworkNodeBlockEntity extends BlockEntity impleme
         this.setChanged();
     }
 
+    @Override
+    public String getLinkReason() { return linkReason; }
+
+    @Override
+    public void setLinkReason(String reason) {
+        this.linkReason = reason == null ? "no_parent" : reason;
+    }
+
+    @Override
+    public void requestRelink() {
+        relinkCooldown = Math.max(relinkCooldown, RELINK_COOLDOWN_TICKS);
+    }
+
+    @Override
+    public int getRelinkAttempts() { return relinkAttempts; }
+
+    @Override
+    public boolean tickRelink() {
+        if (relinkCooldown > 0) {
+            relinkCooldown--;
+            return false;
+        }
+        if (parentPos != null && totalEfficiency > 0.0) return false;
+
+        relinkAttempts++;
+        findParent();
+        return true;
+    }
+
+    @Override
+    public void resetRelink() {
+        relinkAttempts = 0;
+        relinkCooldown = parentPos == null ? 1 : 0;
+        if (parentPos == null) linkReason = "no_parent";
+    }
+
     /**
      * 核心的寻父算法：遍历全图可用节点，找效率最高的。
      */
@@ -73,11 +116,15 @@ public abstract class AbstractNetworkNodeBlockEntity extends BlockEntity impleme
             totalEfficiency = 0.0;
         }
 
-        // 2. 遍历全局节点寻找最优父节点
+        // 2. 遍历全局节点寻找最优父节点，并记录断链原因
         Map<BlockPos, NodeType> allNodes = NetworkManager.getNodesInLevel(level);
         BlockPos myPos = this.getBlockPos();
         double bestEfficiency = -1.0;
         BlockPos bestParent = null;
+        boolean sawFull = false;
+        boolean sawOutOfRange = false;
+        boolean sawCandidate = false;
+        boolean sawInactiveParent = false;
 
         for (Map.Entry<BlockPos, NodeType> entry : allNodes.entrySet()) {
             BlockPos targetPos = entry.getKey();
@@ -89,15 +136,23 @@ public abstract class AbstractNetworkNodeBlockEntity extends BlockEntity impleme
             BlockEntity be = level.getBlockEntity(targetPos);
             if (!(be instanceof INetworkNode parentNode)) continue;
 
-            // ✅ 检查父节点容量是否满载
-            if (parentNode.getChildren().size() >= parentNode.getMaxChildren()) continue;
+            if (parentNode.getChildren().size() >= parentNode.getMaxChildren()) {
+                sawFull = true;
+                continue;
+            }
 
-            // 计算连接效率
             double segEff = EfficiencyCalculator.calculateSegmentEfficiency(targetType, targetPos, myPos);
-            if (segEff <= 0) continue; // 超距
+            if (segEff <= 0) {
+                sawOutOfRange = true;
+                continue;
+            }
 
-            // 总效率 = 父节点效率 * 段效率
+            sawCandidate = true;
             double candidateEff = parentNode.getTotalEfficiency() * segEff;
+            if (candidateEff <= 0) {
+                sawInactiveParent = true;
+                continue;
+            }
 
             if (candidateEff > bestEfficiency) {
                 bestEfficiency = candidateEff;
@@ -105,19 +160,20 @@ public abstract class AbstractNetworkNodeBlockEntity extends BlockEntity impleme
             }
         }
 
-        // 3. 建立新连接
+        // 3. 建立新连接或记录断链原因并等待冷却重连
         if (bestParent != null) {
             this.parentPos = bestParent;
             this.totalEfficiency = bestEfficiency;
+            this.linkReason = "connected";
+            this.relinkAttempts = 0;
+            this.relinkCooldown = 0;
             BlockEntity parent = level.getBlockEntity(bestParent);
             if (parent instanceof INetworkNode node) {
                 node.addChild(myPos);
             }
             this.setChanged();
-            // 自身连上了，递归让子节点也更新效率
             updateChildrenEfficiency();
 
-            // ✅ 通知核心更新名单
             BlockPos rootCore = findRootCore(level, bestParent);
             if (rootCore != null && level.getBlockEntity(rootCore) instanceof SpiritCoreBlockEntity core) {
                 if (this instanceof SpiritCollectorBlockEntity) {
@@ -126,8 +182,21 @@ public abstract class AbstractNetworkNodeBlockEntity extends BlockEntity impleme
             }
         } else {
             this.totalEfficiency = 0.0;
+            if (!sawCandidate && !sawOutOfRange && !sawFull) {
+                this.linkReason = "no_parent";
+            } else if (sawFull && !sawCandidate && !sawOutOfRange) {
+                this.linkReason = "parent_full";
+            } else if (sawOutOfRange && !sawCandidate) {
+                this.linkReason = "out_of_range";
+            } else if (sawInactiveParent) {
+                this.linkReason = "parent_offline";
+            } else {
+                this.linkReason = "no_core";
+            }
+            long backoff = Math.min(RELINK_COOLDOWN_TICKS * (1L << Math.min(relinkAttempts, 4)), 1600L);
+            this.relinkCooldown = Math.max(this.relinkCooldown, (int) backoff);
             this.setChanged();
-            disconnectChildren(); // 自身游离，子节点也断开
+            disconnectChildren(); // 自身游离，子节点进入延迟重连
         }
     }
 
@@ -162,7 +231,8 @@ public abstract class AbstractNetworkNodeBlockEntity extends BlockEntity impleme
                     child.setTotalEfficiency(this.totalEfficiency * segEff);
                     child.updateChildrenEfficiency();
                 } else {
-                    child.findParent(); // 距离变远导致断开，让它重新找
+                    child.setLinkReason("out_of_range");
+                    child.requestRelink();
                 }
             }
         }
@@ -175,10 +245,12 @@ public abstract class AbstractNetworkNodeBlockEntity extends BlockEntity impleme
             if (be instanceof AbstractNetworkNodeBlockEntity child) {
                 child.parentPos = null;
                 child.totalEfficiency = 0.0;
-                child.findParent(); // 强制孤儿重新找爸爸
+                child.setLinkReason("parent_lost");
+                child.requestRelink(); // 延迟重连，避免递归全图扫描
             }
         }
         children.clear();
+        this.setChanged();
     }
 
     @Override
@@ -186,6 +258,8 @@ public abstract class AbstractNetworkNodeBlockEntity extends BlockEntity impleme
         super.saveAdditional(tag, registries);
         if (parentPos != null) tag.putLong("ParentPos", parentPos.asLong());
         tag.putDouble("TotalEfficiency", totalEfficiency);
+        tag.putString("LinkReason", linkReason);
+        tag.putInt("RelinkAttempts", relinkAttempts);
     }
 
     @Override
@@ -197,5 +271,15 @@ public abstract class AbstractNetworkNodeBlockEntity extends BlockEntity impleme
             parentPos = null;
         }
         totalEfficiency = tag.getDouble("TotalEfficiency");
+        linkReason = tag.getString("LinkReason");
+        if (linkReason.isEmpty()) linkReason = "no_parent";
+        relinkAttempts = tag.getInt("RelinkAttempts");
+        if (parentPos == null && relinkAttempts > 0) {
+            relinkCooldown = RELINK_COOLDOWN_TICKS;
+        }
+        // 区块/世界加载时重新登记节点，避免静态节点表在重启后为空
+        if (level != null && !level.isClientSide) {
+            NetworkManager.registerNode(level, getBlockPos(), getNodeType());
+        }
     }
 }

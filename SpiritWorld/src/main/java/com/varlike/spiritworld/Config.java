@@ -66,7 +66,7 @@ public class Config {
     public static int emcConversionBaseInterval = 20;
     public static double spiritFlightCostMultiplier = 1.0;
     public static int pocketDimensionMaxActivePlayers = 8;
-    public static int pocketDimensionYOffset = 100;
+    public static int pocketDimensionYOffset = 200;
     /** 扫描单次最多显示的图标数（超过按距离最近截断） */
     public static int scanMaxIcons = 32;
 
