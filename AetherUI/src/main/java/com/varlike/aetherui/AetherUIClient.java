@@ -50,6 +50,8 @@ public class AetherUIClient {
             return;
         }
         applyDemoConfig();
+        CustomHud.update();
+        BuffHud.update();
         SmeltingIconDemo.onClientTick(event);
     }
 

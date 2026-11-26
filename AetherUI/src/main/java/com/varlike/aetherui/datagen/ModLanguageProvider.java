@@ -39,6 +39,15 @@ public class ModLanguageProvider extends LanguageProvider {
         config("enableCustomHud", "Enable Custom HUD", "启用自定义 HUD",
                 "Custom HUD with armor/held item durability. Hidden in creative/spectator.",
                 "自定义 HUD：显示盔甲与手持物品耐久，创造/旁观模式自动隐藏");
+        config("customHudAnchorX", "Custom HUD X Offset", "自定义 HUD X 偏移",
+                "Bottom-left HUD anchor X offset in GUI pixels; positive moves right.",
+                "左下角状态 HUD 锚点的 X 偏移（GUI 像素，正值向右）");
+        config("customHudAnchorY", "Custom HUD Y Offset", "自定义 HUD Y 偏移",
+                "Bottom-left HUD anchor Y offset in GUI pixels; positive moves up.",
+                "左下角状态 HUD 锚点的 Y 偏移（GUI 像素，正值向上）");
+        config("customHudBarHeight", "Custom HUD Bar Height", "自定义 HUD 条高",
+                "Default height of built-in XP/food/health bars in GUI pixels.",
+                "左下角经验/饥饿/血量等内置条的默认高度（GUI 像素）");
         config("enableTargetInfo", "Enable Target Info", "启用瞄准信息",
                 "Show block/entity info at bottom-right in all game modes.",
                 "在右下角显示方块/实体信息，所有游戏模式均可显示");
@@ -82,8 +91,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 "Show the Boss health bar in both screen HUD and world space.",
                 "显示同时绘制在屏幕 HUD 与世界空间的 Boss 血条演示");
         config("showSmeltingIconDemo", "Show Smelting Icon Demo", "显示熔炼图标演示",
-                "Show a floating rotating icon above the player (demo of WorldIcon).",
-                "在玩家附近显示浮动旋转的世界图标（WorldIcon 演示）");
+                "Show floating rotating output icons above nearby active furnaces.",
+                "在附近正在熔炼的熔炉上方显示浮动旋转的产物图标");
 
         // 状态条
         translate(AetherUILang.HP,    "HP",    "生命");

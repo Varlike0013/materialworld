@@ -7,62 +7,66 @@ import com.varlike.aetherui.api.UIComponent;
 import com.varlike.aetherui.api.UITree;
 import com.varlike.aetherui.api.hud.BuffIcon;
 import com.varlike.aetherui.api.layout.Alignment;
+import com.varlike.aetherui.api.layout.MainAxisAlignment;
 import com.varlike.aetherui.api.layout.Size;
 import com.varlike.aetherui.api.paint.CanvasContext;
 import com.varlike.aetherui.api.target.ScreenAnchor;
 import com.varlike.aetherui.api.target.ScreenRenderTarget;
 import com.varlike.aetherui.core.registry.BuffIconRegistry;
-import com.varlike.aetherui.core.render.OffsetCanvasContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraft.core.Holder;
+import net.minecraft.world.effect.MobEffectInstance;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 物品栏上方的 buff 图标 HUD：图标从左到右排列，超出后换行向上。
- * 同时显示原版状态效果和其它 mod 注册的自定义 BuffIcon。
+ * 物品栏上方的 buff 图标 HUD。
+ *
+ * <p>图标由 {@code UIBuilder.table(PER_ROW)} 自动按“添加顺序 → 从左到右 → 超出换行”排列；
+ * 每个子节点声明自己的真实宽高，根节点高度 WrapContent 并贴底对齐，因此无需手动计算 Y 偏移。
  */
 public final class BuffHud {
 
     private static final float W = 216f;
-    private static final float H = 96f;
     private static final float ICON = 24f;
     private static final float GAP = 2f;
     private static final int PER_ROW = 8;
 
     private static UITree tree;
+    private static String signature = "";
 
     private BuffHud() {}
 
     public static void init() {
-        if (tree != null) return;
+        update();
+    }
 
-        UIComponent root = UIBuilder.canvas(Size.fixed(W), Size.fixed(H))
-                .canvasAnchor(Alignment.TOP_LEFT)
-                .painter(ctx -> paint(ctx, Minecraft.getInstance().player))
-                .build();
+    /** 每帧检查图标集合是否变化；变化时才重建组件树。 */
+    public static void update() {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (!shouldRender() || player == null) return;
 
-        // 物品栏约 22px 高，放在其上方
-        tree = AetherUI.build(root,
-                new ScreenRenderTarget(ScreenAnchor.bottomCenter(-32f))
-                        .alignment(Alignment.BOTTOM_CENTER)
-                        .guiScale(1f),
-                BuffHud::shouldRender);
+        List<BuffEntry> icons = collectIcons(player);
+        String nextSignature = signatureOf(icons);
+        if (nextSignature.equals(signature)) return;
+
+        if (tree != null) AetherUI.destroy(tree);
+        signature = nextSignature;
+        tree = AetherUI.build(buildRoot(icons), target(), BuffHud::shouldRender);
         AetherUI.register(tree);
     }
 
     public static void destroy() {
-        if (tree == null) return;
-        AetherUI.destroy(tree);
+        if (tree != null) AetherUI.destroy(tree);
         tree = null;
+        signature = "";
     }
 
     private static boolean shouldRender() {
@@ -71,39 +75,63 @@ public final class BuffHud {
         return p != null && !p.isSpectator();
     }
 
+    private static ScreenRenderTarget target() {
+        // 物品栏约 22px 高，放在其上方；根节点高度随时间增加自动向上生长
+        return new ScreenRenderTarget(ScreenAnchor.bottomCenter(-32f))
+                .alignment(Alignment.BOTTOM_CENTER)
+                .guiScale(1f);
+    }
+
     private record BuffEntry(BuffIcon icon, Integer level) {}
 
-    private static void paint(CanvasContext ctx, LocalPlayer player) {
+    private static List<BuffEntry> collectIcons(LocalPlayer player) {
         List<BuffEntry> icons = new ArrayList<>();
 
         // 原版状态效果：getAmplifier 从 0 开始，显示为 I / II / III ...
         for (MobEffectInstance inst : player.getActiveEffects()) {
             if (!inst.showIcon()) continue;
             Holder<MobEffect> holder = inst.getEffect();
+            int level = inst.getAmplifier() + 1;
             icons.add(new BuffEntry(
-                    new VanillaEffectIcon(holder.value().getColor(), holder, inst.getAmplifier() + 1),
-                    inst.getAmplifier() + 1));
+                    new VanillaEffectIcon(holder.value().getColor(), holder, level), level));
         }
 
         // 其它 mod 注册的图标：未提供 level 时不绘制层数
         for (BuffIcon icon : BuffIconRegistry.all()) {
             if (icon.visible(player)) icons.add(new BuffEntry(icon, icon.level(player)));
         }
+        return icons;
+    }
 
-        int n = 0;
+    private static String signatureOf(List<BuffEntry> icons) {
+        StringBuilder sb = new StringBuilder();
         for (BuffEntry entry : icons) {
             BuffIcon icon = entry.icon();
-            int col = n % PER_ROW;
-            int row = n / PER_ROW;
-            float x = col * (ICON + GAP);
-            float y = H - (row + 1) * (ICON + GAP); // 从下到上换行
-            if (y < 0f) break;
-
-            CanvasContext local = new OffsetCanvasContext(ctx, x, y, icon.width(), icon.height());
-            icon.paint(local, player);
-            drawLevel(local, entry.level(), icon.width(), icon.height());
-            n++;
+            sb.append(icon.id()).append(':')
+                    .append(entry.level()).append(':')
+                    .append(icon.width()).append('x').append(icon.height())
+                    .append('|');
         }
+        return sb.toString();
+    }
+
+    private static UIComponent buildRoot(List<BuffEntry> icons) {
+        UIBuilder table = UIBuilder.table(PER_ROW)
+                .size(Size.fixed(W), Size.WRAP)
+                .spacing(GAP)
+                .mainAxisAlignment(MainAxisAlignment.CENTER);
+
+        for (BuffEntry entry : icons) {
+            BuffIcon icon = entry.icon();
+            table.add(UIBuilder.canvas(Size.fixed(icon.width()), Size.fixed(icon.height()))
+                    .canvasAnchor(Alignment.TOP_LEFT)
+                    .painter(ctx -> {
+                        LocalPlayer player = Minecraft.getInstance().player;
+                        if (player != null) icon.paint(ctx, player);
+                        drawLevel(ctx, entry.level(), icon.width(), icon.height());
+                    }));
+        }
+        return table.build();
     }
 
     /** 在图标右下角绘制罗马数字层数；没有层数或层数小于 1 时不绘制。 */

@@ -34,4 +34,28 @@ public interface HudBar {
      * @param player 当前客户端玩家
      */
     void paint(CanvasContext ctx, LocalPlayer player);
+
+    /** 用绘制器创建一条 HudBar，避免其它 Mod 每次都写匿名类。 */
+    static HudBar of(ResourceLocation id, float width, float height, HudBarPainter painter) {
+        return new HudBar() {
+            @Override public ResourceLocation id() { return id; }
+            @Override public float width()  { return width; }
+            @Override public float height() { return height; }
+            @Override public void paint(CanvasContext ctx, LocalPlayer player) { painter.paint(ctx, player); }
+        };
+    }
+
+    /** 使用默认宽高的绘制器版本。 */
+    static HudBar of(ResourceLocation id, HudBarPainter painter) {
+        return new HudBar() {
+            @Override public ResourceLocation id() { return id; }
+            @Override public void paint(CanvasContext ctx, LocalPlayer player) { painter.paint(ctx, player); }
+        };
+    }
+
+    /** 自定义条绘制器。 */
+    @FunctionalInterface
+    interface HudBarPainter {
+        void paint(CanvasContext ctx, LocalPlayer player);
+    }
 }

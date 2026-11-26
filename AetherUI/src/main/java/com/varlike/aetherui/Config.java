@@ -18,6 +18,18 @@ public final class Config {
             .comment("启用 AetherUI 自定义 HUD（装备与手持物品的图标+耐久，创造和旁观者模式自动隐藏）")
             .define("enableCustomHud", true);
 
+    public static final ModConfigSpec.DoubleValue CUSTOM_HUD_ANCHOR_X = BUILDER
+            .comment("左下角状态 HUD 的锚点 X 偏移（逻辑像素，正值向右）")
+            .defineInRange("customHudAnchorX", 10.0, -1000.0, 1000.0);
+
+    public static final ModConfigSpec.DoubleValue CUSTOM_HUD_ANCHOR_Y = BUILDER
+            .comment("左下角状态 HUD 的锚点 Y 偏移（逻辑像素，正值向上）")
+            .defineInRange("customHudAnchorY", -12.0, -1000.0, 1000.0);
+
+    public static final ModConfigSpec.DoubleValue CUSTOM_HUD_BAR_HEIGHT = BUILDER
+            .comment("左下角状态 HUD 中经验/饥饿/血量等内置条的默认高度（逻辑像素）")
+            .defineInRange("customHudBarHeight", 12.0, 4.0, 64.0);
+
     public static final ModConfigSpec.BooleanValue ENABLE_TARGET_INFO = BUILDER
             .comment("启用右下角瞄准信息（方块/实体名称等关键信息），所有游戏模式均可显示")
             .define("enableTargetInfo", true);
@@ -93,6 +105,19 @@ public final class Config {
 
     public static boolean customHudEnabled() {
         return allAssistsEnabled() && ENABLE_CUSTOM_HUD.get();
+    }
+
+    public static float customHudAnchorX() {
+        return CUSTOM_HUD_ANCHOR_X.get().floatValue();
+    }
+
+    public static float customHudAnchorY() {
+        return CUSTOM_HUD_ANCHOR_Y.get().floatValue();
+    }
+
+    /** 内置经验/饥饿/血量条的默认高度；其它 Mod 也可读取以保持样式一致。 */
+    public static float customHudBarHeight() {
+        return CUSTOM_HUD_BAR_HEIGHT.get().floatValue();
     }
 
     public static boolean targetInfoEnabled() {

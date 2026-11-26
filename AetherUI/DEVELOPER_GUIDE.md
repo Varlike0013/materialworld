@@ -51,7 +51,7 @@ side = "CLIENT"
 - `UITree`：`UIComponent` 根节点 + `RenderTarget` + 可见性谓词
 - `Bindable<T>`：惰性取值包装，`Bindable.supplier(...)` 可实现每帧动态数据
 - `RenderTarget`：sealed 接口，两种实现：`ScreenRenderTarget`（屏幕空间）与 `WorldRenderTarget`（世界空间，billboard 投影渲染）。用 `AetherUI.buildAndRegisterBoth(...)` 可让同一棵组件树同时注册到两种目标，一次声明、两处绘制
-- `LayoutEngine`：measure → place → emit，输出 `ElementSnapshot` 列表，由 `SnapshotRenderer` 绘制
+- `LayoutEngine`：measure → place → emit，输出 `ElementSnapshot` 列表，由 `SnapshotRenderer` 绘制；`row()` / `column()` 线性排列，`table(columns)` 按添加顺序从左到右、超出换行，并根据子节点真实宽高自动计算列宽与行高
 
 ---
 
@@ -176,12 +176,21 @@ Demo 与内置 HUD 使用的边框面板、带框图标、进度条样式已提�
 | `framedImage(ctx, tex, x, y, w, h, border, bg, borderArgb)` | 完全可定制的带框图片 |
 | `bar(ctx, x, y, w, h, ratio, color, label)` | **进度条变体一（饥饿条式）**：深色底框 + 比例填充 + 条内白色带阴影文字（如 `Food 20/20`） |
 | `bar(ctx, x, y, w, h, ratio, color)` | 变体一的无文字版本（仍有底框） |
-| `barWithValue(ctx, x, y, w, h, ratio, color, label, value, boxWidth)` | **进度条变体二（血条式）**：变体一 + 右侧独立数值方块，数字颜色与条填充色 `color` 一致 |
+| `barWithValue(ctx, x, y, w, h, ratio, color, label, value, boxWidth)` | **进度条变体二（血条式）**：变体一 + 右侧独立数值方块，数字颜色默认与条填充色 `color` 一致 |
+| `barWithValue(ctx, x, y, w, h, ratio, color, label, value, boxWidth, valueArgb)` | 同上，但数值文字颜色独立指定（如红血条 + 银白护甲值） |
+| `bar(..., BarColor fill[, label])` | 用 `BarColor` 指定填充色，可单色或渐变 |
+| `barWithValue(..., BarColor fill, ...)` | 血条式变体的 `BarColor` 版本；默认数值色取渐变末端色 |
 | `valueBox(ctx, x, y, w, h, value)` | 单独的数值方块（深色底框 + 居中浅灰数字），可独立复用 |
 | `valueBox(ctx, x, y, w, h, value, textColor)` | 可指定数字颜色的数值方块 |
 
 两个进度条变体的 `ratio` 都会被钳制到 `[0,1]`。两者区别只在**右侧有没有独立数值方块**
-（条内文字两个变体都有）。按需选择，或两者都不用：
+（条内文字两个变体都有）。填充色既可以传单一 ARGB，也可以传 `BarColor`：
+
+- `BarColor.solid(argb)`：单色，等价于旧的 `int fillArgb` 重载。
+- `BarColor.gradient(startArgb, endArgb)`：在**当前填充区域**内从左到右渐变；渐变默认数值色取末端色，也可单独指定 `valueArgb`。
+
+`UIBuilder.barCanvas(...)` / `UIBuilder.barWithValueCanvas(...)` 也提供对应的 `BarColor` 重载，
+比例、标签和数值仍可每帧从 supplier 读取。按需选择，或两者都不用：
 
 ```java
 UIBuilder.canvas(Size.fixed(120f), Size.fixed(20f))
@@ -203,7 +212,8 @@ UIBuilder.canvas(Size.fixed(120f), Size.fixed(20f))
 
 配色常量：`LIGHT_BORDER`（`0x99D0D0D0`）、`PANEL_BG`（`0x70000000`）、
 `DARK_BG`（`0xB0080808`）、`DARK_BORDER`（`0xFF5A5A5A`）、`WHITE`、
-`VALUE_TEXT_COLOR`（`0xFFC0C0C0`，数值方块内文字）。
+`VALUE_TEXT_COLOR`（`0xFFC0C0C0`，数值方块内文字）、
+`IRON_SILVER`（`0xFFE8E8E8`，铁锭/护甲数值银白色）。
 
 ### 4.2 带边框的 PNG 图标（`framedIcon`）
 
@@ -402,6 +412,29 @@ AetherUI.registerHudBar(new HudBar() {
                 Component.literal("MP " + ManaProvider.get(p) + "/" + max));
     }
 });
+```
+
+也可直接复用一行工厂，避免写匿名类：
+
+```java
+AetherUI.registerHudBar(HudBar.of(ID, 142f, Config.customHudBarHeight(),
+        (ctx, p) -> CanvasStyles.bar(ctx, 0f, 0f, ctx.width(), ctx.height(),
+                manaRatio(p), 0xFF3388FF, Component.literal("MP"))));
+```
+
+在自己的 UI 树里画同款条时使用公开的 `UIBuilder.barCanvas(...)`。比例与标签支持每帧 supplier，
+无需为了血量/魔力变化重建组件树：
+
+```java
+UIBuilder.barCanvas(142f, Config.customHudBarHeight(),
+        () -> manaRatio(p), 0xFF3388FF,
+        () -> Component.literal("MP " + ManaProvider.get(p)));
+
+// 血条 + 右侧数值方块：数值颜色可独立于条颜色
+UIBuilder.barWithValueCanvas(142f, Config.customHudBarHeight(),
+        () -> hpRatio(p), 0xFFE03333,
+        () -> Component.literal("HP ..."),
+        p::getArmorValue, 24f, CanvasStyles.IRON_SILVER);
 ```
 
 要点：
@@ -694,9 +727,9 @@ WorldMarker timed = WorldMarker.timed("chest-hint", pos, icon, false, 5000L,
 
 | HUD | 位置 | 内容 | 受配置控制 |
 |-----|------|------|-----------|
-| 状态 HUD | 左下角 | 装备/手持耐久行、经验条、饥饿条、血条+护甲方块 | `enableCustomHud`、`showArmorDurability`、`showHeldDurability` |
+| 状态 HUD | 左下角 | 装备/手持耐久行、经验条、饥饿条、血条+护甲方块；外层 `COLUMN` 贴底对齐，耐久条目内层 `ROW` 对齐 | `enableCustomHud`、`showArmorDurability`、`showHeldDurability` |
 | 瞄准信息 HUD | 右下角 | 实体名/HP/护甲/距离；方块名/工具/等级/可否挖掘；`BlockInfoSource` / `BlockInfoProvider` 扩展信息；容器格子数；配方 `[材料]→[时间]→[产物]` | `enableTargetInfo`、`showTargetBlockInfo` |
-| Buff HUD | 物品栏上方 | 原版状态效果 + 注册的 `BuffIcon`；层数以罗马数字显示在图标右下角 | `enableBuffHud`（旁观者不显示） |
+| Buff HUD | 物品栏上方 | 原版状态效果 + 注册的 `BuffIcon`；由 `table(columns)` 按添加顺序自动换行对齐；层数以罗马数字显示在图标右下角 | `enableBuffHud`（旁观者不显示） |
 | 3D 血条 | 生物头顶 | 名字 + 血条 + 护甲方块（仅有护甲时） | `enableWorldHealthBar`、`showHostileHealthBar`、`showAnimalHealthBar`、`showNeutralHealthBar` |
 | 世界空间 UI | 世界坐标 / 实体 / 玩家相对 | 任意 `UIComponent`（与屏幕树共享样式，一次声明两处绘制） | `enableWorldUI` 与构建时的可见性谓词 |
 
@@ -712,6 +745,9 @@ WorldMarker timed = WorldMarker.timed("chest-hint", pos, icon, false, 5000L,
 |----|------|------|
 | `enableAllAssists` | true | **总开关**：关闭后本 Mod 提供的所有辅助全部停用 |
 | `enableCustomHud` | true | 启用左下角状态 HUD（创造/旁观者自动隐藏） |
+| `customHudAnchorX` | 10 | 左下角 HUD 锚点 X 偏移（正值向右） |
+| `customHudAnchorY` | -12 | 左下角 HUD 锚点 Y 偏移（正值向上） |
+| `customHudBarHeight` | 12 | 经验/饥饿/血量等内置条默认高度（其它 Mod 可通过 `Config.customHudBarHeight()` 读取） |
 | `showArmorDurability` | true | 显示盔甲耐久 |
 | `showHeldDurability` | true | 显示手持物品耐久 |
 | `enableBuffHud` | true | 启用物品栏上方的 Buff 图标 HUD |
@@ -763,7 +799,7 @@ com.varlike.aetherui
 │   ├── hud                        HudBar / BuffIcon / BlockInfoProvider / BlockInfoSource / RecipeInfo / RecipeInfoProvider / WorldMarker / WorldMarkerProvider / WorldIcon / Spin（扩展接口/便捷API）
 │   ├── lang                       AetherUILang（翻译键）
 │   ├── layout                     Size / Alignment / FitMode / MeasureContext 等布局类型
-│   ├── paint                      CanvasContext / CanvasPainter
+│   ├── paint                      CanvasContext / CanvasPainter / CanvasStyles / BarColor
 │   ├── snapshot                   ElementSnapshot
 │   └── target                     RenderTarget / ScreenRenderTarget / ScreenAnchor / WorldRenderTarget / Anchor / Orientation
 ├── core

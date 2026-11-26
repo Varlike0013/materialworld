@@ -3,9 +3,13 @@ package com.varlike.aetherui.api;
 import com.varlike.aetherui.api.binding.Bindable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 
 import com.varlike.aetherui.api.layout.*;
+import com.varlike.aetherui.api.paint.BarColor;
 import com.varlike.aetherui.api.paint.CanvasPainter;
+import com.varlike.aetherui.api.paint.CanvasStyles;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec2;
@@ -30,6 +34,103 @@ public final class UIBuilder {
 
     public static UIBuilder canvas()                { return new UIBuilder(ElementKind.CANVAS); }
     public static UIBuilder canvas(Size w, Size h)  { return canvas().size(w, h); }
+
+    /** 状态条画布：固定尺寸 + 左上角锚点，供 CanvasStyles.bar / barWithValue 或自定义条绘制使用。 */
+    public static UIBuilder barCanvas(Size w, Size h, CanvasPainter painter) {
+        return canvas(w, h).canvasAnchor(Alignment.TOP_LEFT).painter(painter);
+    }
+
+    /** 同上，直接使用逻辑像素尺寸。 */
+    public static UIBuilder barCanvas(float w, float h, CanvasPainter painter) {
+        return barCanvas(Size.fixed(w), Size.fixed(h), painter);
+    }
+
+    /** 进度条画布：比例与标签每帧从 supplier 读取，填充色为单一颜色。 */
+    public static UIBuilder barCanvas(float w, float h, Supplier<Float> ratio,
+                                      int fillArgb, Supplier<Component> label) {
+        return barCanvas(w, h, ratio, BarColor.solid(fillArgb), label);
+    }
+
+    /** 使用 {@link BarColor} 的进度条画布，可传单色或渐变色。 */
+    public static UIBuilder barCanvas(float w, float h, Supplier<Float> ratio,
+                                      BarColor fill, Supplier<Component> label) {
+        return barCanvas(w, h, ctx -> {
+            Float value = ratio != null ? ratio.get() : null;
+            Component text = label != null ? label.get() : Component.empty();
+            CanvasStyles.bar(ctx, 0f, 0f, w, h,
+                    value != null ? value : 0f, fill, text);
+        });
+    }
+
+    /** 无标签版本：只画动态进度条。 */
+    public static UIBuilder barCanvas(float w, float h, Supplier<Float> ratio, BarColor fill) {
+        return barCanvas(w, h, ratio, fill, (Supplier<Component>) null);
+    }
+
+    /** 同上，标签固定。 */
+    public static UIBuilder barCanvas(float w, float h, Supplier<Float> ratio,
+                                      int fillArgb, Component label) {
+        return barCanvas(w, h, ratio, BarColor.solid(fillArgb), () -> label);
+    }
+
+    /** 同上，标签固定且填充色为单色或渐变色。 */
+    public static UIBuilder barCanvas(float w, float h, Supplier<Float> ratio,
+                                      BarColor fill, Component label) {
+        return barCanvas(w, h, ratio, fill, () -> label);
+    }
+
+    /** 血条 + 右侧数值方块：比例、标签与数值都每帧读取，数值颜色与条颜色相同。 */
+    public static UIBuilder barWithValueCanvas(float w, float h, Supplier<Float> ratio,
+                                               int fillArgb, Supplier<Component> label,
+                                               IntSupplier value, float boxWidth) {
+        return barWithValueCanvas(w, h, ratio, BarColor.solid(fillArgb), label,
+                value, boxWidth, fillArgb);
+    }
+
+    /** 使用 {@link BarColor} 的血条式画布，数值颜色默认取渐变末端色。 */
+    public static UIBuilder barWithValueCanvas(float w, float h, Supplier<Float> ratio,
+                                               BarColor fill, Supplier<Component> label,
+                                               IntSupplier value, float boxWidth) {
+        BarColor safeFill = fill != null ? fill : BarColor.solid(CanvasStyles.WHITE);
+        return barWithValueCanvas(w, h, ratio, safeFill, label,
+                value, boxWidth, safeFill.colorAt(1f));
+    }
+
+    /** 同上，数值文字颜色可独立于条颜色（如红血条渐变 + 银白护甲值）。 */
+    public static UIBuilder barWithValueCanvas(float w, float h, Supplier<Float> ratio,
+                                               int fillArgb, Supplier<Component> label,
+                                               IntSupplier value, float boxWidth, int valueArgb) {
+        return barWithValueCanvas(w, h, ratio, BarColor.solid(fillArgb), label,
+                value, boxWidth, valueArgb);
+    }
+
+    /** 使用 {@link BarColor} 且数值颜色独立的血条式画布。 */
+    public static UIBuilder barWithValueCanvas(float w, float h, Supplier<Float> ratio,
+                                               BarColor fill, Supplier<Component> label,
+                                               IntSupplier value, float boxWidth, int valueArgb) {
+        return barCanvas(w, h, ctx -> {
+            Float r = ratio != null ? ratio.get() : null;
+            Component text = label != null ? label.get() : Component.empty();
+            int v = value != null ? value.getAsInt() : 0;
+            CanvasStyles.barWithValue(ctx, 0f, 0f, w, h,
+                    r != null ? r : 0f, fill, text, v, boxWidth, valueArgb);
+        });
+    }
+
+    /** 同上，标签固定。 */
+    public static UIBuilder barWithValueCanvas(float w, float h, Supplier<Float> ratio,
+                                               int fillArgb, Component label,
+                                               IntSupplier value, float boxWidth, int valueArgb) {
+        return barWithValueCanvas(w, h, ratio, BarColor.solid(fillArgb), () -> label,
+                value, boxWidth, valueArgb);
+    }
+
+    /** 同上，标签固定且填充色为单色或渐变色。 */
+    public static UIBuilder barWithValueCanvas(float w, float h, Supplier<Float> ratio,
+                                               BarColor fill, Component label,
+                                               IntSupplier value, float boxWidth, int valueArgb) {
+        return barWithValueCanvas(w, h, ratio, fill, () -> label, value, boxWidth, valueArgb);
+    }
 
     public UIBuilder canvasAnchor(Alignment a) {
         checkMutable();

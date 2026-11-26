@@ -64,9 +64,9 @@ public final class LayoutEngine {
             case ROW    -> measureRow(node, maxW, maxH, true);
             case COLUMN -> measureRow(node, maxW, maxH, false);
             case STACK  -> measureStack(node, maxW, maxH);
+            case TABLE  -> measureTable(node, maxW, maxH);
             case ICON   -> measureIcon(node, maxW, maxH);
             case LABEL  -> measureLabel(node, ctx, maxW, maxH);
-            case TABLE  -> measureStack(node, maxW, maxH); // 第一版退化为 Stack
         }
     }
 
@@ -152,6 +152,41 @@ public final class LayoutEngine {
         node.h = fixedH >= 0 ? fixedH : mh + c.padding.vertical();
     }
 
+    private static void measureTable(LayoutNode node, float maxW, float maxH) {
+        UIComponent c = node.element;
+        float fixedW = resolveWidth(c.widthMode, maxW);
+        float fixedH = resolveHeight(c.heightMode, maxH);
+        TableMetrics metrics = tableMetrics(c, node.children);
+
+        node.w = fixedW >= 0f ? fixedW : metrics.contentWidth() + c.padding.horizontal();
+        node.h = fixedH >= 0f ? fixedH : metrics.contentHeight() + c.padding.vertical();
+    }
+
+    private static TableMetrics tableMetrics(UIComponent c, List<LayoutNode> children) {
+        int columns = Math.max(1, c.tableColumns);
+        int rows = (children.size() + columns - 1) / columns;
+        float[] columnWidths = new float[columns];
+        float[] rowHeights = new float[rows];
+
+        for (int i = 0; i < children.size(); i++) {
+            LayoutNode child = children.get(i);
+            int column = i % columns;
+            int row = i / columns;
+            columnWidths[column] = Math.max(columnWidths[column], child.w);
+            rowHeights[row] = Math.max(rowHeights[row], child.h);
+        }
+
+        float contentWidth = 0f;
+        for (float w : columnWidths) contentWidth += w;
+        contentWidth += c.spacing * Math.max(0, columns - 1);
+
+        float contentHeight = 0f;
+        for (float h : rowHeights) contentHeight += h;
+        contentHeight += c.spacing * Math.max(0, rows - 1);
+
+        return new TableMetrics(columnWidths, rowHeights, contentWidth, contentHeight);
+    }
+
     private static void measureIcon(LayoutNode node, float maxW, float maxH) {
         UIComponent c = node.element;
         // Icon 默认 WrapContent 时 = 纹理的“逻辑尺寸” = 100×100 这类声明值（构建时已固定）
@@ -208,10 +243,11 @@ public final class LayoutEngine {
             }
             case ROW    -> placeRow(node, x + padL, y + padT, true);
             case COLUMN -> placeRow(node, x + padL, y + padT, false);
-            case STACK, TABLE -> {
+            case STACK -> {
                 for (LayoutNode cn : node.children)
                     place(cn, x + padL, y + padT);
             }
+            case TABLE -> placeTable(node, x + padL, y + padT);
             case ICON, LABEL -> { /* 叶子，无子元素 */ }
         }
     }
@@ -264,6 +300,59 @@ public final class LayoutEngine {
         }
     }
 
+    private static void placeTable(LayoutNode node, float startX, float startY) {
+        UIComponent c = node.element;
+        int count = node.children.size();
+        if (count == 0) return;
+
+        int columns = Math.max(1, c.tableColumns);
+        TableMetrics metrics = tableMetrics(c, node.children);
+        float padH = c.padding.horizontal();
+        float padV = c.padding.vertical();
+        float freeX = Math.max(0f, node.w - padH - metrics.contentWidth());
+        float freeY = Math.max(0f, node.h - padV - metrics.contentHeight());
+
+        float gapX = c.spacing;
+        float leadX = 0f;
+        switch (c.mainAxisAlignment) {
+            case START -> { }
+            case CENTER -> leadX = freeX / 2f;
+            case END -> leadX = freeX;
+            case SPACE_BETWEEN -> {
+                if (columns > 1) gapX = c.spacing + freeX / (columns - 1);
+            }
+            case SPACE_AROUND -> {
+                float each = freeX / columns;
+                leadX = each / 2f;
+                gapX = c.spacing + each;
+            }
+        }
+
+        float leadY = 0f;
+        switch (c.crossAxisAlignment) {
+            case START, STRETCH -> { }
+            case CENTER -> leadY = freeY / 2f;
+            case END -> leadY = freeY;
+        }
+
+        for (int i = 0; i < count; i++) {
+            int column = i % columns;
+            int row = i / columns;
+
+            float x = startX + leadX;
+            for (int col = 0; col < column; col++) {
+                x += metrics.columnWidths()[col] + gapX;
+            }
+
+            float y = startY + leadY;
+            for (int r = 0; r < row; r++) {
+                y += metrics.rowHeights()[r] + c.spacing;
+            }
+
+            place(node.children.get(i), x, y);
+        }
+    }
+
     // ==================== Emit ====================
 
     private static void emit(LayoutNode node, float parentX, float parentY,
@@ -304,6 +393,9 @@ public final class LayoutEngine {
     }
 
     // ==================== 内部状态 ====================
+
+    private record TableMetrics(float[] columnWidths, float[] rowHeights,
+                                float contentWidth, float contentHeight) {}
 
     private static final class LayoutNode {
         final UIComponent element;

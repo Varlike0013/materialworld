@@ -24,12 +24,12 @@ AetherUI 是一个基于 **NeoForge 1.21.1 / Java 21** 的声明式 UI 框架库
 
 | 能力 | 说明 |
 |------|------|
-| 组件与布局 | `UIBuilder` 提供 `panel` / `row` / `column` / `table` / `canvas` / `label` / `icon` 工厂；`LayoutEngine` 执行 measure → place → emit |
+| 组件与布局 | `UIBuilder` 提供 `panel` / `row` / `column` / `table` / `canvas` / `label` / `icon` 工厂；`table(columns)` 按添加顺序自动换行对齐；`LayoutEngine` 执行 measure → place → emit |
 | 动态数据 | `Bindable<T>` 惰性取值，支持 `Bindable.supplier(...)` 每帧刷新 |
 | 屏幕 UI | `ScreenRenderTarget` + 多种 `ScreenAnchor` 锚点，支持对齐、缩放 |
 | 双端世界 UI | `buildAndRegisterBoth(...)` 用一棵组件树同时注册屏幕与 `WorldRenderTarget`；`DualTree.destroy()` 一次清理 |
 | 自定义绘制 | `canvas()` + `CanvasContext`，提供矩形填充、纹理、图集 sprite、文字、物品图标等原语 |
-| 扩展 HUD | `HudBar`、`BuffIcon`、`BlockInfoProvider`、`BlockInfoSource`（方块自提供，免注册）、`WorldMarkerProvider` |
+| 扩展 HUD | `HudBar.of(...)` 一行注册自定义条；`UIBuilder.barCanvas(...)` / `barWithValueCanvas(...)` 画动态进度条与数值条，支持 `BarColor` 单色/渐变；另有 `BuffIcon`、`BlockInfoProvider`、`BlockInfoSource`、`WorldMarkerProvider` |
 | 内置 HUD | 状态 HUD、瞄准信息 HUD、Buff HUD、3D 血条，均可独立配置开关 |
 | 权威状态同步 | 内置网络查询让容器格子数（含大箱子合并统计）与熔炉产物显示不依赖客户端未同步的 BlockEntity 数据 |
 | 双语言 | 翻译键集中在 `AetherUILang`，由数据生成器产出 `en_us.json` / `zh_cn.json` |
@@ -95,6 +95,9 @@ AetherUI.register(tree);
 |----|------|------|
 | `enableAllAssists` | true | **总开关**：关闭后本 Mod 提供的所有辅助全部停用 |
 | `enableCustomHud` | true | 启用左下角状态 HUD（创造 / 旁观者自动隐藏） |
+| `customHudAnchorX` | 10 | 左下角 HUD 锚点 X 偏移（正值向右） |
+| `customHudAnchorY` | -12 | 左下角 HUD 锚点 Y 偏移（正值向上） |
+| `customHudBarHeight` | 12 | 内置经验/饥饿/血量条高度 |
 | `showArmorDurability` | true | 显示盔甲耐久 |
 | `showHeldDurability` | true | 显示手持物品耐久 |
 | `enableBuffHud` | true | 启用物品栏上方的 Buff 图标 HUD |
